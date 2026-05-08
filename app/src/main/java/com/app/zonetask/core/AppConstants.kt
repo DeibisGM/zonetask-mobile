@@ -9,6 +9,7 @@ object AppConstants {
             const val USER_SPACES = "users/{userId}/spaces"
             const val SPACE_BY_ID = "spaces/{id}"
             const val TASK_FORM_OPTIONS = "api/lookups/task-form-options"
+            const val ZONE_OBJECTS = "api/lookups/zones/{zoneId}/objects"
         }
     }
 }

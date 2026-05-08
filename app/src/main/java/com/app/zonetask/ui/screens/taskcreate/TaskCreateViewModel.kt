@@ -56,6 +56,31 @@ class TaskCreateViewModel : ViewModel() {
         }
     }
 
+    fun loadZoneObjects(zoneId: Int) {
+        viewModelScope.launch {
+            formOptionsUiState = formOptionsUiState.copy(objectsLoading = true, errorMessage = null)
+
+            when (val result = AppContainer.taskLookupRepository.getZoneObjects(zoneId)) {
+                is ApiResult.Success -> {
+                    val data = result.data
+                    formOptionsUiState = formOptionsUiState.copy(
+                        objects = data.map { it.name to it.id.toString() },
+                        objectsLoading = false,
+                        errorMessage = null
+                    )
+                }
+
+                is ApiResult.Error -> {
+                    formOptionsUiState = formOptionsUiState.copy(
+                        objects = emptyList(),
+                        objectsLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
+    }
+
     private fun TaskCreateUiState.revalidate(showErrors: Boolean = this.showErrors): TaskCreateUiState {
         val titleValid = title.isNotBlank()
         val startDateValid = startDate.isNotBlank()

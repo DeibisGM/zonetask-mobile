@@ -21,6 +21,8 @@ data class TaskCreateUiState(
     val spaceId: Int = 1,
     val zoneId: Int? = 1,
     val objectId: Int? = null,
+    val objectSelectionEnabled: Boolean = false,
+    val selectedObjectIds: List<Int> = emptyList(),
     
     // UI specific
     val deadline: String = "",

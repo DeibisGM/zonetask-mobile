@@ -124,6 +124,12 @@ fun TaskCreateScreen(
         )
     }
 
+    LaunchedEffect(uiState.zoneId, uiState.objectSelectionEnabled) {
+        if (uiState.objectSelectionEnabled && uiState.zoneId != null) {
+            viewModel.loadZoneObjects(uiState.zoneId)
+        }
+    }
+
     TaskCreateScaffold(
         title = UserMessages.Screens.CREATE_TASK_TITLE,
         showBack = true,
@@ -255,7 +261,7 @@ private fun TaskCreateContent(
                 value = zoneOptions.find { it.second == uiState.zoneId.toString() }?.first ?: "Zona General",
                 options = zoneOptions,
                 onOptionSelected = { selectedValue ->
-                    onUpdate { copy(zoneId = selectedValue.toIntOrNull() ?: 1) }
+                    onUpdate { copy(zoneId = selectedValue.toIntOrNull() ?: 1, selectedObjectIds = emptyList()) }
                 }
             )
 
@@ -396,6 +402,80 @@ private fun TaskCreateContent(
                             onUpdate { copy(reminderMinutes = selectedValue.toIntOrNull() ?: 30) }
                         }
                     )
+                }
+
+                Divider(color = AppBorder, modifier = Modifier.padding(vertical = 4.dp))
+
+                Text(
+                    text = "Objetos de la zona",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppOnSurface
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
+                    TaskRadioRow(
+                        label = "No",
+                        selected = !uiState.objectSelectionEnabled,
+                        onSelected = {
+                            onUpdate { copy(objectSelectionEnabled = false, selectedObjectIds = emptyList()) }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TaskRadioRow(
+                        label = "Si",
+                        selected = uiState.objectSelectionEnabled,
+                        onSelected = {
+                            onUpdate { copy(objectSelectionEnabled = true) }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (uiState.objectSelectionEnabled) {
+                    if (uiState.zoneId == null) {
+                        Text(
+                            text = "Selecciona una zona primero",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppSecondaryText
+                        )
+                    } else if (formOptions.objectsLoading) {
+                        Text(
+                            text = "Cargando objetos...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppSecondaryText
+                        )
+                    } else if (formOptions.objects.isEmpty()) {
+                        Text(
+                            text = "No hay objetos en esta zona",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AppSecondaryText
+                        )
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            formOptions.objects.forEach { (objectName, objectValue) ->
+                                val objectId = objectValue.toIntOrNull()
+                                if (objectId != null) {
+                                    TaskCheckboxRow(
+                                        label = objectName,
+                                        checked = uiState.selectedObjectIds.contains(objectId),
+                                        onCheckedChange = { checked ->
+                                            onUpdate {
+                                                val updated = if (checked) {
+                                                    selectedObjectIds + objectId
+                                                } else {
+                                                    selectedObjectIds - objectId
+                                                }
+                                                copy(selectedObjectIds = updated.distinct())
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
