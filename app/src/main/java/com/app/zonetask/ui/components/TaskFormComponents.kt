@@ -112,6 +112,12 @@ fun TaskDropdown(
     var expanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppOnSurface,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = value,
@@ -121,7 +127,6 @@ fun TaskDropdown(
                 enabled = false, 
                 isError = error != null,
                 shape = RoundedCornerShape(14.dp),
-                label = { Text(text = label) },
                 trailingIcon = {
                     Icon(
                         imageVector = PhosphorIcons.Bold.CaretDown,
@@ -235,6 +240,12 @@ fun TaskTextField(
     error: String? = null
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppOnSurface,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -242,14 +253,11 @@ fun TaskTextField(
             shape = RoundedCornerShape(14.dp),
             singleLine = singleLine,
             isError = error != null,
-            label = { Text(text = label) },
             placeholder = placeholder?.let { { Text(text = it) } },
             leadingIcon = leadingIcon?.let { { Icon(imageVector = it, contentDescription = null) } },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = AppPrimary,
                 unfocusedBorderColor = AppBorder,
-                focusedLabelColor = AppPrimary,
-                unfocusedLabelColor = AppSecondaryText,
                 focusedTextColor = AppOnSurface,
                 unfocusedTextColor = AppOnSurface,
                 cursorColor = AppPrimary,
@@ -277,29 +285,34 @@ fun TaskDropdownField(
     value: String,
     modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = {},
-        modifier = modifier.fillMaxWidth(),
-        readOnly = true,
-        shape = RoundedCornerShape(14.dp),
-        label = { Text(text = label) },
-        trailingIcon = {
-            Icon(
-                imageVector = PhosphorIcons.Bold.CaretDown,
-                contentDescription = null,
-                tint = AppSecondaryText
-            )
-        },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = AppPrimary,
-            unfocusedBorderColor = AppBorder,
-            focusedLabelColor = AppPrimary,
-            unfocusedLabelColor = AppSecondaryText,
-            focusedTextColor = AppOnSurface,
-            unfocusedTextColor = AppOnSurface
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppOnSurface,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
-    )
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            readOnly = true,
+            shape = RoundedCornerShape(14.dp),
+            trailingIcon = {
+                Icon(
+                    imageVector = PhosphorIcons.Bold.CaretDown,
+                    contentDescription = null,
+                    tint = AppSecondaryText
+                )
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = AppPrimary,
+                unfocusedBorderColor = AppBorder,
+                focusedTextColor = AppOnSurface,
+                unfocusedTextColor = AppOnSurface
+            )
+        )
+    }
 }
 
 @Composable
@@ -464,41 +477,52 @@ fun TaskBottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.forEach { item ->
+                BottomNavCell(
+                    item = item,
+                    onNavigate = onNavigate
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.BottomNavCell(
+    item: TaskBottomNavItem,
+    onNavigate: (String) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .height(44.dp)
+            .clickable { onNavigate(item.route) },
+        contentAlignment = Alignment.Center
+    ) {
+        if (item.selected) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = AppPrimary,
+                modifier = Modifier
+                    .height(38.dp)
+                    .padding(horizontal = 4.dp)
+            ) {
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                        .clickable { onNavigate(item.route) },
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (item.selected) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = AppPrimary,
-                            modifier = Modifier
-                                .height(38.dp)
-                                .padding(horizontal = 4.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.contentDescription,
-                                    tint = AppBackground
-                                )
-                            }
-                        }
-                    } else {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = item.contentDescription,
-                            tint = AppOnSurface
-                        )
-                    }
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.contentDescription,
+                        tint = AppBackground
+                    )
                 }
             }
+        } else {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.contentDescription,
+                tint = AppOnSurface
+            )
         }
     }
 }

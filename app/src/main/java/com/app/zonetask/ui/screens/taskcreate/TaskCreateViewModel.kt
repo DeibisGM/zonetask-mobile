@@ -11,18 +11,27 @@ class TaskCreateViewModel : ViewModel() {
         private set
     
     fun updateState(block: TaskCreateUiState.() -> TaskCreateUiState) {
-        uiState = uiState.block()
+        uiState = uiState.block().revalidate()
     }
 
     fun validate(): Boolean {
-        val isValid = uiState.isValid
-        uiState = uiState.copy(
-            isTitleValid = uiState.title.isNotBlank(),
-            isStartDateValid = uiState.startDate.isNotBlank(),
-            isTimeValid = uiState.scheduledTime.isNotBlank(),
-            isEstimatedTimeValid = uiState.estimatedMinutes != null,
-            showErrors = !isValid
+        val validatedState = uiState.revalidate(showErrors = true)
+        uiState = validatedState
+        return validatedState.isValid
+    }
+
+    private fun TaskCreateUiState.revalidate(showErrors: Boolean = this.showErrors): TaskCreateUiState {
+        val titleValid = title.isNotBlank()
+        val startDateValid = startDate.isNotBlank()
+        val timeValid = scheduledTime.isNotBlank()
+        val estimatedTimeValid = estimatedMinutes != null
+
+        return copy(
+            isTitleValid = titleValid,
+            isStartDateValid = startDateValid,
+            isTimeValid = timeValid,
+            isEstimatedTimeValid = estimatedTimeValid,
+            showErrors = showErrors
         )
-        return isValid
     }
 }
