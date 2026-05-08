@@ -35,6 +35,7 @@ fun TaskCreateScaffold(
     onBackClick: () -> Unit,
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
+    topBarColor: Color = AppBackground,
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -88,7 +89,7 @@ fun TaskCreateScaffold(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = AppBackground,
+                        containerColor = topBarColor,
                         titleContentColor = AppOnSurface,
                         navigationIconContentColor = AppOnSurface
                     )

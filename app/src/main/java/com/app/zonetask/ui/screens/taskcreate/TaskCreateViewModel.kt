@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
+import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
 import com.app.zonetask.di.AppContainer
 import kotlinx.coroutines.launch
 
@@ -77,6 +78,48 @@ class TaskCreateViewModel : ViewModel() {
                         errorMessage = result.message
                     )
                 }
+            }
+        }
+    }
+
+    fun saveTask(onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val normalizedTime = uiState.scheduledTime
+                .takeIf { it.isNotBlank() }
+                ?.let { value ->
+                    if (value.count { it == ':' } == 1) {
+                        "$value:00"
+                    } else {
+                        value
+                    }
+                }
+
+            val request = CreateTaskRequestDto(
+                title = uiState.title.trim(),
+                description = uiState.description.takeIf { it.isNotBlank() }?.trim(),
+                frequency = uiState.frequency,
+                recurrenceRule = uiState.recurrenceRule,
+                scheduledTime = normalizedTime,
+                startDate = uiState.startDate.ifBlank { null },
+                endDate = uiState.endDate,
+                rotating = uiState.rotating,
+                isActive = uiState.isActive,
+                reminderEnabled = uiState.reminderEnabled,
+                reminderMinutes = uiState.reminderMinutes,
+                requiresProof = uiState.requiresProof,
+                requiresDescription = uiState.requiresDescription,
+                estimatedMinutes = uiState.estimatedMinutes,
+                createdBy = uiState.createdBy,
+                categoryId = uiState.categoryId,
+                spaceId = uiState.spaceId,
+                zoneId = uiState.zoneId,
+                objectId = uiState.selectedObjectIds.firstOrNull(),
+                objectIds = if (uiState.objectSelectionEnabled) uiState.selectedObjectIds else emptyList()
+            )
+
+            when (val result = AppContainer.taskRepository.createTask(request)) {
+                is ApiResult.Success -> onResult(true, "Tarea guardada")
+                is ApiResult.Error -> onResult(false, result.message)
             }
         }
     }

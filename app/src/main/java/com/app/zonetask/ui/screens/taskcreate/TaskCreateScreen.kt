@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.core.UserMessages
@@ -18,6 +19,7 @@ import com.app.zonetask.ui.components.*
 import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppOnSurface
+import com.app.zonetask.ui.theme.AppSurface
 import com.app.zonetask.ui.theme.AppSecondaryText
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,6 +46,7 @@ fun TaskCreateScreen(
     // Date Pickers State
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
+    var saveErrorMessage by remember { mutableStateOf<String?>(null) }
 
     // Constraints: Start Date cannot be after End Date
     val startDatePickerState = rememberDatePickerState(
@@ -124,6 +127,25 @@ fun TaskCreateScreen(
         )
     }
 
+    if (saveErrorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { saveErrorMessage = null },
+            confirmButton = {
+                TextButton(onClick = { saveErrorMessage = null }) {
+                    Text("OK")
+                }
+            },
+            title = { Text("Error al guardar") },
+            text = {
+                Text(
+                    text = saveErrorMessage.orEmpty(),
+                    maxLines = 8,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        )
+    }
+
     LaunchedEffect(uiState.zoneId, uiState.objectSelectionEnabled) {
         if (uiState.objectSelectionEnabled && uiState.zoneId != null) {
             viewModel.loadZoneObjects(uiState.zoneId)
@@ -135,6 +157,7 @@ fun TaskCreateScreen(
         showBack = true,
         onBackClick = { onNavigate("spaces") },
         onNavigate = onNavigate,
+        topBarColor = AppSurface,
         bottomBar = {
             Column(modifier = Modifier.background(AppBackground)) {
                 TaskActionButtonsRow(
@@ -143,7 +166,13 @@ fun TaskCreateScreen(
                     onCancelClick = { viewModel.updateState { TaskCreateUiState() } },
                     onSaveClick = {
                         if (viewModel.validate()) {
-                            // TODO: Implement save logic
+                            viewModel.saveTask { success, message ->
+                                if (success) {
+                                    saveErrorMessage = null
+                                } else {
+                                    saveErrorMessage = message
+                                }
+                            }
                         }
                     }
                 )
