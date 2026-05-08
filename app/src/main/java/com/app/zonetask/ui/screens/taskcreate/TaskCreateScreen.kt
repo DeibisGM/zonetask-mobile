@@ -161,6 +161,36 @@ private fun TaskCreateContent(
         "Objeto" to "object"
     )
 
+    val zoneOptions = listOf(
+        "Zona General" to "1",
+        "Cocina" to "2",
+        "Sala" to "3",
+        "Jardín" to "4",
+        "Habitación Principal" to "5"
+    )
+
+    val estimatedTimeOptions = listOf(
+        "5 minutos" to "5",
+        "15 minutos" to "15",
+        "30 minutos" to "30",
+        "45 minutos" to "45",
+        "1 hora" to "60",
+        "1.5 horas" to "90",
+        "2 horas" to "120",
+        "3 horas" to "180",
+        "5 horas" to "300"
+    )
+
+    val reminderOptions = listOf(
+        "Al momento" to "0",
+        "5 minutos antes" to "5",
+        "15 minutos antes" to "15",
+        "30 minutos antes" to "30",
+        "1 hora antes" to "60",
+        "2 horas antes" to "120",
+        "1 día antes" to "1440"
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -194,6 +224,15 @@ private fun TaskCreateContent(
                 options = targetLevelOptions,
                 onOptionSelected = { selectedValue -> 
                     onUpdate { copy(targetLevel = selectedValue) }
+                }
+            )
+
+            TaskDropdown(
+                label = UserMessages.TaskCreate.ZONE_ID_LABEL,
+                value = zoneOptions.find { it.second == uiState.zoneId.toString() }?.first ?: "Zona General",
+                options = zoneOptions,
+                onOptionSelected = { selectedValue ->
+                    onUpdate { copy(zoneId = selectedValue.toIntOrNull() ?: 1) }
                 }
             )
 
@@ -258,11 +297,13 @@ private fun TaskCreateContent(
                     Box(modifier = Modifier.matchParentSize().clickable { onShowTime() })
                 }
                 
-                TaskTextField(
+                TaskDropdown(
                     label = UserMessages.TaskCreate.ESTIMATED_MINUTES_LABEL,
-                    value = uiState.estimatedMinutes?.toString() ?: "",
-                    onValueChange = { value -> onUpdate { copy(estimatedMinutes = value.toIntOrNull()) } },
-                    placeholder = "Minutos",
+                    value = estimatedTimeOptions.find { it.second == uiState.estimatedMinutes?.toString() }?.first ?: "No definido",
+                    options = estimatedTimeOptions,
+                    onOptionSelected = { selectedValue ->
+                        onUpdate { copy(estimatedMinutes = selectedValue.toIntOrNull()) }
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -317,10 +358,13 @@ private fun TaskCreateContent(
                 }
                 
                 if (uiState.reminderEnabled) {
-                    TaskTextField(
+                    TaskDropdown(
                         label = UserMessages.TaskCreate.REMINDER_MINUTES_LABEL,
-                        value = uiState.reminderMinutes.toString(),
-                        onValueChange = { value -> onUpdate { copy(reminderMinutes = value.toIntOrNull() ?: 30) } }
+                        value = reminderOptions.find { it.second == uiState.reminderMinutes.toString() }?.first ?: "15 minutos antes",
+                        options = reminderOptions,
+                        onOptionSelected = { selectedValue ->
+                            onUpdate { copy(reminderMinutes = selectedValue.toIntOrNull() ?: 30) }
+                        }
                     )
                 }
             }
