@@ -1,5 +1,4 @@
-package com.app.zonetask.ui.screens.spacedetail
-
+package com.app.zonetask.ui.screens.spaces
 import com.app.zonetask.domain.model.Space
 
 data class SpaceDetailUiState(

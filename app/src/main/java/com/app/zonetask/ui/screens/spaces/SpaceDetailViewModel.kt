@@ -1,9 +1,8 @@
-package com.app.zonetask.ui.screens.spacedetail
+package com.app.zonetask.ui.screens.spaces
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.repository.SpaceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,9 +31,7 @@ class SpaceDetailViewModel(
                     _uiState.value = SpaceDetailUiState(space = result.data)
                 }
                 is ApiResult.Error -> {
-                    _uiState.value = SpaceDetailUiState(
-                        errorBanner = result.message + UserMessages.TAP_TO_RETRY_SUFFIX
-                    )
+                    _uiState.value = SpaceDetailUiState(errorBanner = result.message)
                 }
             }
         }

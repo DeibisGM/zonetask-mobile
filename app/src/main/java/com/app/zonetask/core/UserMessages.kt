@@ -8,13 +8,13 @@ object UserMessages {
         const val LOADING      = "Cargando espacios..."
         const val EMPTY        = "No tenés espacios aún"
         const val TYPE_PREFIX  = "Tipo: "
-        const val OWNER_PREFIX = "Owner ID: "
+        const val OWNER_PREFIX = "Propietario ID: "
     }
 
     object SpaceDetail {
         const val TITLE          = "Detalle del espacio"
         const val TYPE_LABEL     = "Tipo"
-        const val OWNER_LABEL    = "Owner ID"
+        const val OWNER_LABEL    = "Propietario ID"
         const val DESC_LABEL     = "Descripción"
         const val NO_DESCRIPTION = "Sin descripción"
     }

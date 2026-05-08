@@ -7,5 +7,5 @@ data class Space(
     val spaceType: String,
     val coverImageUrl: String?,
     val isActive: Boolean,
-    val ownerId: Int
+    val ownerId: Int = 0
 )

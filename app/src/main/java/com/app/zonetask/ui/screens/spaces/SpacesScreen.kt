@@ -2,6 +2,7 @@ package com.app.zonetask.ui.screens.spaces
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,8 +27,6 @@ import com.app.zonetask.domain.model.Space
 import com.app.zonetask.ui.components.SpaceCard
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
-
-import com.app.zonetask.ui.components.ZoneTaskScaffold
 
 @Composable
 fun SpacesScreen(
@@ -53,73 +53,83 @@ fun SpacesScreen(
         }
     }
 
-    ZoneTaskScaffold(
-        title = UserMessages.Screens.SPACES_TITLE,
-        snackbarHostState = snackbarHostState,
-        onNavigate = onNavigate
-    ) { padding ->
-        val errorBanner = uiState.errorBanner
+    // Show loaded errors as snackbars without replacing the whole list.
+    LaunchedEffect(uiState.errorBanner) {
+        val error = uiState.errorBanner
+        if (error != null && uiState.spaces.isNotEmpty()) {
+            snackbarHostState.showSnackbar(message = error)
+            viewModel.clearErrorBanner()
+        }
+    }
 
-        Box(modifier = modifier.padding(padding)) {
-            when {
-                uiState.isLoading -> {
-                    Box(
-                        modifier        = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+    when {
+        uiState.isLoading && uiState.spaces.isEmpty() -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = UserMessages.Spaces.LOADING,
+                    color = AppSecondaryText,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
+
+        uiState.errorBanner != null && uiState.spaces.isEmpty() -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = uiState.errorBanner!!,
+                        color = AppSecondaryText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    TextButton(onClick = { viewModel.fetchSpaces() }) {
                         Text(
-                            text  = UserMessages.Spaces.LOADING,
-                            color = AppSecondaryText,
-                            style = MaterialTheme.typography.bodyLarge
+                            text = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
+                            color = AppPrimary
                         )
                     }
                 }
+            }
+        }
 
-                errorBanner != null -> {
-                    Box(
-                        modifier        = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        TextButton(onClick = { viewModel.fetchSpaces() }) {
-                            Text(
-                                text  = errorBanner,
-                                color = AppPrimary            // teal accent on retry tap
-                            )
-                        }
-                    }
-                }
+        uiState.spaces.isEmpty() -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = UserMessages.Spaces.EMPTY,
+                    color = AppSecondaryText,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
 
-                uiState.spaces.isEmpty() -> {
-                    Box(
-                        modifier        = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text  = UserMessages.Spaces.EMPTY,
-                            color = AppSecondaryText,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                }
-
-                else -> {
-                    LazyColumn(
-                        modifier        = Modifier.fillMaxSize(),
-                        contentPadding  = PaddingValues(
-                            start  = 16.dp,
-                            end    = 16.dp,
-                            top    = 12.dp,
-                            bottom = 96.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(uiState.spaces) { space ->
-                            SpaceCard(
-                                space   = space,
-                                onClick = { onSpaceClick(space) }
-                            )
-                        }
-                    }
+        else -> {
+            LazyColumn(
+                modifier = modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 12.dp,
+                    bottom = 96.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(uiState.spaces) { space ->
+                    SpaceCard(
+                        space = space,
+                        onClick = { onSpaceClick(space) }
+                    )
                 }
             }
         }
