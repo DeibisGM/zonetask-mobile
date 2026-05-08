@@ -15,7 +15,7 @@ import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
-import com.app.zonetask.ui.screens.spacedetail.SpaceDetailScreen
+import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
 
 @Composable
 fun AppNavHost() {
@@ -37,7 +37,7 @@ fun AppNavHost() {
             ) { padding ->
                 SpacesScreen(
                     snackbarHostState = snackbarHostState,
-                    userId           = 1,
+                    userId           = 2,
                     modifier         = Modifier.padding(padding),
                     onSpaceClick     = { space ->
                         navController.navigate(
@@ -53,12 +53,13 @@ fun AppNavHost() {
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->
             val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
+            val snackbarHostState = remember { SnackbarHostState() }
 
-            // Recuperamos el space del repositorio via el ViewModel
             ZoneTaskScaffold(
-                title       = UserMessages.SpaceDetail.TITLE,
-                showBack    = true,
-                onBackClick = { navController.popBackStack() }
+                title             = UserMessages.SpaceDetail.TITLE,
+                showBack          = true,
+                onBackClick       = { navController.popBackStack() },
+                snackbarHostState = snackbarHostState
             ) { padding ->
                 SpaceDetailScreen(
                     spaceId  = spaceId,
@@ -67,4 +68,11 @@ fun AppNavHost() {
             }
         }
     }
+}
+
+object AppDestinations {
+    const val LOGIN               = "login"
+    const val SPACES              = "spaces"
+    const val SPACE_DETAIL_ROUTE  = "space_detail"
+    const val SPACE_DETAIL        = "space_detail/{spaceId}"
 }

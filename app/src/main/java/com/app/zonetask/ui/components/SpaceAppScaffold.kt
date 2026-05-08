@@ -17,6 +17,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.app.zonetask.core.UserMessages
@@ -30,19 +34,23 @@ fun ZoneTaskScaffold(
     showBack: Boolean,
     onBackClick: () -> Unit,
     snackbarHostState: SnackbarHostState? = null,
+    showBottomBar: Boolean = true,
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
+    // Track the selected bottom nav destination; Spaces is the only active one
+    var selectedDestination by rememberSaveable { mutableStateOf(NavDestination.SPACES) }
+
     Scaffold(
         modifier       = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,  // #000000
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
                         text  = title,
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground   // white
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 navigationIcon = {
@@ -61,7 +69,16 @@ fun ZoneTaskScaffold(
                 )
             )
         },
-        bottomBar    = bottomBar,
+        bottomBar = {
+            if (showBottomBar && !showBack) {
+                AppBottomNavBar(
+                    currentDestination    = selectedDestination,
+                    onDestinationSelected = { selectedDestination = it }
+                )
+            } else {
+                bottomBar()
+            }
+        },
         snackbarHost = {
             snackbarHostState?.let { host ->
                 SnackbarHost(hostState = host) { data ->

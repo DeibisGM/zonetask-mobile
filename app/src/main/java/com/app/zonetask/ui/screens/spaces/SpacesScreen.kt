@@ -2,6 +2,7 @@ package com.app.zonetask.ui.screens.spaces
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,7 +38,7 @@ fun SpacesScreen(
     viewModel: SpacesViewModel = viewModel(
         factory = SpacesViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
-            userId = userId
+            userId          = userId
         )
     )
 ) {
@@ -49,12 +51,20 @@ fun SpacesScreen(
         }
     }
 
-    val errorBanner = uiState.errorBanner
+    // If there's already data loaded, show the error as a snackbar instead of
+    // replacing the whole screen — the user keeps seeing their list.
+    LaunchedEffect(uiState.errorBanner) {
+        val error = uiState.errorBanner
+        if (error != null && uiState.spaces.isNotEmpty()) {
+            snackbarHostState.showSnackbar(message = error)
+            viewModel.clearErrorBanner()
+        }
+    }
 
     when {
-        uiState.isLoading -> {
+        uiState.isLoading && uiState.spaces.isEmpty() -> {
             Box(
-                modifier        = modifier.fillMaxSize(),
+                modifier         = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -65,23 +75,35 @@ fun SpacesScreen(
             }
         }
 
-        errorBanner != null -> {
+        // Initial load failed — same two-line pattern as SpaceDetailScreen
+        uiState.errorBanner != null && uiState.spaces.isEmpty() -> {
             Box(
-                modifier        = modifier.fillMaxSize(),
+                modifier         = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                TextButton(onClick = { viewModel.fetchSpaces() }) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
-                        text  = errorBanner,
-                        color = AppPrimary            // teal accent on retry tap
+                        text      = uiState.errorBanner!!,
+                        color     = AppSecondaryText,
+                        style     = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
                     )
+                    TextButton(onClick = { viewModel.fetchSpaces() }) {
+                        Text(
+                            text  = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
+                            color = AppPrimary
+                        )
+                    }
                 }
             }
         }
 
         uiState.spaces.isEmpty() -> {
             Box(
-                modifier        = modifier.fillMaxSize(),
+                modifier         = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(

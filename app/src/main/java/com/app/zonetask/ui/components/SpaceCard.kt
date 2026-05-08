@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -70,18 +69,6 @@ fun SpaceCard(
                     )
                 },
                 text = UserMessages.Spaces.TYPE_PREFIX + space.spaceType
-            )
-
-            SpaceInfoRow(
-                icon = {
-                    Icon(
-                        imageVector        = Icons.Outlined.Person,
-                        contentDescription = null,
-                        modifier           = Modifier.size(16.dp),
-                        tint               = AppIconTint
-                    )
-                },
-                text = UserMessages.Spaces.OWNER_PREFIX + space.ownerId
             )
         }
     }

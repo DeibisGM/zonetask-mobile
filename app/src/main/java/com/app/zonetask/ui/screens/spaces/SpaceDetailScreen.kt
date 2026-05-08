@@ -1,4 +1,4 @@
-package com.app.zonetask.ui.screens.spacedetail
+package com.app.zonetask.ui.screens.spaces
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -28,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -65,8 +65,22 @@ fun SpaceDetailScreen(
 
         uiState.errorBanner != null -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                TextButton(onClick = { viewModel.loadSpace() }) {
-                    Text(text = uiState.errorBanner!!, color = AppPrimary)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text      = uiState.errorBanner!!,
+                        color     = AppSecondaryText,
+                        style     = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    TextButton(onClick = { viewModel.loadSpace() }) {
+                        Text(
+                            text  = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
+                            color = AppPrimary
+                        )
+                    }
                 }
             }
         }
@@ -111,14 +125,6 @@ private fun SpaceDetailContent(
                     icon  = Icons.Outlined.Category,
                     label = UserMessages.SpaceDetail.TYPE_LABEL,
                     value = space.spaceType
-                )
-
-                HorizontalDivider(color = AppBorder)
-
-                DetailRow(
-                    icon  = Icons.Outlined.Person,
-                    label = UserMessages.SpaceDetail.OWNER_LABEL,
-                    value = space.ownerId.toString()
                 )
 
                 HorizontalDivider(color = AppBorder)
