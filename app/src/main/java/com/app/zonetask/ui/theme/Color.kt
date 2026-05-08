@@ -2,10 +2,14 @@ package com.app.zonetask.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// Dark theme - consistent with app prototype
+val AppPrimary        = Color(0xFF4DD0C4)   // Teal accent (buttons, highlights)
+val AppBackground     = Color(0xFF000000)   // Pure black background
+val AppSurface        = Color(0xFF1C1C1C)   // Card / surface background
+val AppBorder         = Color(0xFF2C2C2C)   // Subtle card border
+val AppSecondaryText  = Color(0xFF9E9E9E)   // Secondary / hint text
+val AppIconTint       = Color(0xFF9E9E9E)   // Icon tint
+val AppNavUnselected  = Color(0xFF616161)   // Inactive nav icon
+val AppError          = Color(0xFFCF6679)   // Error / delete red-ish
+val AppOnPrimary      = Color(0xFF000000)   // Text on teal buttons
+val AppOnSurface      = Color(0xFFFFFFFF)   // Primary text on dark surfaces
