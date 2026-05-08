@@ -30,6 +30,7 @@ fun TaskCreateScreen(
     viewModel: TaskCreateViewModel = viewModel()
 ) {
     val uiState = viewModel.uiState
+    val formOptions = viewModel.formOptionsUiState
     val context = LocalContext.current
     val activity = context as? Activity
 
@@ -145,6 +146,7 @@ fun TaskCreateScreen(
     ) { padding ->
         TaskCreateContent(
             uiState = uiState,
+            formOptions = formOptions,
             modifier = modifier.padding(padding),
             onShowStartDate = { showStartDatePicker = true },
             onShowEndDate = { showEndDatePicker = true },
@@ -157,6 +159,7 @@ fun TaskCreateScreen(
 @Composable
 private fun TaskCreateContent(
     uiState: TaskCreateUiState,
+    formOptions: TaskFormOptionsUiState,
     modifier: Modifier = Modifier,
     onShowStartDate: () -> Unit,
     onShowEndDate: () -> Unit,
@@ -180,13 +183,9 @@ private fun TaskCreateContent(
         "Objeto" to "object"
     )
 
-    val zoneOptions = listOf(
-        "Zona General" to "1",
-        "Cocina" to "2",
-        "Sala" to "3",
-        "Jardín" to "4",
-        "Habitación Principal" to "5"
-    )
+    val zoneOptions = formOptions.zones.ifEmpty {
+        listOf("Cargando zonas..." to "")
+    }
 
     val estimatedTimeOptions = listOf(
         "5 minutos" to "5",
@@ -252,7 +251,7 @@ private fun TaskCreateContent(
             )
 
             TaskDropdown(
-                label = UserMessages.TaskCreate.ZONE_ID_LABEL + " *",
+                label = UserMessages.TaskCreate.ZONE_LABEL + " *",
                 value = zoneOptions.find { it.second == uiState.zoneId.toString() }?.first ?: "Zona General",
                 options = zoneOptions,
                 onOptionSelected = { selectedValue ->
@@ -260,9 +259,14 @@ private fun TaskCreateContent(
                 }
             )
 
-            TaskDropdownField(
-                label = UserMessages.TaskCreate.CATEGORY_ID_LABEL,
-                value = "Hogar (ID: 1)"
+            TaskDropdown(
+                label = UserMessages.TaskCreate.CATEGORY_LABEL,
+                value = formOptions.categories.find { it.second == uiState.categoryId.toString() }?.first
+                    ?: "Selecciona una categoria",
+                options = formOptions.categories.ifEmpty { listOf("Cargando categorias..." to "") },
+                onOptionSelected = { selectedValue ->
+                    onUpdate { copy(categoryId = selectedValue.toIntOrNull() ?: 1) }
+                }
             )
         }
 

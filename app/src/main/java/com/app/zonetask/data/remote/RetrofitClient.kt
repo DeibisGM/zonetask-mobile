@@ -1,6 +1,7 @@
 package com.app.zonetask.data.remote
 
 import com.app.zonetask.core.AppConstants
+import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.SpaceApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -27,5 +28,9 @@ object RetrofitClient {
 
     val spaceApiService: SpaceApiService by lazy {
         retrofit.create(SpaceApiService::class.java)
+    }
+
+    val taskLookupApiService: TaskLookupApiService by lazy {
+        retrofit.create(TaskLookupApiService::class.java)
     }
 }

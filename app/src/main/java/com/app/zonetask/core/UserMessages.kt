@@ -42,6 +42,8 @@ object UserMessages {
         const val CREATED_BY_LABEL = "Creado por"
         const val CATEGORY_ID_LABEL = "ID de categoria"
         const val ZONE_ID_LABEL = "ID de zona"
+        const val CATEGORY_LABEL = "Categoria"
+        const val ZONE_LABEL = "Zona"
         const val OBJECT_ID_LABEL = "ID de objeto"
         const val REMINDER_MINUTES_LABEL = "Recordar"
         const val SAVE_BUTTON = "GUARDAR"
