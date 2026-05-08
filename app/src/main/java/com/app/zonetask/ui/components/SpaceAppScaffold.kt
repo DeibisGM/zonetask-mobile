@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -34,11 +35,11 @@ fun ZoneTaskScaffold(
     showBack: Boolean,
     onBackClick: () -> Unit,
     snackbarHostState: SnackbarHostState? = null,
+    onAddClick: (() -> Unit)? = null,
     showBottomBar: Boolean = true,
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    // Track the selected bottom nav destination; Spaces is the only active one
     var selectedDestination by rememberSaveable { mutableStateOf(NavDestination.SPACES) }
 
     Scaffold(
@@ -59,6 +60,17 @@ fun ZoneTaskScaffold(
                             Icon(
                                 imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = UserMessages.Accessibility.BACK,
+                                tint               = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    if (onAddClick != null) {
+                        IconButton(onClick = onAddClick) {
+                            Icon(
+                                imageVector        = Icons.Default.Add,
+                                contentDescription = "Agregar",
                                 tint               = MaterialTheme.colorScheme.onBackground
                             )
                         }
