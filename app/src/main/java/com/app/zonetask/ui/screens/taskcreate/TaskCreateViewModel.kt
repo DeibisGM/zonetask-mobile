@@ -124,6 +124,10 @@ class TaskCreateViewModel : ViewModel() {
         }
     }
 
+    fun resetForm() {
+        uiState = TaskCreateUiState()
+    }
+
     private fun TaskCreateUiState.revalidate(showErrors: Boolean = this.showErrors): TaskCreateUiState {
         val titleValid = title.isNotBlank()
         val startDateValid = startDate.isNotBlank()
