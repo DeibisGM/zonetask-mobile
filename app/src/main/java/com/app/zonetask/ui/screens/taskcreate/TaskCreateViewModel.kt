@@ -18,6 +18,9 @@ class TaskCreateViewModel : ViewModel() {
         val isValid = uiState.isValid
         uiState = uiState.copy(
             isTitleValid = uiState.title.isNotBlank(),
+            isStartDateValid = uiState.startDate.isNotBlank(),
+            isTimeValid = uiState.scheduledTime.isNotBlank(),
+            isEstimatedTimeValid = uiState.estimatedMinutes != null,
             showErrors = !isValid
         )
         return isValid

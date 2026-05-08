@@ -33,11 +33,36 @@ fun TaskCreateScreen(
     val context = LocalContext.current
     val activity = context as? Activity
 
+    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+
+    // Helper to parse date string back to millis for constraints
+    fun parseDate(dateStr: String?): Long? {
+        return try { dateStr?.let { dateFormatter.parse(it)?.time } } catch (e: Exception) { null }
+    }
+
     // Date Pickers State
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
-    val startDatePickerState = rememberDatePickerState()
-    val endDatePickerState = rememberDatePickerState()
+
+    // Constraints: Start Date cannot be after End Date
+    val startDatePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val endMillis = parseDate(uiState.endDate)
+                return endMillis == null || utcTimeMillis <= endMillis
+            }
+        }
+    )
+
+    // Constraints: End Date cannot be before Start Date
+    val endDatePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val startMillis = parseDate(uiState.startDate)
+                return startMillis == null || utcTimeMillis >= startMillis
+            }
+        }
+    )
 
     // Time Picker State
     var showTimePicker by remember { mutableStateOf(false) }
@@ -46,8 +71,6 @@ fun TaskCreateScreen(
         initialMinute = 0,
         is24Hour = false
     )
-
-    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
     if (showStartDatePicker) {
         DatePickerDialog(
@@ -112,12 +135,8 @@ fun TaskCreateScreen(
                     saveText = UserMessages.TaskCreate.SAVE_BUTTON,
                     onCancelClick = { viewModel.updateState { TaskCreateUiState() } },
                     onSaveClick = {
-                        // TODO: Implement save logic
-                        viewModel.updateState { 
-                            copy(
-                                spaceId = 1,
-                                zoneId = 1
-                            )
+                        if (viewModel.validate()) {
+                            // TODO: Implement save logic
                         }
                     }
                 )
@@ -204,22 +223,27 @@ private fun TaskCreateContent(
             subtitle = UserMessages.TaskCreate.INTRO
         ) {
             TaskTextField(
-                label = UserMessages.TaskCreate.TITLE_LABEL,
+                label = UserMessages.TaskCreate.TITLE_LABEL + " *",
                 value = uiState.title,
-                onValueChange = { value -> onUpdate { copy(title = value) } },
-                placeholder = "Ej: Limpiar la sala"
+                onValueChange = { value -> 
+                    if (value.length <= 150) onUpdate { copy(title = value) }
+                },
+                placeholder = "Ej: Limpiar la sala",
+                error = if (uiState.showErrors && !uiState.isTitleValid) "Campo obligatorio" else null
             )
 
             TaskTextField(
                 label = UserMessages.TaskCreate.DESCRIPTION_LABEL,
                 value = uiState.description,
-                onValueChange = { value -> onUpdate { copy(description = value) } },
+                onValueChange = { value -> 
+                    if (value.length <= 500) onUpdate { copy(description = value) }
+                },
                 placeholder = "Detalla lo que se debe hacer...",
                 singleLine = false
             )
             
             TaskDropdown(
-                label = UserMessages.TaskCreate.TARGET_LEVEL_LABEL,
+                label = UserMessages.TaskCreate.TARGET_LEVEL_LABEL + " *",
                 value = targetLevelOptions.find { it.second == uiState.targetLevel }?.first ?: "Espacio",
                 options = targetLevelOptions,
                 onOptionSelected = { selectedValue -> 
@@ -228,7 +252,7 @@ private fun TaskCreateContent(
             )
 
             TaskDropdown(
-                label = UserMessages.TaskCreate.ZONE_ID_LABEL,
+                label = UserMessages.TaskCreate.ZONE_ID_LABEL + " *",
                 value = zoneOptions.find { it.second == uiState.zoneId.toString() }?.first ?: "Zona General",
                 options = zoneOptions,
                 onOptionSelected = { selectedValue ->
@@ -247,7 +271,7 @@ private fun TaskCreateContent(
             title = UserMessages.TaskCreate.SCHEDULE_SECTION
         ) {
             TaskDropdown(
-                label = UserMessages.TaskCreate.FREQUENCY_LABEL,
+                label = UserMessages.TaskCreate.FREQUENCY_LABEL + " *",
                 value = frequencyOptions.find { it.second == uiState.frequency }?.first ?: "Una vez",
                 options = frequencyOptions,
                 onOptionSelected = { selectedValue ->
@@ -261,11 +285,12 @@ private fun TaskCreateContent(
             ) {
                 Box(modifier = Modifier.weight(1f).clickable { onShowStartDate() }) {
                     TaskTextField(
-                        label = UserMessages.TaskCreate.START_DATE_LABEL,
+                        label = UserMessages.TaskCreate.START_DATE_LABEL + " *",
                         value = uiState.startDate,
                         onValueChange = {},
                         placeholder = "YYYY-MM-DD",
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        error = if (uiState.showErrors && uiState.startDate.isBlank()) "Obligatorio" else null
                     )
                     Box(modifier = Modifier.matchParentSize().clickable { onShowStartDate() })
                 }
@@ -288,17 +313,18 @@ private fun TaskCreateContent(
             ) {
                 Box(modifier = Modifier.weight(1f).clickable { onShowTime() }) {
                     TaskTextField(
-                        label = UserMessages.TaskCreate.TIME_LABEL,
+                        label = UserMessages.TaskCreate.TIME_LABEL + " *",
                         value = uiState.scheduledTime,
                         onValueChange = {},
                         placeholder = "HH:MM",
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        error = if (uiState.showErrors && uiState.scheduledTime.isBlank()) "Obligatorio" else null
                     )
                     Box(modifier = Modifier.matchParentSize().clickable { onShowTime() })
                 }
                 
                 TaskDropdown(
-                    label = UserMessages.TaskCreate.ESTIMATED_MINUTES_LABEL,
+                    label = UserMessages.TaskCreate.ESTIMATED_MINUTES_LABEL + " *",
                     value = estimatedTimeOptions.find { it.second == uiState.estimatedMinutes?.toString() }?.first ?: "No definido",
                     options = estimatedTimeOptions,
                     onOptionSelected = { selectedValue ->

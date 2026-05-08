@@ -106,68 +106,82 @@ fun TaskDropdown(
     value: String,
     options: List<Pair<String, String>>,
     onOptionSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    error: String? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box(modifier = modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {},
-            modifier = Modifier.fillMaxWidth(),
-            readOnly = true,
-            enabled = false, 
-            shape = RoundedCornerShape(14.dp),
-            label = { Text(text = label) },
-            trailingIcon = {
-                Icon(
-                    imageVector = PhosphorIcons.Bold.CaretDown,
-                    contentDescription = null,
-                    tint = AppSecondaryText
+    Column(modifier = modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = {},
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                enabled = false, 
+                isError = error != null,
+                shape = RoundedCornerShape(14.dp),
+                label = { Text(text = label) },
+                trailingIcon = {
+                    Icon(
+                        imageVector = PhosphorIcons.Bold.CaretDown,
+                        contentDescription = null,
+                        tint = if (error != null) MaterialTheme.colorScheme.error else AppSecondaryText
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledBorderColor = if (error != null) MaterialTheme.colorScheme.error else AppBorder,
+                    disabledLabelColor = if (error != null) MaterialTheme.colorScheme.error else AppSecondaryText,
+                    disabledTextColor = AppOnSurface,
+                    focusedBorderColor = AppPrimary,
+                    unfocusedBorderColor = AppBorder,
+                    focusedLabelColor = AppPrimary,
+                    unfocusedLabelColor = AppSecondaryText,
+                    focusedTextColor = AppOnSurface,
+                    unfocusedTextColor = AppOnSurface,
+                    errorBorderColor = MaterialTheme.colorScheme.error,
+                    errorLabelColor = MaterialTheme.colorScheme.error
                 )
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledBorderColor = AppBorder,
-                disabledLabelColor = AppSecondaryText,
-                disabledTextColor = AppOnSurface,
-                focusedBorderColor = AppPrimary,
-                unfocusedBorderColor = AppBorder,
-                focusedLabelColor = AppPrimary,
-                unfocusedLabelColor = AppSecondaryText,
-                focusedTextColor = AppOnSurface,
-                unfocusedTextColor = AppOnSurface
             )
-        )
-        
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clickable { expanded = true }
-        )
+            
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { expanded = true }
+            )
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .background(AppSurface)
-                .border(1.dp, AppBorder, RoundedCornerShape(8.dp))
-        ) {
-            options.forEach { (labelStr, valStr) ->
-                DropdownMenuItem(
-                    text = { 
-                        Text(
-                            text = labelStr, 
-                            color = if (value == labelStr) AppPrimary else AppOnSurface,
-                            fontWeight = if (value == labelStr) FontWeight.Bold else FontWeight.Normal
-                        ) 
-                    },
-                    onClick = {
-                        onOptionSelected(valStr)
-                        expanded = false
-                    }
-                )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(AppSurface)
+                    .border(1.dp, AppBorder, RoundedCornerShape(8.dp))
+            ) {
+                options.forEach { (labelStr, valStr) ->
+                    DropdownMenuItem(
+                        text = { 
+                            Text(
+                                text = labelStr, 
+                                color = if (value == labelStr) AppPrimary else AppOnSurface,
+                                fontWeight = if (value == labelStr) FontWeight.Bold else FontWeight.Normal
+                            ) 
+                        },
+                        onClick = {
+                            onOptionSelected(valStr)
+                            expanded = false
+                        }
+                    )
+                }
             }
+        }
+        if (error != null) {
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp)
+            )
         }
     }
 }
@@ -217,29 +231,44 @@ fun TaskTextField(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     leadingIcon: ImageVector? = null,
-    singleLine: Boolean = true
+    singleLine: Boolean = true,
+    error: String? = null
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        singleLine = singleLine,
-        label = { Text(text = label) },
-        placeholder = placeholder?.let { { Text(text = it) } },
-        leadingIcon = leadingIcon?.let { { Icon(imageVector = it, contentDescription = null) } },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = AppPrimary,
-            unfocusedBorderColor = AppBorder,
-            focusedLabelColor = AppPrimary,
-            unfocusedLabelColor = AppSecondaryText,
-            focusedTextColor = AppOnSurface,
-            unfocusedTextColor = AppOnSurface,
-            cursorColor = AppPrimary,
-            focusedLeadingIconColor = AppPrimary,
-            unfocusedLeadingIconColor = AppSecondaryText
+    Column(modifier = modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            singleLine = singleLine,
+            isError = error != null,
+            label = { Text(text = label) },
+            placeholder = placeholder?.let { { Text(text = it) } },
+            leadingIcon = leadingIcon?.let { { Icon(imageVector = it, contentDescription = null) } },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = AppPrimary,
+                unfocusedBorderColor = AppBorder,
+                focusedLabelColor = AppPrimary,
+                unfocusedLabelColor = AppSecondaryText,
+                focusedTextColor = AppOnSurface,
+                unfocusedTextColor = AppOnSurface,
+                cursorColor = AppPrimary,
+                focusedLeadingIconColor = AppPrimary,
+                unfocusedLeadingIconColor = AppSecondaryText,
+                errorBorderColor = MaterialTheme.colorScheme.error,
+                errorLabelColor = MaterialTheme.colorScheme.error,
+                errorCursorColor = MaterialTheme.colorScheme.error
+            )
         )
-    )
+        if (error != null) {
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp)
+            )
+        }
+    }
 }
 
 @Composable

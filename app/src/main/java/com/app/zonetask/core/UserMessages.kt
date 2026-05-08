@@ -43,7 +43,7 @@ object UserMessages {
         const val CATEGORY_ID_LABEL = "ID de categoria"
         const val ZONE_ID_LABEL = "ID de zona"
         const val OBJECT_ID_LABEL = "ID de objeto"
-        const val REMINDER_MINUTES_LABEL = "Recordar antes"
+        const val REMINDER_MINUTES_LABEL = "Recordar"
         const val SAVE_BUTTON = "GUARDAR"
         const val SAVE_SNACKBAR = "Vista de formulario lista para guardar."
         const val ACTIVE_LABEL = "Tarea activa"

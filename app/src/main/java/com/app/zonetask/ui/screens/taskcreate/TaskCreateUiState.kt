@@ -29,7 +29,16 @@ data class TaskCreateUiState(
     
     // Validation
     val isTitleValid: Boolean = true,
+    val isTargetLevelValid: Boolean = true,
+    val isZoneValid: Boolean = true,
+    val isFrequencyValid: Boolean = true,
+    val isStartDateValid: Boolean = true,
+    val isTimeValid: Boolean = true,
+    val isEstimatedTimeValid: Boolean = true,
     val showErrors: Boolean = false
 ) {
-    val isValid: Boolean get() = title.isNotBlank() && startDate.isNotBlank()
+    val isValid: Boolean get() = title.isNotBlank() && 
+                                 startDate.isNotBlank() && 
+                                 scheduledTime.isNotBlank() && 
+                                 estimatedMinutes != null
 }
