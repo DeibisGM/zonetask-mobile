@@ -1,0 +1,331 @@
+package com.app.zonetask.ui.screens.taskcreate
+
+import android.app.Activity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.zonetask.core.UserMessages
+import com.app.zonetask.ui.components.*
+import com.app.zonetask.ui.theme.AppBackground
+import com.app.zonetask.ui.theme.AppBorder
+import com.app.zonetask.ui.theme.AppOnSurface
+import com.app.zonetask.ui.theme.AppSecondaryText
+import java.text.SimpleDateFormat
+import java.util.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TaskCreateScreen(
+    modifier: Modifier = Modifier,
+    onNavigate: (String) -> Unit = {},
+    viewModel: TaskCreateViewModel = viewModel()
+) {
+    val uiState = viewModel.uiState
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    // Date Pickers State
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+    val startDatePickerState = rememberDatePickerState()
+    val endDatePickerState = rememberDatePickerState()
+
+    // Time Picker State
+    var showTimePicker by remember { mutableStateOf(false) }
+    val timePickerState = rememberTimePickerState(
+        initialHour = 12,
+        initialMinute = 0,
+        is24Hour = false
+    )
+
+    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+
+    if (showStartDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showStartDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    startDatePickerState.selectedDateMillis?.let { millis ->
+                        val dateString = dateFormatter.format(Date(millis))
+                        viewModel.updateState { copy(startDate = dateString) }
+                    }
+                    showStartDatePicker = false
+                }) { Text("OK") }
+            }
+        ) { DatePicker(state = startDatePickerState) }
+    }
+
+    if (showEndDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showEndDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    endDatePickerState.selectedDateMillis?.let { millis ->
+                        val dateString = dateFormatter.format(Date(millis))
+                        viewModel.updateState { copy(endDate = dateString) }
+                    }
+                    showEndDatePicker = false
+                }) { Text("OK") }
+            }
+        ) { DatePicker(state = endDatePickerState) }
+    }
+
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val time = String.format("%02d:%02d", timePickerState.hour, timePickerState.minute)
+                    viewModel.updateState { copy(scheduledTime = time) }
+                    showTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("CANCELAR") }
+            },
+            text = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    TimePicker(state = timePickerState)
+                }
+            }
+        )
+    }
+
+    TaskCreateScaffold(
+        title = UserMessages.Screens.CREATE_TASK_TITLE,
+        showBack = true,
+        onBackClick = { onNavigate("spaces") },
+        onNavigate = onNavigate,
+        bottomBar = {
+            Column(modifier = Modifier.background(AppBackground)) {
+                TaskActionButtonsRow(
+                    cancelText = "CANCELAR",
+                    saveText = UserMessages.TaskCreate.SAVE_BUTTON,
+                    onCancelClick = { viewModel.updateState { TaskCreateUiState() } },
+                    onSaveClick = {
+                        // TODO: Implement save logic
+                        viewModel.updateState { 
+                            copy(
+                                spaceId = 1,
+                                zoneId = 1
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    ) { padding ->
+        TaskCreateContent(
+            uiState = uiState,
+            modifier = modifier.padding(padding),
+            onShowStartDate = { showStartDatePicker = true },
+            onShowEndDate = { showEndDatePicker = true },
+            onShowTime = { showTimePicker = true },
+            onUpdate = { update -> viewModel.updateState(update) }
+        )
+    }
+}
+
+@Composable
+private fun TaskCreateContent(
+    uiState: TaskCreateUiState,
+    modifier: Modifier = Modifier,
+    onShowStartDate: () -> Unit,
+    onShowEndDate: () -> Unit,
+    onShowTime: () -> Unit,
+    onUpdate: (TaskCreateUiState.() -> TaskCreateUiState) -> Unit
+) {
+    val frequencyOptions = listOf(
+        "Una vez" to "once",
+        "Diaria" to "daily",
+        "Cada 2 días" to "every_2_days",
+        "Cada 3 días" to "every_3_days",
+        "Semanal" to "weekly",
+        "Quincenal" to "biweekly",
+        "Mensual" to "monthly",
+        "Personalizado" to "custom"
+    )
+
+    val targetLevelOptions = listOf(
+        "Espacio" to "space",
+        "Zona" to "zone",
+        "Objeto" to "object"
+    )
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // General Info Section
+        TaskSectionCard(
+            title = UserMessages.TaskCreate.GENERAL_SECTION,
+            subtitle = UserMessages.TaskCreate.INTRO
+        ) {
+            TaskTextField(
+                label = UserMessages.TaskCreate.TITLE_LABEL,
+                value = uiState.title,
+                onValueChange = { value -> onUpdate { copy(title = value) } },
+                placeholder = "Ej: Limpiar la sala"
+            )
+
+            TaskTextField(
+                label = UserMessages.TaskCreate.DESCRIPTION_LABEL,
+                value = uiState.description,
+                onValueChange = { value -> onUpdate { copy(description = value) } },
+                placeholder = "Detalla lo que se debe hacer...",
+                singleLine = false
+            )
+            
+            TaskDropdown(
+                label = UserMessages.TaskCreate.TARGET_LEVEL_LABEL,
+                value = targetLevelOptions.find { it.second == uiState.targetLevel }?.first ?: "Espacio",
+                options = targetLevelOptions,
+                onOptionSelected = { selectedValue -> 
+                    onUpdate { copy(targetLevel = selectedValue) }
+                }
+            )
+
+            TaskDropdownField(
+                label = UserMessages.TaskCreate.CATEGORY_ID_LABEL,
+                value = "Hogar (ID: 1)"
+            )
+        }
+
+        // Schedule Section
+        TaskSectionCard(
+            title = UserMessages.TaskCreate.SCHEDULE_SECTION
+        ) {
+            TaskDropdown(
+                label = UserMessages.TaskCreate.FREQUENCY_LABEL,
+                value = frequencyOptions.find { it.second == uiState.frequency }?.first ?: "Una vez",
+                options = frequencyOptions,
+                onOptionSelected = { selectedValue ->
+                    onUpdate { copy(frequency = selectedValue) }
+                }
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f).clickable { onShowStartDate() }) {
+                    TaskTextField(
+                        label = UserMessages.TaskCreate.START_DATE_LABEL,
+                        value = uiState.startDate,
+                        onValueChange = {},
+                        placeholder = "YYYY-MM-DD",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(modifier = Modifier.matchParentSize().clickable { onShowStartDate() })
+                }
+
+                Box(modifier = Modifier.weight(1f).clickable { onShowEndDate() }) {
+                    TaskTextField(
+                        label = UserMessages.TaskCreate.END_DATE_LABEL,
+                        value = uiState.endDate ?: "",
+                        onValueChange = {},
+                        placeholder = "Opcional",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(modifier = Modifier.matchParentSize().clickable { onShowEndDate() })
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f).clickable { onShowTime() }) {
+                    TaskTextField(
+                        label = UserMessages.TaskCreate.TIME_LABEL,
+                        value = uiState.scheduledTime,
+                        onValueChange = {},
+                        placeholder = "HH:MM",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Box(modifier = Modifier.matchParentSize().clickable { onShowTime() })
+                }
+                
+                TaskTextField(
+                    label = UserMessages.TaskCreate.ESTIMATED_MINUTES_LABEL,
+                    value = uiState.estimatedMinutes?.toString() ?: "",
+                    onValueChange = { value -> onUpdate { copy(estimatedMinutes = value.toIntOrNull()) } },
+                    placeholder = "Minutos",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        // Configuration Section
+        TaskSectionCard(
+            title = UserMessages.TaskCreate.RULES_SECTION
+        ) {
+            TaskCheckboxRow(
+                label = UserMessages.TaskCreate.ROTATING_LABEL,
+                checked = uiState.rotating,
+                onCheckedChange = { onUpdate { copy(rotating = it) } }
+            )
+            
+            TaskCheckboxRow(
+                label = UserMessages.TaskCreate.REQUIRE_PROOF_LABEL,
+                checked = uiState.requiresProof,
+                onCheckedChange = { onUpdate { copy(requiresProof = it) } }
+            )
+            
+            TaskCheckboxRow(
+                label = UserMessages.TaskCreate.REQUIRE_DESCRIPTION_LABEL,
+                checked = uiState.requiresDescription,
+                onCheckedChange = { onUpdate { copy(requiresDescription = it) } }
+            )
+
+            Divider(color = AppBorder, modifier = Modifier.padding(vertical = 4.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = UserMessages.TaskCreate.REMINDER_LABEL,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppOnSurface
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
+                    TaskRadioRow(
+                        label = "No",
+                        selected = !uiState.reminderEnabled,
+                        onSelected = { onUpdate { copy(reminderEnabled = false) } },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TaskRadioRow(
+                        label = "Si",
+                        selected = uiState.reminderEnabled,
+                        onSelected = { onUpdate { copy(reminderEnabled = true) } },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                
+                if (uiState.reminderEnabled) {
+                    TaskTextField(
+                        label = UserMessages.TaskCreate.REMINDER_MINUTES_LABEL,
+                        value = uiState.reminderMinutes.toString(),
+                        onValueChange = { value -> onUpdate { copy(reminderMinutes = value.toIntOrNull() ?: 30) } }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
