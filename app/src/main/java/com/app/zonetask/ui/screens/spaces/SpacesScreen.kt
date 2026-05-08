@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -35,10 +36,11 @@ fun SpacesScreen(
     successMessage: String? = null,
     onSuccessMessageShown: () -> Unit = {},
     onSpaceClick: (Space) -> Unit = {},
+    onNavigate: (String) -> Unit = {},
     viewModel: SpacesViewModel = viewModel(
         factory = SpacesViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
-            userId          = userId
+            userId = userId
         )
     )
 ) {
@@ -51,8 +53,7 @@ fun SpacesScreen(
         }
     }
 
-    // If there's already data loaded, show the error as a snackbar instead of
-    // replacing the whole screen — the user keeps seeing their list.
+    // Show loaded errors as snackbars without replacing the whole list.
     LaunchedEffect(uiState.errorBanner) {
         val error = uiState.errorBanner
         if (error != null && uiState.spaces.isNotEmpty()) {
@@ -64,21 +65,20 @@ fun SpacesScreen(
     when {
         uiState.isLoading && uiState.spaces.isEmpty() -> {
             Box(
-                modifier         = modifier.fillMaxSize(),
+                modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text  = UserMessages.Spaces.LOADING,
+                    text = UserMessages.Spaces.LOADING,
                     color = AppSecondaryText,
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
 
-        // Initial load failed — same two-line pattern as SpaceDetailScreen
         uiState.errorBanner != null && uiState.spaces.isEmpty() -> {
             Box(
-                modifier         = modifier.fillMaxSize(),
+                modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -86,14 +86,14 @@ fun SpacesScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text      = uiState.errorBanner!!,
-                        color     = AppSecondaryText,
-                        style     = MaterialTheme.typography.bodyMedium,
+                        text = uiState.errorBanner!!,
+                        color = AppSecondaryText,
+                        style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
                     TextButton(onClick = { viewModel.fetchSpaces() }) {
                         Text(
-                            text  = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
+                            text = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
                             color = AppPrimary
                         )
                     }
@@ -103,11 +103,11 @@ fun SpacesScreen(
 
         uiState.spaces.isEmpty() -> {
             Box(
-                modifier         = modifier.fillMaxSize(),
+                modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text  = UserMessages.Spaces.EMPTY,
+                    text = UserMessages.Spaces.EMPTY,
                     color = AppSecondaryText,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -116,18 +116,18 @@ fun SpacesScreen(
 
         else -> {
             LazyColumn(
-                modifier        = modifier.fillMaxSize(),
-                contentPadding  = PaddingValues(
-                    start  = 16.dp,
-                    end    = 16.dp,
-                    top    = 12.dp,
+                modifier = modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 12.dp,
                     bottom = 96.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(uiState.spaces) { space ->
                     SpaceCard(
-                        space   = space,
+                        space = space,
                         onClick = { onSpaceClick(space) }
                     )
                 }
