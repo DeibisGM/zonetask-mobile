@@ -39,17 +39,17 @@ fun TaskCreateScreen(
 
     val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
-    // Helper to parse date string back to millis for constraints
+    // Convert the saved date string into millis for picker limits.
     fun parseDate(dateStr: String?): Long? {
         return try { dateStr?.let { dateFormatter.parse(it)?.time } } catch (e: Exception) { null }
     }
 
-    // Date Pickers State
+    // Picker visibility flags.
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     var saveErrorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Constraints: Start Date cannot be after End Date
+    // Keep the start date on or before the selected end date.
     val startDatePickerState = rememberDatePickerState(
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
@@ -59,7 +59,7 @@ fun TaskCreateScreen(
         }
     )
 
-    // Constraints: End Date cannot be before Start Date
+    // Keep the end date on or after the selected start date.
     val endDatePickerState = rememberDatePickerState(
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
@@ -69,7 +69,7 @@ fun TaskCreateScreen(
         }
     )
 
-    // Time Picker State
+    // Default time picker state.
     var showTimePicker by remember { mutableStateOf(false) }
     val timePickerState = rememberTimePickerState(
         initialHour = 12,
@@ -166,6 +166,7 @@ fun TaskCreateScreen(
                     saveText = UserMessages.TaskCreate.SAVE_BUTTON,
                     onCancelClick = { viewModel.updateState { TaskCreateUiState() } },
                     onSaveClick = {
+                        // Only clear the form after a successful save.
                         if (viewModel.validate()) {
                             viewModel.saveTask { success, message ->
                                 if (success) {

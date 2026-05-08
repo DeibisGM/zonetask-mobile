@@ -9,6 +9,7 @@ class TaskRepository(
     private val apiService: TaskApiService
 ) {
 
+    // Send the task payload and convert the result to a UI-friendly state.
     suspend fun createTask(request: CreateTaskRequestDto): ApiResult<Unit> {
         return try {
             val response = apiService.createTask(request)

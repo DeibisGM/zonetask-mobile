@@ -3,6 +3,7 @@ package com.app.zonetask.data.remote.dto
 import com.google.gson.annotations.SerializedName
 
 data class LookupOptionResponse(
+    // Generic label/value item for dropdowns and checkboxes.
     @SerializedName("id")
     val id: Int,
     @SerializedName("name")
@@ -10,6 +11,7 @@ data class LookupOptionResponse(
 )
 
 data class TaskFormOptionsResponse(
+    // Bundles the lookup data needed by the create-task form.
     @SerializedName("spaceId")
     val spaceId: Int,
     @SerializedName("zones")

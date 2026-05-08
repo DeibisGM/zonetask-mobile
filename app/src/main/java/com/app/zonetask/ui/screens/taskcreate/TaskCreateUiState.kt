@@ -1,6 +1,7 @@
 package com.app.zonetask.ui.screens.taskcreate
 
 data class TaskCreateUiState(
+    // Form inputs shown on the create-task screen.
     val title: String = "",
     val description: String = "",
     val targetLevel: String = "space",
@@ -24,12 +25,12 @@ data class TaskCreateUiState(
     val objectSelectionEnabled: Boolean = false,
     val selectedObjectIds: List<Int> = emptyList(),
     
-    // UI specific
+    // Legacy UI fields kept to match the current screen layout.
     val deadline: String = "",
     val hour: String = "8:00 PM",
     val assignedSpace: String = "1",
     
-    // Validation
+    // Validation flags used to paint inline errors.
     val isTitleValid: Boolean = true,
     val isTargetLevelValid: Boolean = true,
     val isZoneValid: Boolean = true,
@@ -39,6 +40,7 @@ data class TaskCreateUiState(
     val isEstimatedTimeValid: Boolean = true,
     val showErrors: Boolean = false
 ) {
+    // Simple gate used before sending the request.
     val isValid: Boolean get() = title.isNotBlank() && 
                                  startDate.isNotBlank() && 
                                  scheduledTime.isNotBlank() && 

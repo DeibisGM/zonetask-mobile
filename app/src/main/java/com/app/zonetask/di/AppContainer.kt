@@ -7,6 +7,7 @@ import com.app.zonetask.data.repository.SpaceRepository
 
 object AppContainer {
 
+    // Small manual DI setup for the screens in this module.
     val spaceRepository: SpaceRepository by lazy {
         SpaceRepository(RetrofitClient.spaceApiService)
     }

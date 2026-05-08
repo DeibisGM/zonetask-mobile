@@ -11,6 +11,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
+    // Logs requests and responses while we build the task flow.
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
@@ -23,10 +24,11 @@ object RetrofitClient {
         Retrofit.Builder()
             .baseUrl(AppConstants.Api.BASE_URL)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
     }
 
+    // Shared services use the same Retrofit instance.
     val spaceApiService: SpaceApiService by lazy {
         retrofit.create(SpaceApiService::class.java)
     }

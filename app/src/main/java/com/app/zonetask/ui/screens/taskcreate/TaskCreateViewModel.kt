@@ -19,6 +19,7 @@ class TaskCreateViewModel : ViewModel() {
         private set
 
     init {
+        // Load dropdown data as soon as the screen opens.
         loadFormOptions()
     }
     
@@ -84,6 +85,7 @@ class TaskCreateViewModel : ViewModel() {
 
     fun saveTask(onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch {
+            // The API expects time in HH:mm:ss format.
             val normalizedTime = uiState.scheduledTime
                 .takeIf { it.isNotBlank() }
                 ?.let { value ->
@@ -117,6 +119,7 @@ class TaskCreateViewModel : ViewModel() {
                 objectIds = if (uiState.objectSelectionEnabled) uiState.selectedObjectIds else emptyList()
             )
 
+            // Return the API result to the UI so it can show success or error.
             when (val result = AppContainer.taskRepository.createTask(request)) {
                 is ApiResult.Success -> onResult(true, "Tarea guardada")
                 is ApiResult.Error -> onResult(false, result.message)
@@ -125,10 +128,12 @@ class TaskCreateViewModel : ViewModel() {
     }
 
     fun resetForm() {
+        // Start over with a fresh form after a successful save.
         uiState = TaskCreateUiState()
     }
 
     private fun TaskCreateUiState.revalidate(showErrors: Boolean = this.showErrors): TaskCreateUiState {
+        // Keep validation state in sync while the user types.
         val titleValid = title.isNotBlank()
         val startDateValid = startDate.isNotBlank()
         val timeValid = scheduledTime.isNotBlank()

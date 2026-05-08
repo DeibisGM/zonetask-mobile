@@ -8,6 +8,7 @@ import retrofit2.http.POST
 
 interface TaskApiService {
 
+    // Sends the create-task payload to the backend.
     @POST(AppConstants.Api.Paths.TASKS)
     suspend fun createTask(
         @Body request: CreateTaskRequestDto

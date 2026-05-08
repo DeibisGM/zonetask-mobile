@@ -9,6 +9,7 @@ class TaskLookupRepository(
     private val apiService: TaskLookupApiService
 ) {
 
+    // Wrap the lookup response in a simple success/error result.
     suspend fun getTaskFormOptions(spaceId: Int = 1): ApiResult<TaskFormOptionsResponse> {
         return try {
             val response = apiService.getTaskFormOptions(spaceId)
@@ -29,6 +30,7 @@ class TaskLookupRepository(
         }
     }
 
+    // Return only the objects for the selected zone.
     suspend fun getZoneObjects(zoneId: Int): ApiResult<List<LookupOptionResponse>> {
         return try {
             val response = apiService.getZoneObjects(zoneId)

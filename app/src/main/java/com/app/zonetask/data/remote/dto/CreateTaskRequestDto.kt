@@ -3,6 +3,7 @@ package com.app.zonetask.data.remote.dto
 import com.google.gson.annotations.SerializedName
 
 data class CreateTaskRequestDto(
+    // Main task fields mapped to the API contract.
     @SerializedName("title")
     val title: String,
     @SerializedName("description")
@@ -39,8 +40,10 @@ data class CreateTaskRequestDto(
     val spaceId: Int,
     @SerializedName("zoneId")
     val zoneId: Int?,
+    // Main selected object, kept for compatibility with the API payload.
     @SerializedName("objectId")
     val objectId: Int? = null,
+    // Full object list used when the user selects multiple objects.
     @SerializedName("objectIds")
     val objectIds: List<Int> = emptyList()
 )

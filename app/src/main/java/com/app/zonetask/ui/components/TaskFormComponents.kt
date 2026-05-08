@@ -42,6 +42,7 @@ fun TaskCreateScaffold(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    // Shared shell for task screens with drawer and top bar.
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -112,6 +113,7 @@ fun TaskDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    // Read-only field with a custom dropdown menu.
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
@@ -199,6 +201,7 @@ fun TaskSectionCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    // Reusable card used to group form sections.
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -240,6 +243,7 @@ fun TaskTextField(
     singleLine: Boolean = true,
     error: String? = null
 ) {
+    // Standard text field with label and optional inline error.
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
@@ -323,6 +327,7 @@ fun TaskRadioRow(
     onSelected: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Compact radio row for yes/no style choices.
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -354,6 +359,7 @@ fun TaskCheckboxRow(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Compact checkbox row for selectable object items.
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -425,6 +431,7 @@ fun TaskActionButtonsRow(
     onCancelClick: () -> Unit,
     onSaveClick: () -> Unit
 ) {
+    // Bottom action bar shared by the form.
     Row(
         modifier = Modifier
             .fillMaxWidth()
