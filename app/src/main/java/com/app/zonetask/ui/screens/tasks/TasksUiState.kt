@@ -14,7 +14,9 @@ data class TaskItemUiState(
     val assignees: List<TaskAssigneeUiState> = emptyList(),
     val statusLabel: String = "Pendiente",
     val dueLabel: String = "Sin fecha límite",
-    val dueStatusKey: String = "none"
+    val dueStatusKey: String = "none",
+    val completionAssignmentId: Int? = null,
+    val canComplete: Boolean = false
 )
 
 data class ZoneTaskGroupUiState(
@@ -32,5 +34,7 @@ data class TasksUiState(
     val selectedSpaceName: String = "",
     val zoneGroups: List<ZoneTaskGroupUiState> = emptyList(),
     val errorMessage: String? = null,
-    val taskErrorMessage: String? = null
+    val taskErrorMessage: String? = null,
+    val completionError: String? = null,
+    val completingAssignmentId: Int? = null
 )

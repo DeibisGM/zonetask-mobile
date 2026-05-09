@@ -1,37 +1,43 @@
 package com.app.zonetask.ui.common
 
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
-import java.time.Instant
-import java.time.OffsetDateTime
 
 data class TaskDueTimeUiState(
     val label: String = "Sin fecha límite",
-    val statusKey: String = "none"
+    val statusKey: String = "none",
+    val assignmentId: Int? = null,
+    val canComplete: Boolean = false
 )
 
-fun List<TaskAssignmentResponse>.resolveDueTimeUiState(): TaskDueTimeUiState {
-    val dueAssignment = selectRelevantDueAssignment() ?: return TaskDueTimeUiState()
+fun List<TaskAssignmentResponse>.resolveDueTimeUiState(currentUserId: Int? = null): TaskDueTimeUiState {
+    // The same selected assignment drives both the due-time label and the Complete button.
+    val dueAssignment = selectRelevantDueAssignment(currentUserId) ?: return TaskDueTimeUiState()
 
     return TaskDueTimeUiState(
         label = dueAssignment.dueStatusLabel.takeIf { it.isNotBlank() } ?: "Sin fecha límite",
-        statusKey = dueAssignment.dueStatusKey.ifBlank { "none" }
+        statusKey = dueAssignment.dueStatusKey.ifBlank { "none" },
+        assignmentId = dueAssignment.assignmentId,
+        // The button is only enabled for the user's own active assignment.
+        canComplete = currentUserId != null &&
+            dueAssignment.assignedUserId == currentUserId &&
+            !dueAssignment.status.equals("completed", ignoreCase = true)
     )
 }
 
-private fun List<TaskAssignmentResponse>.selectRelevantDueAssignment(): TaskAssignmentResponse? {
+private fun List<TaskAssignmentResponse>.selectRelevantDueAssignment(currentUserId: Int?): TaskAssignmentResponse? {
     if (isEmpty()) return null
 
+    // Completed assignments are no longer actionable; prefer the user's current active round.
     val activeAssignments = filterNot { it.status.equals("completed", ignoreCase = true) }
-    val prioritized = if (activeAssignments.isNotEmpty()) activeAssignments else this
+    val prioritized = when {
+        currentUserId != null -> {
+            // In a rotation, "mine" means the active assignment where assigned_user_id matches the session user.
+            val mine = activeAssignments.firstOrNull { it.assignedUserId == currentUserId }
+            mine ?: activeAssignments.firstOrNull() ?: firstOrNull()
+        }
+        activeAssignments.isNotEmpty() -> activeAssignments.firstOrNull()
+        else -> firstOrNull()
+    } ?: return null
 
-    return prioritized.minWithOrNull(
-        compareBy<TaskAssignmentResponse> { it.dueAt.toInstantOrNull() ?: Instant.MAX }
-            .thenBy { it.assignmentId }
-    )
-}
-
-private fun String?.toInstantOrNull(): Instant? {
-    if (this.isNullOrBlank()) return null
-
-    return runCatching { OffsetDateTime.parse(this).toInstant() }.getOrNull()
+    return prioritized
 }

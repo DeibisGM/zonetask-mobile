@@ -2,11 +2,12 @@ package com.app.zonetask.data.remote.service
 
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
+import com.app.zonetask.data.remote.dto.MarkTaskCompletionRequestDto
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import retrofit2.Response
 import retrofit2.http.Body
-  import retrofit2.http.DELETE
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -50,4 +51,11 @@ interface TaskApiService {
     suspend fun getTaskAssignments(
         @Path("taskId") taskId: Int
     ): Response<List<TaskAssignmentResponse>>
+
+    // Completes one assignment round by writing task_completion; assignment stays as the schedule/owner link.
+    @POST("api/assignments/{assignmentId}/completion")
+    suspend fun completeTaskAssignment(
+        @Path("assignmentId") assignmentId: Int,
+        @Body request: MarkTaskCompletionRequestDto
+    ): Response<Void>
 }

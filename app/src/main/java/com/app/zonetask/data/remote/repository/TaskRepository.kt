@@ -2,6 +2,7 @@ package com.app.zonetask.data.remote.repository
 
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
+import com.app.zonetask.data.remote.dto.MarkTaskCompletionRequestDto
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.data.remote.service.TaskApiService
@@ -146,6 +147,34 @@ class TaskRepository(
             } else {
                 ApiResult.Error(
                     message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
+    suspend fun completeTaskAssignment(
+        assignmentId: Int,
+        request: MarkTaskCompletionRequestDto
+    ): ApiResult<Unit> {
+        return try {
+            // The endpoint returns 204 when the completion row is stored for this assignment.
+            val response = apiService.completeTaskAssignment(assignmentId, request)
+
+            if (response.isSuccessful) {
+                ApiResult.Success(Unit)
+            } else {
+                // Keep the backend message when available; ownership and duplicate errors are useful to show.
+                val errorBody = try {
+                    response.errorBody()?.string()
+                } catch (_: IOException) {
+                    null
+                }
+
+                ApiResult.Error(
+                    message = errorBody ?: "Error ${response.code()}",
                     statusCode = response.code()
                 )
             }
