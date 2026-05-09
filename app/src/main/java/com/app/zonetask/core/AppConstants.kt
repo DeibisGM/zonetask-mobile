@@ -10,6 +10,8 @@ object AppConstants {
             const val SPACE_BY_ID = "spaces/{spaceId}"
 
             const val CREATE_SPACE = "spaces"
+
+            const val UPDATE_SPACE = "spaces/{spaceId}"
         }
     }
 }

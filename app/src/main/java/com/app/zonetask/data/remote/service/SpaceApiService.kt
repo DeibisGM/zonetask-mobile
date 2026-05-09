@@ -2,11 +2,13 @@ package com.app.zonetask.data.remote.service
 
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.CreateSpaceRequest
+import com.app.zonetask.data.remote.dto.EditSpaceRequest
 import com.app.zonetask.data.remote.dto.SpaceResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface SpaceApiService {
@@ -24,5 +26,11 @@ interface SpaceApiService {
     @POST(AppConstants.Api.Paths.CREATE_SPACE)
     suspend fun createSpace(
         @Body request: CreateSpaceRequest
+    ): Response<SpaceResponse>
+
+    @PUT(AppConstants.Api.Paths.UPDATE_SPACE)
+    suspend fun updateSpace(
+        @Path("spaceId") spaceId: Int,
+        @Body request: EditSpaceRequest
     ): Response<SpaceResponse>
 }

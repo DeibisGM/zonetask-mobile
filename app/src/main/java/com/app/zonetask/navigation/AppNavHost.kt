@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -16,6 +17,7 @@ import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.spaces.CreateSpaceScreen
+import com.app.zonetask.ui.screens.spaces.EditSpaceScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
 
@@ -28,12 +30,19 @@ fun AppNavHost() {
         startDestination = AppDestinations.SPACES,
         modifier         = Modifier.fillMaxSize()
     ) {
-        composable(route = AppDestinations.SPACES) {
+        composable(route = AppDestinations.SPACES) { navBackStackEntry ->
             val snackbarHostState = remember { SnackbarHostState() }
-
-            val successMessage = it.savedStateHandle
+            val successMessage = navBackStackEntry.savedStateHandle
                 .getStateFlow<String?>("successMessage", null)
                 .collectAsStateWithLifecycle()
+
+            LaunchedEffect(successMessage.value) {
+                val msg = successMessage.value
+                if (msg != null) {
+                    snackbarHostState.showSnackbar(message = msg)
+                    navBackStackEntry.savedStateHandle["successMessage"] = null
+                }
+            }
 
             ZoneTaskScaffold(
                 title             = UserMessages.Screens.SPACES_TITLE,
@@ -43,13 +52,12 @@ fun AppNavHost() {
                 onAddClick        = { navController.navigate(AppDestinations.CREATE_SPACE) }
             ) { padding ->
                 SpacesScreen(
-                    snackbarHostState = snackbarHostState,
-                    userId           = 2,
-                    modifier         = Modifier.padding(padding),
-                    onSpaceClick     = { space ->
-                        navController.navigate(
-                            "${AppDestinations.SPACE_DETAIL_ROUTE}/${space.spaceId}"
-                        )
+                    snackbarHostState     = snackbarHostState,
+                    userId                = 2,
+                    modifier              = Modifier.padding(padding),
+                    reloadTrigger         = successMessage.value != null,
+                    onSpaceClick          = { space ->
+                        navController.navigate("${AppDestinations.SPACE_DETAIL_ROUTE}/${space.spaceId}")
                     }
                 )
             }
@@ -81,8 +89,12 @@ fun AppNavHost() {
             route     = AppDestinations.SPACE_DETAIL,
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
+            val spaceId           = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
             val snackbarHostState = remember { SnackbarHostState() }
+
+            val refreshDetail = backStackEntry.savedStateHandle
+                .getStateFlow<Boolean>("refreshDetail", false)
+                .collectAsStateWithLifecycle()
 
             ZoneTaskScaffold(
                 title             = UserMessages.SpaceDetail.TITLE,
@@ -91,8 +103,43 @@ fun AppNavHost() {
                 snackbarHostState = snackbarHostState
             ) { padding ->
                 SpaceDetailScreen(
+                    spaceId         = spaceId,
+                    refreshTrigger  = refreshDetail.value,
+                    modifier        = Modifier.padding(padding),
+                    onEditClick     = { id ->
+                        navController.navigate("${AppDestinations.EDIT_SPACE_ROUTE}/$id")
+                    },
+                    onDeleteSuccess = {
+                        backStackEntry.savedStateHandle["successMessage"] = "Espacio eliminado"
+                        navController.popBackStack()
+                    }
+                )
+            }
+        }
+
+        composable(
+            route     = AppDestinations.EDIT_SPACE,
+            arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val spaceId           = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
+            val snackbarHostState = remember { SnackbarHostState() }
+
+            ZoneTaskScaffold(
+                title             = "Editar espacio",
+                showBack          = true,
+                onBackClick       = { navController.popBackStack() },
+                snackbarHostState = snackbarHostState
+            ) { padding ->
+                EditSpaceScreen(
                     spaceId  = spaceId,
-                    modifier = Modifier.padding(padding)
+                    modifier = Modifier.padding(padding),
+                    onSaved  = { msg ->
+                        navController.getBackStackEntry(AppDestinations.SPACES)
+                            .savedStateHandle["successMessage"] = msg
+                        navController.getBackStackEntry(AppDestinations.SPACE_DETAIL)
+                            .savedStateHandle["refreshDetail"] = true
+                        navController.popBackStack()
+                    }
                 )
             }
         }
@@ -100,6 +147,10 @@ fun AppNavHost() {
 }
 
 object AppDestinations {
+    const val EDIT_SPACE_ROUTE   = "edit_space"
+
+    const val EDIT_SPACE         = "edit_space/{spaceId}"
+
     const val LOGIN              = "login"
     const val SPACES             = "spaces"
     const val SPACE_DETAIL_ROUTE = "space_detail"

@@ -2,6 +2,7 @@ package com.app.zonetask.data.repository
 
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateSpaceRequest
+import com.app.zonetask.data.remote.dto.EditSpaceRequest
 import com.app.zonetask.data.remote.dto.toDomain
 import com.app.zonetask.data.remote.service.SpaceApiService
 import com.app.zonetask.domain.model.Space
@@ -60,6 +61,21 @@ class SpaceRepository(
             if (response.isSuccessful) {
                 val space = response.body()?.toDomain()
                     ?: return ApiResult.Error(message = "Error al crear el espacio")
+                ApiResult.Success(space)
+            } else {
+                ApiResult.Error(message = httpErrorMessage(response.code()), statusCode = response.code())
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
+    suspend fun updateSpace(spaceId: Int, request: EditSpaceRequest): ApiResult<Space> {
+        return try {
+            val response = apiService.updateSpace(spaceId, request)
+            if (response.isSuccessful) {
+                val space = response.body()?.toDomain()
+                    ?: return ApiResult.Error(message = "Error al actualizar el espacio")
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(message = httpErrorMessage(response.code()), statusCode = response.code())
