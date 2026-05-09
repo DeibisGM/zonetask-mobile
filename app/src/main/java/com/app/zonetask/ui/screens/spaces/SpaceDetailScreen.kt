@@ -20,6 +20,9 @@ import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material.icons.outlined.PlaylistAdd
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -28,13 +31,21 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,6 +67,10 @@ fun SpaceDetailScreen(
     spaceId: Int,
     userId: Int,
     modifier: Modifier = Modifier,
+    refreshTrigger   : Boolean  = false,
+    onRefreshHandled : () -> Unit = {},  
+    onEditClick   : (Int) -> Unit = {},
+    onDeleteSuccess: () -> Unit   = {},
     onNavigateToPermissions: (Int) -> Unit = {},
     onCreateTaskClick: () -> Unit = {},
     viewModel: SpaceDetailViewModel = viewModel(
@@ -67,6 +82,37 @@ fun SpaceDetailScreen(
     )
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger) {
+            viewModel.loadSpace()
+            onRefreshHandled()
+        }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title   = { Text("Eliminar espacio") },
+            text    = { Text("¿Estás seguro de que quieres eliminar este espacio? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeleteSuccess()
+                    }
+                ) {
+                    Text("Eliminar", color = Color(0xFFE53935), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     when {
         uiState.isLoading -> {
@@ -106,6 +152,49 @@ fun SpaceDetailScreen(
         }
 
         uiState.space != null -> {
+            Box(modifier = modifier.fillMaxSize()) {
+                SpaceDetailContent(
+                    space    = uiState.space!!,
+                    modifier = Modifier.padding(bottom = 88.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick  = { onEditClick(spaceId) },
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape    = RoundedCornerShape(50),
+                        border   = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
+                    ) {
+                        Text(
+                            text       = "EDITAR",
+                            fontWeight = FontWeight.Bold,
+                            color      = MaterialTheme.colorScheme.onBackground,
+                            style      = MaterialTheme.typography.labelLarge
+                        )
+                    }
+
+                    // ELIMINAR
+                    Button(
+                        onClick  = { showDeleteDialog = true },
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape    = RoundedCornerShape(50),
+                        colors   = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
+                    ) {
+                        Text(
+                            text       = "ELIMINAR",
+                            fontWeight = FontWeight.Bold,
+                            color      = Color.White,
+                            style      = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+            }
             SpaceDetailContent(
                 space = uiState.space!!,
                 userRole = uiState.userRole,
