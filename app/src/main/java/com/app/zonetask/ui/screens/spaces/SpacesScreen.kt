@@ -46,6 +46,14 @@ fun SpacesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is SpacesEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
     LaunchedEffect(successMessage) {
         if (successMessage != null) {
             snackbarHostState.showSnackbar(message = successMessage)
@@ -53,7 +61,7 @@ fun SpacesScreen(
         }
     }
 
-    // Show loaded errors as snackbars without replacing the whole list.
+    // Shows loaded errors as snackbars without replacing the whole list.
     LaunchedEffect(uiState.errorBanner) {
         val error = uiState.errorBanner
         if (error != null && uiState.spaces.isNotEmpty()) {
@@ -125,10 +133,21 @@ fun SpacesScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(uiState.spaces) { space ->
+                items(
+                    items = uiState.spaces,
+                    key = { it.spaceId }
+                ) { space ->
+                    val isOwner = space.ownerId == viewModel.userId
+
                     SpaceCard(
                         space = space,
-                        onClick = { onSpaceClick(space) }
+                        isOwner = isOwner,
+                        onClick = { onSpaceClick(space) },
+                        isDeleting = uiState.deletingSpaceId == space.spaceId,
+                        onDelete = if (isOwner) {
+                            { viewModel.deleteSpace(space.spaceId) }
+                        } else null,
+                        onDeleteNotAllowed = { viewModel.notifyDeleteNotAllowed() }
                     )
                 }
             }

@@ -20,7 +20,10 @@ data class SpaceResponse(
     val coverImageUrl: String?,
 
     @SerializedName("isActive")
-    val isActive: Boolean
+    val isActive: Boolean,
+
+    @SerializedName("ownerId")
+    val ownerId: Int
 )
 
 fun SpaceResponse.toDomain(): Space = Space(
@@ -29,5 +32,6 @@ fun SpaceResponse.toDomain(): Space = Space(
     description   = description,
     spaceType     = spaceType,
     coverImageUrl = coverImageUrl,
-    isActive      = isActive
+    isActive      = isActive,
+    ownerId       = ownerId
 )

@@ -3,20 +3,27 @@ package com.app.zonetask.ui.screens.spaces
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.repository.SpaceRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SpacesViewModel(
     private val spaceRepository: SpaceRepository,
-    private val userId: Int
+    val userId: Int
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SpacesUiState())
     val uiState: StateFlow<SpacesUiState> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<SpacesEvent>()
+    val events: SharedFlow<SpacesEvent> = _events.asSharedFlow()
 
     init {
         fetchSpaces()
@@ -32,14 +39,13 @@ class SpacesViewModel(
             when (val result = spaceRepository.getSpacesByUser(userId)) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        spaces    = result.data,
+                        isLoading   = false,
+                        spaces      = result.data,
                         errorBanner = null
                     )
                 }
 
                 is ApiResult.Error -> {
-                    // Preserve existing list so the user doesn't lose data on a failed refresh
                     _uiState.value = _uiState.value.copy(
                         isLoading   = false,
                         errorBanner = result.message
@@ -49,9 +55,47 @@ class SpacesViewModel(
         }
     }
 
+    fun deleteSpace(spaceId: Int) {
+        if (_uiState.value.deletingSpaceId != null) return
+
+        _uiState.value = _uiState.value.copy(deletingSpaceId = spaceId)
+
+        viewModelScope.launch {
+            when (val result = spaceRepository.deleteSpace(spaceId, userId)) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        deletingSpaceId = null,
+                        spaces          = _uiState.value.spaces.filter { it.spaceId != spaceId }
+                    )
+                    _events.emit(SpacesEvent.ShowMessage(UserMessages.Spaces.DELETE_SUCCESS))
+                }
+
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(deletingSpaceId = null)
+                    val message = if (result.statusCode == 403) {
+                        UserMessages.Spaces.DELETE_FORBIDDEN
+                    } else {
+                        result.message
+                    }
+                    _events.emit(SpacesEvent.ShowMessage(message))
+                }
+            }
+        }
+    }
+
     fun clearErrorBanner() {
         _uiState.value = _uiState.value.copy(errorBanner = null)
     }
+
+    fun notifyDeleteNotAllowed() {
+        viewModelScope.launch {
+            _events.emit(SpacesEvent.ShowMessage(UserMessages.Spaces.DELETE_NOT_OWNER))
+        }
+    }
+}
+
+sealed class SpacesEvent {
+    data class ShowMessage(val message: String) : SpacesEvent()
 }
 
 class SpacesViewModelFactory(
