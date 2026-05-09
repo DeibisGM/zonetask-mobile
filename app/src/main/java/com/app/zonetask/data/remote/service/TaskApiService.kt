@@ -2,9 +2,12 @@ package com.app.zonetask.data.remote.service
 
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
+import com.app.zonetask.data.remote.dto.TaskResponse
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface TaskApiService {
 
@@ -13,4 +16,9 @@ interface TaskApiService {
     suspend fun createTask(
         @Body request: CreateTaskRequestDto
     ): Response<Void>
+
+    @GET(AppConstants.Api.Paths.SPACE_TASKS)
+    suspend fun getTasksBySpace(
+        @Path("spaceId") spaceId: Int
+    ): Response<List<TaskResponse>>
 }

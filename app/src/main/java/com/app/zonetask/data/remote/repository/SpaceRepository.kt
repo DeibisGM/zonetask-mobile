@@ -18,14 +18,11 @@ class SpaceRepository(
             val response = apiService.getSpacesByUser(userId)
 
             if (response.isSuccessful) {
-                val spaces = response.body()
-                    ?.map { it.toDomain() }
-                    ?: emptyList()
-
+                val spaces = response.body()?.map { it.toDomain() }.orEmpty()
                 ApiResult.Success(spaces)
             } else {
                 ApiResult.Error(
-                    message    = httpErrorMessage(response.code()),
+                    message = httpErrorMessage(response.code()),
                     statusCode = response.code()
                 )
             }
@@ -45,7 +42,7 @@ class SpaceRepository(
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(
-                    message    = httpErrorMessage(response.code()),
+                    message = httpErrorMessage(response.code()),
                     statusCode = response.code()
                 )
             }
@@ -57,12 +54,23 @@ class SpaceRepository(
     suspend fun createSpace(request: CreateSpaceRequest): ApiResult<Space> {
         return try {
             val response = apiService.createSpace(request)
+
             if (response.isSuccessful) {
                 val space = response.body()?.toDomain()
                     ?: return ApiResult.Error(message = "Error al crear el espacio")
+
                 ApiResult.Success(space)
             } else {
-                ApiResult.Error(message = httpErrorMessage(response.code()), statusCode = response.code())
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
     suspend fun deleteSpace(spaceId: Int, userId: Int): ApiResult<Unit> {
         return try {
             val response = apiService.deleteSpace(spaceId, userId)
@@ -71,7 +79,7 @@ class SpaceRepository(
                 ApiResult.Success(Unit)
             } else {
                 ApiResult.Error(
-                    message    = httpErrorMessage(response.code()),
+                    message = httpErrorMessage(response.code()),
                     statusCode = response.code()
                 )
             }
@@ -81,19 +89,18 @@ class SpaceRepository(
     }
 
     private fun httpErrorMessage(code: Int): String = when (code) {
-        401  -> "Sesión expirada, vuelve a iniciar sesión"
-        403  -> "No tienes permisos para esto"
-        404  -> "Recurso no encontrado"
-        500  -> "Error interno del servidor"
-        502,
-        503  -> "Servicio no disponible, intenta más tarde"
+        401 -> "Sesión expirada, vuelve a iniciar sesión"
+        403 -> "No tienes permisos para esto"
+        404 -> "Recurso no encontrado"
+        500 -> "Error interno del servidor"
+        502, 503 -> "Servicio no disponible, intenta más tarde"
         else -> "Error del servidor ($code)"
     }
 
     private fun networkErrorMessage(e: Exception): String = when (e) {
-        is UnknownHostException    -> "Sin conexión a internet"
-        is SocketTimeoutException  -> "El servidor tardó demasiado en responder"
-        is IOException             -> "Error de red, verifica tu conexión"
-        else                       -> "Error inesperado"
+        is UnknownHostException -> "Sin conexión a internet"
+        is SocketTimeoutException -> "El servidor tardó demasiado en responder"
+        is IOException -> "Error de red, verifica tu conexión"
+        else -> "Error inesperado"
     }
 }
