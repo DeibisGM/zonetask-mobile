@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.repository.SpaceRepository
+import com.app.zonetask.di.AppContainer
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +14,8 @@ import kotlinx.coroutines.launch
 
 class SpaceDetailViewModel(
     private val spaceRepository: SpaceRepository,
-    private val spaceId: Int
+    private val spaceId: Int,
+    private val userId: Int
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SpaceDetailUiState())
@@ -20,18 +23,58 @@ class SpaceDetailViewModel(
 
     init {
         loadSpace()
+        loadTasks()
     }
 
     fun loadSpace() {
-        _uiState.value = SpaceDetailUiState(isLoading = true)
-
+        _uiState.value = _uiState.value.copy(isLoading = true, errorBanner = null)
         viewModelScope.launch {
-            when (val result = spaceRepository.getSpaceById(spaceId)) {
+            val spaceDeferred       = async { spaceRepository.getSpaceById(spaceId) }
+            val permissionsDeferred = async { spaceRepository.getSpacePermissions(spaceId, userId) }
+
+            val spaceResult       = spaceDeferred.await()
+            val permissionsResult = permissionsDeferred.await()
+
+            if (spaceResult is ApiResult.Error) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading   = false,
+                    errorBanner = spaceResult.message
+                )
+                return@launch
+            }
+
+            val space = (spaceResult as ApiResult.Success).data
+            val userRole = when {
+                permissionsResult is ApiResult.Success -> permissionsResult.data.requestingUserRole
+                space.ownerId == userId               -> "owner"
+                else                                  -> "member"
+            }
+
+            _uiState.value = _uiState.value.copy(
+                isLoading   = false,
+                space       = space,
+                userRole    = userRole,
+                errorBanner = null
+            )
+        }
+    }
+
+    fun loadTasks() {
+        _uiState.value = _uiState.value.copy(tasksLoading = true, tasksError = null)
+        viewModelScope.launch {
+            when (val result = AppContainer.taskRepository.getTasksBySpace(spaceId)) {
                 is ApiResult.Success -> {
-                    _uiState.value = SpaceDetailUiState(space = result.data)
+                    _uiState.value = _uiState.value.copy(
+                        tasksLoading = false,
+                        tasks        = result.data,
+                        tasksError   = null
+                    )
                 }
                 is ApiResult.Error -> {
-                    _uiState.value = SpaceDetailUiState(errorBanner = result.message)
+                    _uiState.value = _uiState.value.copy(
+                        tasksLoading = false,
+                        tasksError   = result.message
+                    )
                 }
             }
         }
@@ -40,13 +83,14 @@ class SpaceDetailViewModel(
 
 class SpaceDetailViewModelFactory(
     private val spaceRepository: SpaceRepository,
-    private val spaceId: Int
+    private val spaceId: Int,
+    private val userId: Int
 ) : ViewModelProvider.Factory {
-
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
         SpaceDetailViewModel(
             spaceRepository = spaceRepository,
-            spaceId         = spaceId
+            spaceId         = spaceId,
+            userId          = userId
         ) as T
 }

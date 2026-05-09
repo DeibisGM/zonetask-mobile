@@ -1,0 +1,8 @@
+package com.app.zonetask.data.remote.dto
+
+import com.google.gson.annotations.SerializedName
+
+data class UserResponse(
+    @SerializedName("userId")
+    val userId: Int
+)

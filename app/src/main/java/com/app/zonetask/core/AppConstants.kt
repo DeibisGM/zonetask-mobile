@@ -1,10 +1,11 @@
 package com.app.zonetask.core
 
-object AppConstants {
+import com.app.zonetask.BuildConfig
 
+object AppConstants {
     object Api {
-        // Local backend base URL for the phone or emulator.
-        const val BASE_URL = "http://10.0.2.2:5248/"
+        // Base URL configured from Gradle to avoid hardcoding the local IP.
+        val BASE_URL: String = BuildConfig.API_BASE_URL
 
         object Paths {
             // API routes used by the task creation flow.
@@ -12,6 +13,7 @@ object AppConstants {
             const val SPACE_BY_ID = "spaces/{spaceId}"
             const val USER_SPACES = "api/users/{userId}/spaces"
             const val SPACE_BY_ID = "spaces/{spaceId}"
+            const val SPACE_TASKS = "api/spaces/{spaceId}/tasks"
 
             const val CREATE_SPACE = "spaces"
 
@@ -20,6 +22,9 @@ object AppConstants {
             const val TASK_FORM_OPTIONS = "api/lookups/task-form-options"
             const val ZONE_OBJECTS = "api/lookups/zones/{zoneId}/objects"
             const val TASKS = "api/tasks"
+            const val SPACE_PERMISSIONS = "api/spaces/spaces/{spaceId}/permissions"
+            const val SPACE_MEMBERS = "api/spaces/spaces/{spaceId}/members"
+            const val UPDATE_MEMBER_ROLE = "api/spaces/spaces/{spaceId}/members/{memberId}/role"
         }
     }
 }

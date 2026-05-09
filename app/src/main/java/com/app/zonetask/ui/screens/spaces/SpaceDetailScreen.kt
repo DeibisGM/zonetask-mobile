@@ -4,27 +4,34 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.outlined.PlaylistAdd
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,23 +52,31 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.Space
+import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppIconTint
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 
+private const val ROLE_OWNER = "owner"
+private const val ROLE_ADMIN = "admin"
+
 @Composable
 fun SpaceDetailScreen(
     spaceId: Int,
+    userId: Int,
     modifier: Modifier = Modifier,
     refreshTrigger   : Boolean  = false,
     onRefreshHandled : () -> Unit = {},  
     onEditClick   : (Int) -> Unit = {},
     onDeleteSuccess: () -> Unit   = {},
+    onNavigateToPermissions: (Int) -> Unit = {},
+    onCreateTaskClick: () -> Unit = {},
     viewModel: SpaceDetailViewModel = viewModel(
         factory = SpaceDetailViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
-            spaceId         = spaceId
+            spaceId         = spaceId,
+            userId          = userId
         )
     )
 ) {
@@ -101,11 +116,15 @@ fun SpaceDetailScreen(
     when {
         uiState.isLoading -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text  = UserMessages.Spaces.LOADING,
-                    color = AppSecondaryText,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = AppPrimary)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text  = UserMessages.Spaces.LOADING,
+                        color = AppSecondaryText,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             }
         }
 
@@ -175,6 +194,16 @@ fun SpaceDetailScreen(
                     }
                 }
             }
+            SpaceDetailContent(
+                space                   = uiState.space!!,
+                userRole                = uiState.userRole,
+                tasks                   = uiState.tasks,
+                tasksLoading            = uiState.tasksLoading,
+                tasksError              = uiState.tasksError,
+                onNavigateToPermissions = { onNavigateToPermissions(spaceId) },
+                onCreateTaskClick       = onCreateTaskClick,
+                modifier                = modifier
+            )
         }
     }
 }
@@ -182,44 +211,188 @@ fun SpaceDetailScreen(
 @Composable
 private fun SpaceDetailContent(
     space: Space,
+    userRole: String,
+    tasks: List<TaskResponse>,
+    tasksLoading: Boolean,
+    tasksError: String?,
+    onNavigateToPermissions: () -> Unit,
+    onCreateTaskClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    val canViewPermissions = userRole == ROLE_OWNER || userRole == ROLE_ADMIN
+
+    androidx.compose.foundation.lazy.LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        Text(
-            text  = space.name,
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        item {
+            Text(
+                text  = space.name,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
 
-        Card(
-            shape  = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            border = BorderStroke(1.dp, AppBorder)
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+        item {
+            Card(
+                shape  = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, AppBorder)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    DetailRow(
+                        icon  = Icons.Outlined.Category,
+                        label = UserMessages.SpaceDetail.TYPE_LABEL,
+                        value = space.spaceType
+                    )
+                    HorizontalDivider(color = AppBorder)
+                    DetailRow(
+                        icon  = Icons.Outlined.Info,
+                        label = UserMessages.SpaceDetail.DESC_LABEL,
+                        value = space.description ?: UserMessages.SpaceDetail.NO_DESCRIPTION
+                    )
+                }
+            }
+        }
 
-                DetailRow(
-                    icon  = Icons.Outlined.Category,
-                    label = UserMessages.SpaceDetail.TYPE_LABEL,
-                    value = space.spaceType
+        item {
+            Text(
+                text  = "Tareas del espacio",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+
+        when {
+            tasksLoading -> {
+                item {
+                    Text(
+                        text  = "Cargando tareas...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AppSecondaryText
+                    )
+                }
+            }
+
+            tasksError != null -> {
+                item {
+                    Text(
+                        text  = tasksError,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            tasks.isEmpty() -> {
+                item {
+                    Text(
+                        text  = "No hay tareas todavía en este espacio.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AppSecondaryText
+                    )
+                }
+            }
+
+            else -> {
+                items(tasks) { task ->
+                    TaskRow(task = task)
+                }
+            }
+        }
+
+        item {
+            Button(
+                onClick  = onCreateTaskClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector        = Icons.Outlined.PlaylistAdd,
+                    contentDescription = null,
+                    modifier           = Modifier.size(18.dp)
                 )
-
-                HorizontalDivider(color = AppBorder)
-
-                DetailRow(
-                    icon  = Icons.Outlined.Info,
-                    label = UserMessages.SpaceDetail.DESC_LABEL,
-                    value = space.description ?: UserMessages.SpaceDetail.NO_DESCRIPTION
+                Text(
+                    text     = "Crear otra tarea",
+                    modifier = Modifier.padding(start = 8.dp)
                 )
             }
+        }
+
+        if (canViewPermissions) {
+            item {
+                Surface(
+                    onClick = onNavigateToPermissions,
+                    shape   = RoundedCornerShape(16.dp),
+                    color   = MaterialTheme.colorScheme.surface,
+                    border  = BorderStroke(1.dp, AppPrimary.copy(alpha = 0.4f))
+                ) {
+                    Row(
+                        modifier              = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector        = Icons.Outlined.AdminPanelSettings,
+                            contentDescription = null,
+                            tint               = AppPrimary,
+                            modifier           = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text     = UserMessages.SpaceDetail.PERMISSIONS_BUTTON,
+                            style    = MaterialTheme.typography.bodyMedium,
+                            color    = AppPrimary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector        = Icons.Outlined.ChevronRight,
+                            contentDescription = null,
+                            tint               = AppPrimary,
+                            modifier           = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TaskRow(task: TaskResponse) {
+    Card(
+        shape  = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, AppBorder)
+    ) {
+        Column(
+            modifier            = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text  = task.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            task.description?.takeIf { it.isNotBlank() }?.let { desc ->
+                Text(
+                    text  = desc,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppSecondaryText
+                )
+            }
+            Text(
+                text  = "Frecuencia: ${task.frequency}",
+                style = MaterialTheme.typography.labelMedium,
+                color = AppSecondaryText
+            )
         }
     }
 }
