@@ -20,6 +20,7 @@ import com.app.zonetask.ui.components.*
 import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppOnSurface
+import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSurface
 import com.app.zonetask.ui.theme.AppSecondaryText
 import java.text.SimpleDateFormat
@@ -30,12 +31,15 @@ import java.util.*
 fun TaskCreateScreen(
     initialSpaceId: Int = 1,
     initialCreatedBy: Int = 1,
+    taskId: Int? = null,
     modifier: Modifier = Modifier,
     onNavigate: (String) -> Unit = {},
+    onClose: () -> Unit = {},
     viewModel: TaskCreateViewModel = viewModel(
         factory = TaskCreateViewModelFactory(
             initialSpaceId = initialSpaceId,
-            initialCreatedBy = initialCreatedBy
+            initialCreatedBy = initialCreatedBy,
+            taskId = taskId
         )
     )
 ) {
@@ -154,6 +158,10 @@ fun TaskCreateScreen(
         )
     }
 
+    val isWaitingForInitialData =
+        formOptions.isLoading ||
+            (viewModel.isEditMode && uiState.objectSelectionEnabled && formOptions.objectsLoading && uiState.selectedObjectIds.isNotEmpty())
+
     LaunchedEffect(uiState.zoneId, uiState.objectSelectionEnabled) {
         if (uiState.objectSelectionEnabled && uiState.zoneId != null) {
             viewModel.loadZoneObjects(uiState.zoneId)
@@ -161,44 +169,75 @@ fun TaskCreateScreen(
     }
 
     TaskCreateScaffold(
-        title = UserMessages.Screens.CREATE_TASK_TITLE,
+        title = if (viewModel.isEditMode) "Editar tarea" else UserMessages.Screens.CREATE_TASK_TITLE,
         showBack = true,
-        onBackClick = { onNavigate("spaces") },
+        onBackClick = onClose,
         onNavigate = onNavigate,
         topBarColor = AppSurface,
         bottomBar = {
             Column(modifier = Modifier.background(AppBackground)) {
-                TaskActionButtonsRow(
-                    cancelText = "CANCELAR",
-                    saveText = UserMessages.TaskCreate.SAVE_BUTTON,
-                    onCancelClick = { viewModel.updateState { TaskCreateUiState() } },
-                    onSaveClick = {
-                        // Only clear the form after a successful save.
-                        if (viewModel.validate()) {
-                            viewModel.saveTask { success, message ->
-                                if (success) {
-                                    saveErrorMessage = null
-                                    viewModel.resetForm()
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                } else {
-                                    saveErrorMessage = message
+                if (!isWaitingForInitialData) {
+                    TaskActionButtonsRow(
+                        cancelText = "CANCELAR",
+                        saveText = UserMessages.TaskCreate.SAVE_BUTTON,
+                        onCancelClick = {
+                            if (viewModel.isEditMode) {
+                                onClose()
+                            } else {
+                                viewModel.updateState { TaskCreateUiState() }
+                            }
+                        },
+                        onSaveClick = {
+                            // Only clear the form after a successful save.
+                            if (viewModel.validate()) {
+                                viewModel.saveTask { success, message ->
+                                    if (success) {
+                                        saveErrorMessage = null
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                        if (viewModel.isEditMode) {
+                                            onClose()
+                                        } else {
+                                            viewModel.resetForm()
+                                        }
+                                    } else {
+                                        saveErrorMessage = message
+                                    }
                                 }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     ) { padding ->
-        TaskCreateContent(
-            uiState = uiState,
-            formOptions = formOptions,
-            modifier = modifier.padding(padding),
-            onShowStartDate = { showStartDatePicker = true },
-            onShowEndDate = { showEndDatePicker = true },
-            onShowTime = { showTimePicker = true },
-            onUpdate = { update -> viewModel.updateState(update) }
-        )
+        if (isWaitingForInitialData) {
+            Box(
+                modifier = modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = AppPrimary)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Cargando formulario...",
+                        color = AppSecondaryText,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        } else {
+            TaskCreateContent(
+                uiState = uiState,
+                formOptions = formOptions,
+                modifier = modifier.padding(padding),
+                onShowStartDate = { showStartDatePicker = true },
+                onShowEndDate = { showEndDatePicker = true },
+                onShowTime = { showTimePicker = true },
+                onUpdate = { update -> viewModel.updateState(update) }
+            )
+        }
     }
 }
 

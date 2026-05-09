@@ -8,12 +8,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
+import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.di.AppContainer
 import kotlinx.coroutines.launch
 
 class TaskCreateViewModel(
     initialSpaceId: Int = 1,
-    initialCreatedBy: Int = 1
+    initialCreatedBy: Int = 1,
+    private val taskId: Int? = null
 ) : ViewModel() {
 
     var uiState by mutableStateOf(TaskCreateUiState())
@@ -27,9 +29,16 @@ class TaskCreateViewModel(
             spaceId = initialSpaceId,
             createdBy = initialCreatedBy
         )
-        // Load dropdown data as soon as the screen opens.
-        loadFormOptions(initialSpaceId)
+        // Load the right lookup set for create or edit mode.
+        if (taskId != null) {
+            loadTaskForEdit(taskId)
+        } else {
+            loadFormOptions(initialSpaceId)
+        }
     }
+
+    val isEditMode: Boolean
+        get() = taskId != null
     
     fun updateState(block: TaskCreateUiState.() -> TaskCreateUiState) {
         uiState = uiState.block().revalidate()
@@ -48,7 +57,7 @@ class TaskCreateViewModel(
             when (val result = AppContainer.taskLookupRepository.getTaskFormOptions(spaceId)) {
                 is ApiResult.Success -> {
                     val data = result.data
-                    formOptionsUiState = TaskFormOptionsUiState(
+                    formOptionsUiState = formOptionsUiState.copy(
                         categories = data.categories.map { it.name to it.id.toString() },
                         zones = data.zones.map { it.name to it.id.toString() },
                         isLoading = false,
@@ -84,6 +93,20 @@ class TaskCreateViewModel(
                     formOptionsUiState = formOptionsUiState.copy(
                         objects = emptyList(),
                         objectsLoading = false,
+                        errorMessage = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun loadTaskForEdit(taskId: Int) {
+        viewModelScope.launch {
+            // Pull the saved task first so the form can reuse its values.
+            when (val result = AppContainer.taskRepository.getTaskById(taskId)) {
+                is ApiResult.Success -> applyTaskToForm(result.data)
+                is ApiResult.Error -> {
+                    formOptionsUiState = formOptionsUiState.copy(
                         errorMessage = result.message
                     )
                 }
@@ -128,8 +151,14 @@ class TaskCreateViewModel(
             )
 
             // Return the API result to the UI so it can show success or error.
-            when (val result = AppContainer.taskRepository.createTask(request)) {
-                is ApiResult.Success -> onResult(true, "Tarea guardada")
+            val result = if (taskId == null) {
+                AppContainer.taskRepository.createTask(request)
+            } else {
+                AppContainer.taskRepository.updateTask(taskId, request)
+            }
+
+            when (result) {
+                is ApiResult.Success -> onResult(true, "Guardado")
                 is ApiResult.Error -> onResult(false, result.message)
             }
         }
@@ -155,17 +184,52 @@ class TaskCreateViewModel(
             showErrors = showErrors
         )
     }
+
+    private fun applyTaskToForm(task: TaskResponse) {
+        uiState = uiState.copy(
+            title = task.title,
+            description = task.description.orEmpty(),
+            targetLevel = if (task.zoneId != null) "zone" else "space",
+            frequency = task.frequency,
+            recurrenceRule = task.recurrenceRule,
+            scheduledTime = task.scheduledTime?.let { value ->
+                if (value.length >= 5) value.substring(0, 5) else value
+            } ?: "",
+            startDate = task.startDate.orEmpty(),
+            endDate = task.endDate,
+            rotating = task.rotating,
+            isActive = task.isActive,
+            reminderEnabled = task.reminderEnabled,
+            reminderMinutes = task.reminderMinutes,
+            requiresProof = task.requiresProof,
+            requiresDescription = task.requiresDescription,
+            estimatedMinutes = task.estimatedMinutes,
+            createdBy = task.createdBy,
+            categoryId = task.categoryId,
+            spaceId = task.spaceId,
+            zoneId = task.zoneId,
+            objectId = task.objectId,
+            objectSelectionEnabled = task.objectIds.isNotEmpty(),
+            selectedObjectIds = task.objectIds,
+            showErrors = false
+        )
+
+        // Load the proper lookup set for the task's saved space.
+        loadFormOptions(task.spaceId)
+    }
 }
 
 class TaskCreateViewModelFactory(
     private val initialSpaceId: Int,
-    private val initialCreatedBy: Int
+    private val initialCreatedBy: Int,
+    private val taskId: Int? = null
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
         TaskCreateViewModel(
             initialSpaceId = initialSpaceId,
-            initialCreatedBy = initialCreatedBy
+            initialCreatedBy = initialCreatedBy,
+            taskId = taskId
         ) as T
 }

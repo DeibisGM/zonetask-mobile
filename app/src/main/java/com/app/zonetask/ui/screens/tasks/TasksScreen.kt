@@ -63,6 +63,7 @@ private val TopBarColor = Color(0xFF141414)
 fun TasksScreen(
     userId: Int,
     onCreateTask: (spaceId: Int) -> Unit = {},
+    onEditTask: (spaceId: Int, taskId: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: TasksViewModel = viewModel(
         factory = TasksViewModelFactory(userId)
@@ -75,6 +76,7 @@ fun TasksScreen(
         onSpaceSelected = viewModel::selectSpace,
         onRetry = viewModel::retrySelectedSpace,
         onCreateTask = onCreateTask,
+        onEditTask = onEditTask,
         modifier = modifier
     )
 }
@@ -86,6 +88,7 @@ private fun TasksContent(
     onSpaceSelected: (Int) -> Unit,
     onRetry: () -> Unit,
     onCreateTask: (spaceId: Int) -> Unit,
+    onEditTask: (spaceId: Int, taskId: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showSpacePicker by remember { mutableStateOf(false) }
@@ -235,7 +238,11 @@ private fun TasksContent(
                         uiState.zoneGroups,
                         key = { group -> "${group.zoneId ?: "none"}-${group.zoneName}" }
                     ) { group ->
-                        ZoneSection(group = group)
+                        ZoneSection(
+                            group = group,
+                            spaceId = uiState.selectedSpaceId,
+                            onEditTask = onEditTask
+                        )
                     }
                     item { Spacer(modifier = Modifier.height(12.dp)) }
                 }
@@ -318,7 +325,11 @@ private fun SpacePickerItem(
 }
 
 @Composable
-private fun ZoneSection(group: ZoneTaskGroupUiState) {
+private fun ZoneSection(
+    group: ZoneTaskGroupUiState,
+    spaceId: Int?,
+    onEditTask: (spaceId: Int, taskId: Int) -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -351,7 +362,12 @@ private fun ZoneSection(group: ZoneTaskGroupUiState) {
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             group.tasks.forEach { task ->
-                TaskCard(task = task)
+                TaskCard(
+                    task = task,
+                    onEditClick = {
+                        onEditTask(spaceId ?: task.task.spaceId, task.task.taskId)
+                    }
+                )
             }
         }
     }
@@ -363,7 +379,10 @@ private fun String.stripSeconds(): String {
 }
 
 @Composable
-private fun TaskCard(task: TaskItemUiState) {
+private fun TaskCard(
+    task: TaskItemUiState,
+    onEditClick: () -> Unit
+) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardColor),
@@ -390,44 +409,53 @@ private fun TaskCard(task: TaskItemUiState) {
                     modifier = Modifier.weight(1f, fill = false).padding(end = 12.dp)
                 )
 
-                AssistChip(
-                    onClick = {},
-                    label = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onEditClick) {
                         Text(
-                            text = task.statusLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold
+                            text = "Editar",
+                            color = AppPrimary,
+                            style = MaterialTheme.typography.labelMedium
                         )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.CheckCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = when (task.statusLabel) {
+                    }
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(
+                                text = task.statusLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = when (task.statusLabel) {
+                                    "Completada" -> AppPrimary
+                                    "En progreso" -> Color(0xFF8BB7FF)
+                                    "Pendiente" -> Color(0xFFE0B35A)
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = when (task.statusLabel) {
+                                "Completada" -> AppPrimary.copy(alpha = 0.16f)
+                                "En progreso" -> Color(0xFF304E7B)
+                                "Pendiente" -> Color(0xFF3A2F16)
+                                else -> AppSurface
+                            },
+                            labelColor = when (task.statusLabel) {
                                 "Completada" -> AppPrimary
                                 "En progreso" -> Color(0xFF8BB7FF)
                                 "Pendiente" -> Color(0xFFE0B35A)
                                 else -> MaterialTheme.colorScheme.onSurface
                             }
-                        )
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = when (task.statusLabel) {
-                            "Completada" -> AppPrimary.copy(alpha = 0.16f)
-                            "En progreso" -> Color(0xFF304E7B)
-                            "Pendiente" -> Color(0xFF3A2F16)
-                            else -> AppSurface
-                        },
-                        labelColor = when (task.statusLabel) {
-                            "Completada" -> AppPrimary
-                            "En progreso" -> Color(0xFF8BB7FF)
-                            "Pendiente" -> Color(0xFFE0B35A)
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                    ),
-                    border = null
-                )
+                        ),
+                        border = null
+                    )
+                }
             }
 
             task.assignees.firstOrNull()?.let { assignee ->
