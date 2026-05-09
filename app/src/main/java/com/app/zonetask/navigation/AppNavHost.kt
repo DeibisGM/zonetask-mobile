@@ -6,6 +6,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +14,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.ui.components.ZoneTaskScaffold
+import com.app.zonetask.ui.screens.spaces.CreateSpaceScreen
+import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
@@ -37,12 +40,16 @@ fun AppNavHost() {
             )
         }
 
-        composable(route = AppDestinations.SPACES) {
+            val successMessage = it.savedStateHandle
+                .getStateFlow<String?>("successMessage", null)
+                .collectAsStateWithLifecycle()
+
             ZoneTaskScaffold(
-                title = UserMessages.Screens.SPACES_TITLE,
-                showBack = false,
-                onBackClick = {},
-                snackbarHostState = snackbarHostState
+                title             = UserMessages.Screens.SPACES_TITLE,
+                showBack          = false,
+                onBackClick       = {},
+                snackbarHostState = snackbarHostState,
+                onAddClick        = { navController.navigate(AppDestinations.CREATE_SPACE) }
             ) { padding ->
                 SpacesScreen(
                     snackbarHostState = snackbarHostState,
@@ -52,6 +59,28 @@ fun AppNavHost() {
                         navController.navigate(
                             "${AppDestinations.SPACE_DETAIL_ROUTE}/${space.spaceId}"
                         )
+                    }
+                )
+            }
+        }
+
+        composable(route = AppDestinations.CREATE_SPACE) {
+            val snackbarHostState = remember { SnackbarHostState() }
+
+            ZoneTaskScaffold(
+                title             = "Crear un nuevo espacio",
+                showBack          = true,
+                onBackClick       = { navController.popBackStack() },
+                snackbarHostState = snackbarHostState
+            ) { padding ->
+                CreateSpaceScreen(
+                    ownerId  = 2,
+                    modifier = Modifier.padding(padding),
+                    onSaved  = { successMessage ->
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("successMessage", successMessage)
+                        navController.popBackStack()
                     }
                 )
             }
@@ -77,4 +106,12 @@ fun AppNavHost() {
             }
         }
     }
+}
+
+object AppDestinations {
+    const val LOGIN              = "login"
+    const val SPACES             = "spaces"
+    const val SPACE_DETAIL_ROUTE = "space_detail"
+    const val SPACE_DETAIL       = "space_detail/{spaceId}"
+    const val CREATE_SPACE       = "create_space"
 }

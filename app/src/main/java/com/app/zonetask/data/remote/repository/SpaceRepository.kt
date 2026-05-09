@@ -1,6 +1,7 @@
 package com.app.zonetask.data.repository
 
 import com.app.zonetask.data.remote.ApiResult
+import com.app.zonetask.data.remote.dto.CreateSpaceRequest
 import com.app.zonetask.data.remote.dto.toDomain
 import com.app.zonetask.data.remote.service.SpaceApiService
 import com.app.zonetask.domain.model.Space
@@ -53,6 +54,15 @@ class SpaceRepository(
         }
     }
 
+    suspend fun createSpace(request: CreateSpaceRequest): ApiResult<Space> {
+        return try {
+            val response = apiService.createSpace(request)
+            if (response.isSuccessful) {
+                val space = response.body()?.toDomain()
+                    ?: return ApiResult.Error(message = "Error al crear el espacio")
+                ApiResult.Success(space)
+            } else {
+                ApiResult.Error(message = httpErrorMessage(response.code()), statusCode = response.code())
     suspend fun deleteSpace(spaceId: Int, userId: Int): ApiResult<Unit> {
         return try {
             val response = apiService.deleteSpace(spaceId, userId)
