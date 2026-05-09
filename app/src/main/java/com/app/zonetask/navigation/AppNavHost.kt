@@ -8,6 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -16,25 +17,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.compose.runtime.saveable.rememberSaveable
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.spaces.CreateSpaceScreen
 import com.app.zonetask.ui.screens.spaces.EditSpaceScreen
-import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
 import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
-import com.app.zonetask.ui.screens.tasks.TasksScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
+import com.app.zonetask.ui.screens.tasks.TasksScreen
 
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     var currentUserId by rememberSaveable { mutableIntStateOf(0) }
+
     val navigateToTab: (NavDestination) -> Unit = { destination ->
         val targetUserId = currentUserId
         if (targetUserId > 0) {
@@ -45,12 +45,11 @@ fun AppNavHost() {
             }
 
             route?.let {
-                navController.navigate(it) {
-                    launchSingleTop = true
-                }
+                navController.navigate(it) { launchSingleTop = true }
             }
         }
     }
+
     val navigateToSpaces: (String) -> Unit = { route ->
         if (route == "spaces" || route.startsWith("spaces/")) {
             val targetUserId = currentUserId
@@ -67,17 +66,6 @@ fun AppNavHost() {
         startDestination = AppDestinations.LOGIN,
         modifier = Modifier.fillMaxSize()
     ) {
-        composable(route = AppDestinations.SPACES) { navBackStackEntry ->
-            val snackbarHostState = remember { SnackbarHostState() }
-            val successMessage = navBackStackEntry.savedStateHandle
-                .getStateFlow<String?>("successMessage", null)
-                .collectAsStateWithLifecycle()
-
-            LaunchedEffect(successMessage.value) {
-                val msg = successMessage.value
-                if (msg != null) {
-                    snackbarHostState.showSnackbar(message = msg)
-                    navBackStackEntry.savedStateHandle["successMessage"] = null
         composable(route = AppDestinations.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { userId ->
@@ -155,11 +143,14 @@ fun AppNavHost() {
                 onAddClick = { navController.navigate(AppDestinations.CREATE_SPACE) }
             ) { padding ->
                 SpacesScreen(
-                    snackbarHostState     = snackbarHostState,
+                    snackbarHostState = snackbarHostState,
                     userId = userId,
-                    modifier              = Modifier.padding(padding),
-                    reloadTrigger         = successMessage.value != null,
-                    onSpaceClick          = { space ->
+                    modifier = Modifier.padding(padding),
+                    reloadTrigger = successMessage != null,
+                    onSuccessMessageShown = {
+                        backStackEntry.savedStateHandle["successMessage"] = null
+                    },
+                    onSpaceClick = { space ->
                         navController.navigate("${AppDestinations.SPACE_DETAIL_ROUTE}/${space.spaceId}")
                     }
                 )
@@ -218,12 +209,7 @@ fun AppNavHost() {
             route = AppDestinations.SPACE_DETAIL,
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val spaceId           = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
-            val snackbarHostState = remember { SnackbarHostState() }
-
-            val refreshDetail = backStackEntry.savedStateHandle
-                .getStateFlow<Boolean>("refreshDetail", false)
-                .collectAsStateWithLifecycle()
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
 
             ZoneTaskScaffold(
                 title = UserMessages.SpaceDetail.TITLE,
@@ -232,37 +218,38 @@ fun AppNavHost() {
                 snackbarHostState = SnackbarHostState()
             ) { padding ->
                 SpaceDetailScreen(
-                    spaceId         = spaceId,
-                    refreshTrigger  = refreshDetail.value,
-                    modifier        = Modifier.padding(padding),
-                    onEditClick     = { id ->
-                        navController.navigate("${AppDestinations.EDIT_SPACE_ROUTE}/$id")
+                    spaceId = spaceId,
+                    userId = currentUserId,
+                    modifier = Modifier.padding(padding),
+                    onNavigateToPermissions = { id ->
+                        navController.navigate("${AppDestinations.SPACE_PERMISSIONS_ROUTE}/$id")
                     },
-                    onDeleteSuccess = {
-                        backStackEntry.savedStateHandle["successMessage"] = "Espacio eliminado"
-                        navController.popBackStack()
+                    onCreateTaskClick = {
+                        navController.navigate(AppDestinations.taskCreateRoute(spaceId))
+                    },
+                    onEditClick = { id ->
+                        navController.navigate("${AppDestinations.EDIT_SPACE_ROUTE}/$id")
                     }
                 )
             }
         }
 
         composable(
-            route     = AppDestinations.EDIT_SPACE,
+            route = AppDestinations.EDIT_SPACE,
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->
-            val spaceId           = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
-            val snackbarHostState = remember { SnackbarHostState() }
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
 
             ZoneTaskScaffold(
-                title             = "Editar espacio",
-                showBack          = true,
-                onBackClick       = { navController.popBackStack() },
-                snackbarHostState = snackbarHostState
+                title = "Editar espacio",
+                showBack = true,
+                onBackClick = { navController.popBackStack() },
+                snackbarHostState = SnackbarHostState()
             ) { padding ->
                 EditSpaceScreen(
-                    spaceId  = spaceId,
+                    spaceId = spaceId,
                     modifier = Modifier.padding(padding),
-                    onSaved  = { msg ->
+                    onSaved = { msg ->
                         navController.getBackStackEntry(AppDestinations.SPACES)
                             .savedStateHandle["successMessage"] = msg
                         navController.getBackStackEntry(AppDestinations.SPACE_DETAIL)
@@ -272,20 +259,8 @@ fun AppNavHost() {
                 )
             }
         }
-    }
-}
 
-object AppDestinations {
-    const val EDIT_SPACE_ROUTE   = "edit_space"
-
-    const val EDIT_SPACE         = "edit_space/{spaceId}"
-
-    const val LOGIN              = "login"
-    const val SPACES             = "spaces"
-    const val SPACE_DETAIL_ROUTE = "space_detail"
-    const val SPACE_DETAIL       = "space_detail/{spaceId}"
-    const val CREATE_SPACE       = "create_space"
-}
+        composable(
             route = AppDestinations.SPACE_PERMISSIONS,
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->

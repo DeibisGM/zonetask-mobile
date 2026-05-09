@@ -12,6 +12,8 @@ object AppDestinations {
     const val SPACE_DETAIL = "space_detail/{spaceId}"
     const val SPACE_PERMISSIONS_ROUTE = "space_permissions"
     const val SPACE_PERMISSIONS = "space_permissions/{spaceId}"
+    const val EDIT_SPACE_ROUTE = "edit_space"
+    const val EDIT_SPACE = "edit_space/{spaceId}"
 
     fun spacesRoute(userId: Int): String = "spaces/$userId"
     fun tasksRoute(userId: Int): String = "tasks/$userId"
