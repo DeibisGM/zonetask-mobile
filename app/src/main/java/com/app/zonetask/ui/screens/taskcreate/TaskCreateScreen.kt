@@ -28,9 +28,16 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskCreateScreen(
+    initialSpaceId: Int = 1,
+    initialCreatedBy: Int = 1,
     modifier: Modifier = Modifier,
     onNavigate: (String) -> Unit = {},
-    viewModel: TaskCreateViewModel = viewModel()
+    viewModel: TaskCreateViewModel = viewModel(
+        factory = TaskCreateViewModelFactory(
+            initialSpaceId = initialSpaceId,
+            initialCreatedBy = initialCreatedBy
+        )
+    )
 ) {
     val uiState = viewModel.uiState
     val formOptions = viewModel.formOptionsUiState

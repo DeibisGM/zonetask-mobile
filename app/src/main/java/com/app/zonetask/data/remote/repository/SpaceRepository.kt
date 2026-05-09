@@ -19,10 +19,13 @@ class SpaceRepository(
         return try {
             val response = apiService.getSpacesByUser(userId)
             if (response.isSuccessful) {
-                val spaces = response.body()?.map { it.toDomain() } ?: emptyList()
+                val spaces = response.body()?.map { it.toDomain() }.orEmpty()
                 ApiResult.Success(spaces)
             } else {
-                ApiResult.Error(httpErrorMessage(response.code()), response.code())
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(networkErrorMessage(e))
@@ -37,7 +40,10 @@ class SpaceRepository(
                     ?: return ApiResult.Error("Espacio no encontrado")
                 ApiResult.Success(space)
             } else {
-                ApiResult.Error(httpErrorMessage(response.code()), response.code())
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(networkErrorMessage(e))
@@ -58,7 +64,7 @@ class SpaceRepository(
                 )
             }
         } catch (e: Exception) {
-            ApiResult.Error(networkErrorMessage(e))
+            ApiResult.Error(message = networkErrorMessage(e))
         }
     }
 
@@ -68,7 +74,10 @@ class SpaceRepository(
             if (response.isSuccessful) {
                 ApiResult.Success(Unit)
             } else {
-                ApiResult.Error(httpErrorMessage(response.code()), response.code())
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(networkErrorMessage(e))
@@ -83,7 +92,10 @@ class SpaceRepository(
                     ?: return ApiResult.Error("Respuesta vacía del servidor")
                 ApiResult.Success(body)
             } else {
-                ApiResult.Error(httpErrorMessage(response.code()), response.code())
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(networkErrorMessage(e))
@@ -94,10 +106,13 @@ class SpaceRepository(
         return try {
             val response = apiService.getSpaceMembers(spaceId, userId)
             if (response.isSuccessful) {
-                val members = response.body()?.map { it.toDomain() } ?: emptyList()
+                val members = response.body()?.map { it.toDomain() }.orEmpty()
                 ApiResult.Success(members)
             } else {
-                ApiResult.Error(httpErrorMessage(response.code()), response.code())
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(networkErrorMessage(e))
@@ -124,7 +139,10 @@ class SpaceRepository(
                     ?: return ApiResult.Error("Respuesta vacía del servidor")
                 ApiResult.Success(member)
             } else {
-                ApiResult.Error(httpErrorMessage(response.code()), response.code())
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(networkErrorMessage(e))
@@ -136,8 +154,7 @@ class SpaceRepository(
         403 -> "No tienes permisos para esto"
         404 -> "Recurso no encontrado"
         500 -> "Error interno del servidor"
-        502,
-        503 -> "Servicio no disponible, intenta más tarde"
+        502, 503 -> "Servicio no disponible, intenta más tarde"
         else -> "Error del servidor ($code)"
     }
 
