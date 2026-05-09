@@ -18,6 +18,7 @@ object UserMessages {
         const val DELETE_FORBIDDEN      = "No tienes permiso para eliminar este espacio"
         const val DELETE_NOT_OWNER      = "Solo el propietario puede eliminar este espacio"
         const val ROLE_OWNER            = "Propietario"
+        const val ROLE_ADMIN            = "Administrador"
         const val ROLE_MEMBER           = "Miembro"
     }
 
@@ -27,6 +28,35 @@ object UserMessages {
         const val OWNER_LABEL    = "Propietario ID"
         const val DESC_LABEL     = "Descripción"
         const val NO_DESCRIPTION = "Sin descripción"
+        const val PERMISSIONS_BUTTON = "Roles y permisos"
+    }
+
+    object SpacePermissions {
+        const val TITLE                  = "Roles y permisos"
+        const val LOADING                = "Cargando permisos..."
+        const val SECTION_ROLES          = "Roles disponibles"
+        const val SECTION_ACTIONS        = "Acciones por rol"
+        const val YOUR_ROLE_LABEL        = "Tu rol en este espacio"
+        const val MEMBERS_SECTION        = "Miembros del espacio"
+        const val MEMBER_ROLE_LABEL      = "Rol actual"
+        const val CHANGE_ROLE_TITLE      = "Cambiar rol"
+        const val CHANGE_ROLE_CONFIRM    = "Guardar"
+        const val CHANGE_ROLE_CANCEL     = "Cancelar"
+        const val ROLE_UPDATE_SUCCESS    = "Rol actualizado correctamente"
+        const val ROLE_UPDATE_ERROR      = "No se pudo actualizar el rol"
+        const val ROLE_UPDATE_FORBIDDEN  = "No tienes permiso para cambiar este rol"
+        const val CANNOT_CHANGE_OWNER    = "El rol del propietario no puede cambiarse"
+        const val CANNOT_CHANGE_ADMIN    = "Un administrador no puede cambiar el rol de otro administrador"
+        const val SELECT_NEW_ROLE        = "Selecciona el nuevo rol"
+        const val ACTION_VIEW_SPACE         = "Ver el espacio"
+        const val ACTION_EDIT_SPACE         = "Editar información del espacio"
+        const val ACTION_DELETE_SPACE       = "Eliminar el espacio"
+        const val ACTION_INVITE_MEMBERS     = "Invitar miembros"
+        const val ACTION_REMOVE_MEMBERS     = "Remover miembros"
+        const val ACTION_CHANGE_MEMBER_ROLE = "Cambiar rol de miembros"
+        const val ACTION_VIEW_PERMISSIONS   = "Ver configuración de permisos"
+        const val ACTION_MANAGE_ZONES       = "Gestionar zonas"
+        const val ACTION_MANAGE_TASKS       = "Gestionar tareas"
     }
 
     object Screens {
