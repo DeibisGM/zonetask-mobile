@@ -80,7 +80,8 @@ fun AppNavHost() {
             TaskCreateScreen(
                 initialSpaceId = 1,
                 initialCreatedBy = currentUserId,
-                onNavigate = navigateToSpaces
+                onNavigate = navigateToSpaces,
+                onClose = { navController.popBackStack() }
             )
         }
 
@@ -92,7 +93,26 @@ fun AppNavHost() {
             TaskCreateScreen(
                 initialSpaceId = spaceId,
                 initialCreatedBy = currentUserId,
-                onNavigate = navigateToSpaces
+                onNavigate = navigateToSpaces,
+                onClose = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = AppDestinations.TASK_EDIT_WITH_SPACE,
+            arguments = listOf(
+                navArgument("spaceId") { type = NavType.IntType },
+                navArgument("taskId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 1
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+            TaskCreateScreen(
+                initialSpaceId = spaceId,
+                initialCreatedBy = currentUserId,
+                taskId = taskId,
+                onNavigate = navigateToSpaces,
+                onClose = { navController.popBackStack() }
             )
         }
 
@@ -158,6 +178,9 @@ fun AppNavHost() {
                     modifier = Modifier.padding(padding),
                     onCreateTask = { spaceId ->
                         navController.navigate(AppDestinations.taskCreateRoute(spaceId))
+                    },
+                    onEditTask = { spaceId, taskId ->
+                        navController.navigate(AppDestinations.taskEditRoute(spaceId, taskId))
                     }
                 )
             }

@@ -8,6 +8,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface TaskApiService {
@@ -15,6 +16,17 @@ interface TaskApiService {
     // Sends the create-task payload to the backend.
     @POST(AppConstants.Api.Paths.TASKS)
     suspend fun createTask(
+        @Body request: CreateTaskRequestDto
+    ): Response<Void>
+
+    @GET(AppConstants.Api.Paths.TASK_BY_ID)
+    suspend fun getTaskById(
+        @Path("taskId") taskId: Int
+    ): Response<TaskResponse>
+
+    @PUT(AppConstants.Api.Paths.TASK_BY_ID)
+    suspend fun updateTask(
+        @Path("taskId") taskId: Int,
         @Body request: CreateTaskRequestDto
     ): Response<Void>
 

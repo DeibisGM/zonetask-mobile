@@ -13,6 +13,7 @@ object AppConstants {
             const val SPACE_BY_ID = "api/spaces/{spaceId}"
             const val SPACE_TASKS = "api/spaces/{spaceId}/tasks"
             const val ZONE_TASKS = "api/zones/{zoneId}/tasks"
+            const val TASK_BY_ID = "api/tasks/{taskId}"
             const val CREATE_SPACE = "api/spaces"
             const val DELETE_SPACE = "api/spaces/{spaceId}"
             const val TASK_FORM_OPTIONS = "api/lookups/task-form-options"

@@ -37,6 +37,49 @@ class TaskRepository(
         }
     }
 
+    suspend fun updateTask(taskId: Int, request: CreateTaskRequestDto): ApiResult<Unit> {
+        return try {
+            val response = apiService.updateTask(taskId, request)
+
+            if (response.isSuccessful) {
+                ApiResult.Success(Unit)
+            } else {
+                val errorBody = try {
+                    response.errorBody()?.string()
+                } catch (_: IOException) {
+                    null
+                }
+
+                ApiResult.Error(
+                    message = errorBody ?: "Error ${response.code()}",
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error desconocido")
+        }
+    }
+
+    suspend fun getTaskById(taskId: Int): ApiResult<TaskResponse> {
+        return try {
+            val response = apiService.getTaskById(taskId)
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                    ?: return ApiResult.Error(message = "No se pudo cargar la tarea")
+
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
     suspend fun getTasksBySpace(spaceId: Int): ApiResult<List<TaskResponse>> {
         return try {
             val response = apiService.getTasksBySpace(spaceId)
