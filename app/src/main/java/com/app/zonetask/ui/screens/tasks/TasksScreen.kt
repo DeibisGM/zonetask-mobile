@@ -472,6 +472,33 @@ private fun TaskCard(
                 color = AppSecondaryText
             )
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.AccessTime,
+                    contentDescription = null,
+                    tint = when (task.dueStatusKey) {
+                        "overdue" -> Color(0xFFE57373)
+                        "upcoming" -> AppPrimary
+                        "completed" -> AppPrimary
+                        else -> AppSecondaryText
+                    },
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = task.dueLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = when (task.dueStatusKey) {
+                        "overdue" -> Color(0xFFE57373)
+                        "upcoming" -> AppPrimary
+                        "completed" -> AppPrimary
+                        else -> AppSecondaryText
+                    }
+                )
+            }
+
             task.task.scheduledTime?.takeIf { it.isNotBlank() }?.let { time ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

@@ -12,7 +12,9 @@ data class TaskItemUiState(
     val task: TaskResponse,
     val zoneName: String,
     val assignees: List<TaskAssigneeUiState> = emptyList(),
-    val statusLabel: String = "Pendiente"
+    val statusLabel: String = "Pendiente",
+    val dueLabel: String = "Sin fecha límite",
+    val dueStatusKey: String = "none"
 )
 
 data class ZoneTaskGroupUiState(
