@@ -26,6 +26,7 @@ data class ZoneTaskGroupUiState(
 data class TasksUiState(
     val isLoadingSpaces: Boolean = false,
     val isLoadingTasks: Boolean = false,
+    val deletingTaskId: Int? = null,
     val spaces: List<Space> = emptyList(),
     val selectedSpaceId: Int? = null,
     val selectedSpaceName: String = "",

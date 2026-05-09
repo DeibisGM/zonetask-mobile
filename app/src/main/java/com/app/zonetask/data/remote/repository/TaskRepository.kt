@@ -60,6 +60,29 @@ class TaskRepository(
         }
     }
 
+    suspend fun deleteTask(taskId: Int): ApiResult<Unit> {
+        return try {
+            val response = apiService.deleteTask(taskId)
+
+            if (response.isSuccessful) {
+                ApiResult.Success(Unit)
+            } else {
+                val errorBody = try {
+                    response.errorBody()?.string()
+                } catch (_: IOException) {
+                    null
+                }
+
+                ApiResult.Error(
+                    message = errorBody ?: "Error ${response.code()}",
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = e.message ?: "Error desconocido")
+        }
+    }
+
     suspend fun getTaskById(taskId: Int): ApiResult<TaskResponse> {
         return try {
             val response = apiService.getTaskById(taskId)

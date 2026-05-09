@@ -6,6 +6,7 @@ import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import retrofit2.Response
 import retrofit2.http.Body
+  import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -28,6 +29,11 @@ interface TaskApiService {
     suspend fun updateTask(
         @Path("taskId") taskId: Int,
         @Body request: CreateTaskRequestDto
+    ): Response<Void>
+
+    @DELETE(AppConstants.Api.Paths.TASK_BY_ID)
+    suspend fun deleteTask(
+        @Path("taskId") taskId: Int
     ): Response<Void>
 
     @GET(AppConstants.Api.Paths.SPACE_TASKS)

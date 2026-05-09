@@ -88,6 +88,7 @@ fun SpaceDetailScreen(
     LaunchedEffect(refreshTrigger) {
         if (refreshTrigger) {
             viewModel.loadSpace()
+            viewModel.loadTasks()
             onRefreshHandled()
         }
     }

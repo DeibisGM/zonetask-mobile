@@ -162,6 +162,9 @@ fun AppNavHost() {
             arguments = listOf(navArgument("userId") { type = NavType.IntType })
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getInt("userId") ?: currentUserId
+            val taskChanged by backStackEntry.savedStateHandle
+                .getStateFlow("taskChanged", false)
+                .collectAsStateWithLifecycle()
 
             ZoneTaskScaffold(
                 title = UserMessages.Screens.TASKS_TITLE,
@@ -175,7 +178,11 @@ fun AppNavHost() {
                 TasksScreen(
                     userId = userId,
                     modifier = Modifier.padding(padding),
-                    onCreateTask = { spaceId ->
+                    reloadTrigger = taskChanged,
+                    onRefreshHandled = {
+                        backStackEntry.savedStateHandle["taskChanged"] = false
+                    },
+                    onCreateTask = { spaceId -> 
                         navController.navigate(AppDestinations.taskCreateRoute(spaceId))
                     },
                     onEditTask = { spaceId, taskId ->
@@ -210,6 +217,12 @@ fun AppNavHost() {
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->
             val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
+            val refreshDetail by backStackEntry.savedStateHandle
+                .getStateFlow("refreshDetail", false)
+                .collectAsStateWithLifecycle()
+            val taskChanged by backStackEntry.savedStateHandle
+                .getStateFlow("taskChanged", false)
+                .collectAsStateWithLifecycle()
 
             ZoneTaskScaffold(
                 title = UserMessages.SpaceDetail.TITLE,
@@ -221,6 +234,11 @@ fun AppNavHost() {
                     spaceId = spaceId,
                     userId = currentUserId,
                     modifier = Modifier.padding(padding),
+                    refreshTrigger = refreshDetail || taskChanged,
+                    onRefreshHandled = {
+                        backStackEntry.savedStateHandle["refreshDetail"] = false
+                        backStackEntry.savedStateHandle["taskChanged"] = false
+                    },
                     onNavigateToPermissions = { id ->
                         navController.navigate("${AppDestinations.SPACE_PERMISSIONS_ROUTE}/$id")
                     },
