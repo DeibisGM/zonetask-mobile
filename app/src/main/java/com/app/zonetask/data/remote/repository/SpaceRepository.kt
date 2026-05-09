@@ -1,6 +1,7 @@
 package com.app.zonetask.data.repository
 
 import com.app.zonetask.data.remote.ApiResult
+import com.app.zonetask.data.remote.dto.CreateSpaceRequest
 import com.app.zonetask.data.remote.dto.SpacePermissionsResponse
 import com.app.zonetask.data.remote.dto.UpdateMemberRoleRequest
 import com.app.zonetask.data.remote.dto.toDomain
@@ -37,6 +38,24 @@ class SpaceRepository(
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(httpErrorMessage(response.code()), response.code())
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(networkErrorMessage(e))
+        }
+    }
+
+    suspend fun createSpace(request: CreateSpaceRequest): ApiResult<Space> {
+        return try {
+            val response = apiService.createSpace(request)
+            if (response.isSuccessful) {
+                val space = response.body()?.toDomain()
+                    ?: return ApiResult.Error(message = "Error al crear el espacio")
+                ApiResult.Success(space)
+            } else {
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(networkErrorMessage(e))
@@ -93,10 +112,10 @@ class SpaceRepository(
     ): ApiResult<SpaceMember> {
         return try {
             val response = apiService.updateMemberRole(
-                spaceId  = spaceId,
+                spaceId = spaceId,
                 memberId = memberId,
-                request  = UpdateMemberRoleRequest(
-                    newRole          = newRole,
+                request = UpdateMemberRoleRequest(
+                    newRole = newRole,
                     requestingUserId = requestingUserId
                 )
             )
@@ -112,21 +131,20 @@ class SpaceRepository(
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
     private fun httpErrorMessage(code: Int): String = when (code) {
-        401  -> "Sesión expirada, vuelve a iniciar sesión"
-        403  -> "No tienes permisos para esto"
-        404  -> "Recurso no encontrado"
-        500  -> "Error interno del servidor"
+        401 -> "Sesión expirada, vuelve a iniciar sesión"
+        403 -> "No tienes permisos para esto"
+        404 -> "Recurso no encontrado"
+        500 -> "Error interno del servidor"
         502,
-        503  -> "Servicio no disponible, intenta más tarde"
+        503 -> "Servicio no disponible, intenta más tarde"
         else -> "Error del servidor ($code)"
     }
 
     private fun networkErrorMessage(e: Exception): String = when (e) {
-        is UnknownHostException   -> "Sin conexión a internet"
+        is UnknownHostException -> "Sin conexión a internet"
         is SocketTimeoutException -> "El servidor tardó demasiado en responder"
-        is IOException            -> "Error de red, verifica tu conexión"
-        else                      -> "Error inesperado"
+        is IOException -> "Error de red, verifica tu conexión"
+        else -> "Error inesperado"
     }
 }
