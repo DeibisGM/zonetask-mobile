@@ -155,6 +155,12 @@ fun SpaceDetailScreen(
             Box(modifier = modifier.fillMaxSize()) {
                 SpaceDetailContent(
                     space    = uiState.space!!,
+                    userRole = uiState.userRole,
+                    tasks = uiState.tasks,
+                    tasksLoading = uiState.tasksLoading,
+                    tasksError = uiState.tasksError,
+                    onNavigateToPermissions = { onNavigateToPermissions(spaceId) },
+                    onCreateTaskClick = onCreateTaskClick,
                     modifier = Modifier.padding(bottom = 88.dp)
                 )
 
@@ -195,16 +201,6 @@ fun SpaceDetailScreen(
                     }
                 }
             }
-            SpaceDetailContent(
-                space = uiState.space!!,
-                userRole = uiState.userRole,
-                tasks = uiState.tasks,
-                tasksLoading = uiState.tasksLoading,
-                tasksError = uiState.tasksError,
-                onNavigateToPermissions = { onNavigateToPermissions(spaceId) },
-                onCreateTaskClick = onCreateTaskClick,
-                modifier = modifier
-            )
         }
     }
 }
