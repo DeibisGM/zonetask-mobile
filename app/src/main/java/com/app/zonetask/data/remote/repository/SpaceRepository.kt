@@ -64,6 +64,17 @@ class SpaceRepository(
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(message = httpErrorMessage(response.code()), statusCode = response.code())
+    suspend fun deleteSpace(spaceId: Int, userId: Int): ApiResult<Unit> {
+        return try {
+            val response = apiService.deleteSpace(spaceId, userId)
+
+            if (response.isSuccessful) {
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.Error(
+                    message    = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(message = networkErrorMessage(e))

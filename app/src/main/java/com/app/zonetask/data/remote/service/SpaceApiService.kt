@@ -9,7 +9,9 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.DELETE
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface SpaceApiService {
 
@@ -33,4 +35,10 @@ interface SpaceApiService {
         @Path("spaceId") spaceId: Int,
         @Body request: EditSpaceRequest
     ): Response<SpaceResponse>
+}
+    @DELETE(AppConstants.Api.Paths.DELETE_SPACE)
+    suspend fun deleteSpace(
+        @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int
+    ): Response<Unit>
 }

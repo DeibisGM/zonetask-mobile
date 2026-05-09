@@ -14,21 +14,23 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.app.zonetask.core.UserMessages
-import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.spaces.CreateSpaceScreen
 import com.app.zonetask.ui.screens.spaces.EditSpaceScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
+import com.app.zonetask.ui.screens.spaces.SpacesScreen
+import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     NavHost(
-        navController    = navController,
-        startDestination = AppDestinations.SPACES,
-        modifier         = Modifier.fillMaxSize()
+        navController = navController,
+        startDestination = AppDestinations.TASK_CREATE,
+        modifier = Modifier.fillMaxSize()
     ) {
         composable(route = AppDestinations.SPACES) { navBackStackEntry ->
             val snackbarHostState = remember { SnackbarHostState() }
@@ -86,7 +88,7 @@ fun AppNavHost() {
         }
 
         composable(
-            route     = AppDestinations.SPACE_DETAIL,
+            route = AppDestinations.SPACE_DETAIL,
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->
             val spaceId           = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
@@ -97,10 +99,10 @@ fun AppNavHost() {
                 .collectAsStateWithLifecycle()
 
             ZoneTaskScaffold(
-                title             = UserMessages.SpaceDetail.TITLE,
-                showBack          = true,
-                onBackClick       = { navController.popBackStack() },
-                snackbarHostState = snackbarHostState
+                title = UserMessages.SpaceDetail.TITLE,
+                showBack = true,
+                onBackClick = { navController.popBackStack() },
+                snackbarHostState = detailSnackbarHostState
             ) { padding ->
                 SpaceDetailScreen(
                     spaceId         = spaceId,
