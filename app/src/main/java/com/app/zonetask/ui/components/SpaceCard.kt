@@ -55,7 +55,7 @@ fun SpaceCard(
     onDeleteNotAllowed: (() -> Unit)? = null
 ) {
     val isOwner    = userRole == ROLE_OWNER
-    val canDelete  = isOwner   
+    val canDelete = isOwner
 
     var showConfirmDialog by rememberSaveable { mutableStateOf(false) }
 

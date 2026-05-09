@@ -62,6 +62,7 @@ object UserMessages {
     object Screens {
         const val SPACES_TITLE = "Mis espacios"
         const val CREATE_TASK_TITLE = "Crear tarea"
+        const val TASKS_TITLE = "Tareas"
     }
 
     object TaskCreate {
