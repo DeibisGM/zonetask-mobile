@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.repository.SpaceRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -38,9 +40,32 @@ class SpacesViewModel(
         viewModelScope.launch {
             when (val result = spaceRepository.getSpacesByUser(userId)) {
                 is ApiResult.Success -> {
+                    val spaces = result.data
+
+                    // Pedir los permisos de todos los espacios en paralelo
+                    val rolesMap = spaces
+                        .map { space ->
+                            async {
+                                val permResult = spaceRepository.getSpacePermissions(
+                                    spaceId = space.spaceId,
+                                    userId  = userId
+                                )
+                                val role = when {
+                                    permResult is ApiResult.Success ->
+                                        permResult.data.requestingUserRole
+                                    space.ownerId == userId -> "owner"
+                                    else -> "member"
+                                }
+                                space.spaceId to role
+                            }
+                        }
+                        .awaitAll()
+                        .toMap()
+
                     _uiState.value = _uiState.value.copy(
                         isLoading   = false,
-                        spaces      = result.data,
+                        spaces      = spaces,
+                        spaceRoles  = rolesMap,
                         errorBanner = null
                     )
                 }
@@ -65,7 +90,8 @@ class SpacesViewModel(
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         deletingSpaceId = null,
-                        spaces          = _uiState.value.spaces.filter { it.spaceId != spaceId }
+                        spaces          = _uiState.value.spaces.filter { it.spaceId != spaceId },
+                        spaceRoles      = _uiState.value.spaceRoles - spaceId
                     )
                     _events.emit(SpacesEvent.ShowMessage(UserMessages.Spaces.DELETE_SUCCESS))
                 }

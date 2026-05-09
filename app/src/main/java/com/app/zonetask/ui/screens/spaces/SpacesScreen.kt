@@ -61,7 +61,7 @@ fun SpacesScreen(
         }
     }
 
-    // Shows loaded errors as snackbars without replacing the whole list.
+    // Errores tras carga exitosa se muestran como snackbar sin reemplazar la lista
     LaunchedEffect(uiState.errorBanner) {
         val error = uiState.errorBanner
         if (error != null && uiState.spaces.isNotEmpty()) {
@@ -73,11 +73,11 @@ fun SpacesScreen(
     when {
         uiState.isLoading && uiState.spaces.isEmpty() -> {
             Box(
-                modifier = modifier.fillMaxSize(),
+                modifier         = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = UserMessages.Spaces.LOADING,
+                    text  = UserMessages.Spaces.LOADING,
                     color = AppSecondaryText,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -86,7 +86,7 @@ fun SpacesScreen(
 
         uiState.errorBanner != null && uiState.spaces.isEmpty() -> {
             Box(
-                modifier = modifier.fillMaxSize(),
+                modifier         = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -94,14 +94,14 @@ fun SpacesScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = uiState.errorBanner!!,
-                        color = AppSecondaryText,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text      = uiState.errorBanner!!,
+                        color     = AppSecondaryText,
+                        style     = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
                     TextButton(onClick = { viewModel.fetchSpaces() }) {
                         Text(
-                            text = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
+                            text  = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
                             color = AppPrimary
                         )
                     }
@@ -111,11 +111,11 @@ fun SpacesScreen(
 
         uiState.spaces.isEmpty() -> {
             Box(
-                modifier = modifier.fillMaxSize(),
+                modifier         = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = UserMessages.Spaces.EMPTY,
+                    text  = UserMessages.Spaces.EMPTY,
                     color = AppSecondaryText,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -124,27 +124,29 @@ fun SpacesScreen(
 
         else -> {
             LazyColumn(
-                modifier = modifier.fillMaxSize(),
+                modifier       = modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 12.dp,
-                    bottom = 96.dp
+                    start   = 16.dp,
+                    end     = 16.dp,
+                    top     = 12.dp,
+                    bottom  = 96.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(
                     items = uiState.spaces,
-                    key = { it.spaceId }
+                    key   = { it.spaceId }
                 ) { space ->
-                    val isOwner = space.ownerId == viewModel.userId
+                    // Rol real proveniente del backend; fallback a "member" mientras carga
+                    val userRole = uiState.spaceRoles[space.spaceId] ?: "member"
+                    val isOwner  = userRole == "owner"
 
                     SpaceCard(
-                        space = space,
-                        isOwner = isOwner,
-                        onClick = { onSpaceClick(space) },
-                        isDeleting = uiState.deletingSpaceId == space.spaceId,
-                        onDelete = if (isOwner) {
+                        space              = space,
+                        userRole           = userRole,
+                        onClick            = { onSpaceClick(space) },
+                        isDeleting         = uiState.deletingSpaceId == space.spaceId,
+                        onDelete           = if (isOwner) {
                             { viewModel.deleteSpace(space.spaceId) }
                         } else null,
                         onDeleteNotAllowed = { viewModel.notifyDeleteNotAllowed() }

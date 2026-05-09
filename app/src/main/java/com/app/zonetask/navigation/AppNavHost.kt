@@ -21,7 +21,7 @@ import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 
-private const val CURRENT_USER_ID = 1
+private const val CURRENT_USER_ID = 2
 
 @Composable
 fun AppNavHost() {

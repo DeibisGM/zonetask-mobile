@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.repository.SpaceRepository
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,21 +28,29 @@ class SpaceDetailViewModel(
         _uiState.value = SpaceDetailUiState(isLoading = true)
 
         viewModelScope.launch {
-            when (val result = spaceRepository.getSpaceById(spaceId)) {
-                is ApiResult.Success -> {
-                    val space = result.data
+            val spaceDeferred       = async { spaceRepository.getSpaceById(spaceId) }
+            val permissionsDeferred = async { spaceRepository.getSpacePermissions(spaceId, userId) }
 
-                    val userRole = if (space.ownerId == userId) "owner" else "member"
+            val spaceResult       = spaceDeferred.await()
+            val permissionsResult = permissionsDeferred.await()
 
-                    _uiState.value = SpaceDetailUiState(
-                        space    = space,
-                        userRole = userRole
-                    )
-                }
-                is ApiResult.Error -> {
-                    _uiState.value = SpaceDetailUiState(errorBanner = result.message)
-                }
+            if (spaceResult is ApiResult.Error) {
+                _uiState.value = SpaceDetailUiState(errorBanner = spaceResult.message)
+                return@launch
             }
+
+            val space = (spaceResult as ApiResult.Success).data
+
+            val userRole = when {
+                permissionsResult is ApiResult.Success -> permissionsResult.data.requestingUserRole
+                space.ownerId == userId               -> "owner"
+                else                                  -> "member"
+            }
+
+            _uiState.value = SpaceDetailUiState(
+                space    = space,
+                userRole = userRole
+            )
         }
     }
 }
