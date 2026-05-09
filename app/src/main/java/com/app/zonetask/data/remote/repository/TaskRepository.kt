@@ -53,6 +53,23 @@ class TaskRepository(
         }
     }
 
+    suspend fun getTasksByZone(zoneId: Int): ApiResult<List<TaskResponse>> {
+        return try {
+            val response = apiService.getTasksByZone(zoneId)
+
+            if (response.isSuccessful) {
+                ApiResult.Success(response.body().orEmpty())
+            } else {
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
     private fun httpErrorMessage(code: Int): String = when (code) {
         401 -> "Sesión expirada, vuelve a iniciar sesión"
         404 -> "Recurso no encontrado"

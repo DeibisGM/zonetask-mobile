@@ -21,4 +21,9 @@ interface TaskApiService {
     suspend fun getTasksBySpace(
         @Path("spaceId") spaceId: Int
     ): Response<List<TaskResponse>>
+
+    @GET(AppConstants.Api.Paths.ZONE_TASKS)
+    suspend fun getTasksByZone(
+        @Path("zoneId") zoneId: Int
+    ): Response<List<TaskResponse>>
 }
