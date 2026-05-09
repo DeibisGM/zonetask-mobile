@@ -20,5 +20,7 @@ data class TaskResponse(
     @SerializedName("endDate")
     val endDate: String?,
     @SerializedName("createdBy")
-    val createdBy: Int
+    val createdBy: Int,
+    @SerializedName("zoneId")
+    val zoneId: Int? = null
 )

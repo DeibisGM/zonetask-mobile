@@ -18,12 +18,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.app.zonetask.core.UserMessages
+import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.spaces.CreateSpaceScreen
 import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
 import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
+import com.app.zonetask.ui.screens.tasks.TasksScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 
 @Composable
@@ -31,11 +33,29 @@ fun AppNavHost() {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     var currentUserId by rememberSaveable { mutableIntStateOf(0) }
+    val navigateToTab: (NavDestination) -> Unit = { destination ->
+        val targetUserId = currentUserId
+        if (targetUserId > 0) {
+            val route = when (destination) {
+                NavDestination.SPACES -> AppDestinations.spacesRoute(targetUserId)
+                NavDestination.TASKS -> AppDestinations.tasksRoute(targetUserId)
+                else -> null
+            }
+
+            route?.let {
+                navController.navigate(it) {
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
     val navigateToSpaces: (String) -> Unit = { route ->
         if (route == "spaces" || route.startsWith("spaces/")) {
             val targetUserId = currentUserId
             if (targetUserId > 0) {
-                navController.navigate(AppDestinations.spacesRoute(targetUserId))
+                navController.navigate(AppDestinations.spacesRoute(targetUserId)) {
+                    launchSingleTop = true
+                }
             }
         }
     }
@@ -96,6 +116,8 @@ fun AppNavHost() {
                 title = UserMessages.Screens.SPACES_TITLE,
                 showBack = false,
                 onBackClick = {},
+                currentDestination = NavDestination.SPACES,
+                onDestinationSelected = navigateToTab,
                 snackbarHostState = snackbarHostState,
                 onAddClick = { navController.navigate(AppDestinations.CREATE_SPACE) }
             ) { padding ->
@@ -111,6 +133,31 @@ fun AppNavHost() {
                         navController.navigate(
                             "${AppDestinations.SPACE_DETAIL_ROUTE}/${space.spaceId}"
                         )
+                    }
+                )
+            }
+        }
+
+        composable(
+            route = AppDestinations.TASKS,
+            arguments = listOf(navArgument("userId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getInt("userId") ?: currentUserId
+
+            ZoneTaskScaffold(
+                title = UserMessages.Screens.TASKS_TITLE,
+                showBack = false,
+                onBackClick = {},
+                showTopBar = false,
+                currentDestination = NavDestination.TASKS,
+                onDestinationSelected = navigateToTab,
+                snackbarHostState = snackbarHostState
+            ) { padding ->
+                TasksScreen(
+                    userId = userId,
+                    modifier = Modifier.padding(padding),
+                    onCreateTask = { spaceId ->
+                        navController.navigate(AppDestinations.taskCreateRoute(spaceId))
                     }
                 )
             }

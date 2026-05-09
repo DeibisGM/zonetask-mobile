@@ -18,10 +18,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.app.zonetask.core.UserMessages
@@ -34,60 +30,63 @@ fun ZoneTaskScaffold(
     title: String,
     showBack: Boolean = false,
     onBackClick: () -> Unit = {},
+    currentDestination: NavDestination = NavDestination.SPACES,
+    onDestinationSelected: (NavDestination) -> Unit = {},
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
     onAddClick: (() -> Unit)? = null,
+    showTopBar: Boolean = true,
     showBottomBar: Boolean = true,
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    var selectedDestination by rememberSaveable { mutableStateOf(NavDestination.SPACES) }
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground
+            if (showTopBar) {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    },
+                    navigationIcon = {
+                        if (showBack) {
+                            IconButton(onClick = onBackClick) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = UserMessages.Accessibility.BACK,
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        if (onAddClick != null) {
+                            IconButton(onClick = onAddClick) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Agregar",
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
                     )
-                },
-                navigationIcon = {
-                    if (showBack) {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = UserMessages.Accessibility.BACK,
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    if (onAddClick != null) {
-                        IconButton(onClick = onAddClick) {
-                            Icon(
-                                imageVector        = Icons.Default.Add,
-                                contentDescription = "Agregar",
-                                tint               = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
                 )
-            )
+            }
         },
         bottomBar = {
             if (showBottomBar && !showBack) {
                 AppBottomNavBar(
-                    currentDestination = selectedDestination,
-                    onDestinationSelected = { selectedDestination = it }
+                    currentDestination = currentDestination,
+                    onDestinationSelected = onDestinationSelected
                 )
             } else {
                 bottomBar()
