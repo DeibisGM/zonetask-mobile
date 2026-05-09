@@ -7,7 +7,9 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.DELETE
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface SpaceApiService {
 
@@ -25,4 +27,10 @@ interface SpaceApiService {
     suspend fun createSpace(
         @Body request: CreateSpaceRequest
     ): Response<SpaceResponse>
+}
+    @DELETE(AppConstants.Api.Paths.DELETE_SPACE)
+    suspend fun deleteSpace(
+        @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int
+    ): Response<Unit>
 }

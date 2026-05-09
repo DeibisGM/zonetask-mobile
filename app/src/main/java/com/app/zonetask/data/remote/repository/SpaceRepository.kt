@@ -63,11 +63,23 @@ class SpaceRepository(
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(message = httpErrorMessage(response.code()), statusCode = response.code())
+    suspend fun deleteSpace(spaceId: Int, userId: Int): ApiResult<Unit> {
+        return try {
+            val response = apiService.deleteSpace(spaceId, userId)
+
+            if (response.isSuccessful) {
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.Error(
+                    message    = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
             ApiResult.Error(message = networkErrorMessage(e))
         }
     }
+
     private fun httpErrorMessage(code: Int): String = when (code) {
         401  -> "Sesión expirada, vuelve a iniciar sesión"
         403  -> "No tienes permisos para esto"

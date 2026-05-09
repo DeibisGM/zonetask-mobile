@@ -1,0 +1,23 @@
+package com.app.zonetask.data.remote.service
+
+import com.app.zonetask.core.AppConstants
+import com.app.zonetask.data.remote.dto.LookupOptionResponse
+import com.app.zonetask.data.remote.dto.TaskFormOptionsResponse
+import retrofit2.Response
+import retrofit2.http.GET
+import retrofit2.http.Query
+
+interface TaskLookupApiService {
+
+    // Loads the zones and categories used by the task form.
+    @GET(AppConstants.Api.Paths.TASK_FORM_OPTIONS)
+    suspend fun getTaskFormOptions(
+        @Query("spaceId") spaceId: Int = 1
+    ): Response<TaskFormOptionsResponse>
+
+    // Loads the objects that belong to one zone.
+    @GET(AppConstants.Api.Paths.ZONE_OBJECTS)
+    suspend fun getZoneObjects(
+        @retrofit2.http.Path("zoneId") zoneId: Int
+    ): Response<List<LookupOptionResponse>>
+}
