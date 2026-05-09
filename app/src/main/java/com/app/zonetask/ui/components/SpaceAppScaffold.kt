@@ -31,24 +31,26 @@ import com.app.zonetask.ui.theme.AppPrimary
 @Composable
 fun ZoneTaskScaffold(
     title: String,
-    showBack: Boolean,
-    onBackClick: () -> Unit,
+    showBack: Boolean = false,
+    onBackClick: () -> Unit = {},
+    onNavigate: (String) -> Unit = {},
+    onLogout: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
     showBottomBar: Boolean = true,
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    // Track the selected bottom nav destination; Spaces is the only active one
+    // Track the selected bottom navigation item.
     var selectedDestination by rememberSaveable { mutableStateOf(NavDestination.SPACES) }
 
     Scaffold(
-        modifier       = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text  = title,
+                        text = title,
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -57,9 +59,9 @@ fun ZoneTaskScaffold(
                     if (showBack) {
                         IconButton(onClick = onBackClick) {
                             Icon(
-                                imageVector        = Icons.AutoMirrored.Filled.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = UserMessages.Accessibility.BACK,
-                                tint               = MaterialTheme.colorScheme.onBackground
+                                tint = MaterialTheme.colorScheme.onBackground
                             )
                         }
                     }
@@ -72,7 +74,7 @@ fun ZoneTaskScaffold(
         bottomBar = {
             if (showBottomBar && !showBack) {
                 AppBottomNavBar(
-                    currentDestination    = selectedDestination,
+                    currentDestination = selectedDestination,
                     onDestinationSelected = { selectedDestination = it }
                 )
             } else {
@@ -83,14 +85,15 @@ fun ZoneTaskScaffold(
             snackbarHostState?.let { host ->
                 SnackbarHost(hostState = host) { data ->
                     Snackbar(
-                        modifier       = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        snackbarData   = data,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        snackbarData = data,
                         containerColor = AppPrimary,
-                        contentColor   = AppOnPrimary
+                        contentColor = AppOnPrimary
                     )
                 }
             }
-        },
-        content = content
-    )
+        }
+    ) { padding ->
+        content(padding)
+    }
 }

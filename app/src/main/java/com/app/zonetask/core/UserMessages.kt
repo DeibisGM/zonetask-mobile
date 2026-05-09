@@ -31,6 +31,38 @@ object UserMessages {
 
     object Screens {
         const val SPACES_TITLE = "Mis espacios"
+        const val CREATE_TASK_TITLE = "Crear tarea"
+    }
+
+    object TaskCreate {
+        const val INTRO = "Completa el formulario para definir la tarea."
+        const val GENERAL_SECTION = "Datos generales"
+        const val SCHEDULE_SECTION = "Programacion"
+        const val RULES_SECTION = "Reglas"
+        const val RELATIONS_SECTION = "Relaciones opcionales"
+        const val TITLE_LABEL = "Nombre de la tarea"
+        const val DESCRIPTION_LABEL = "Descripcion"
+        const val FREQUENCY_LABEL = "Frecuencia"
+        const val TIME_LABEL = "Hora"
+        const val START_DATE_LABEL = "Fecha de inicio"
+        const val END_DATE_LABEL = "Fecha de fin"
+        const val ESTIMATED_MINUTES_LABEL = "Tiempo estimado"
+        const val TARGET_LEVEL_LABEL = "Nivel de objetivo"
+        const val SPACE_ID_LABEL = "ID de espacio"
+        const val CREATED_BY_LABEL = "Creado por"
+        const val CATEGORY_ID_LABEL = "ID de categoria"
+        const val ZONE_ID_LABEL = "ID de zona"
+        const val CATEGORY_LABEL = "Categoria"
+        const val ZONE_LABEL = "Zona"
+        const val OBJECT_ID_LABEL = "ID de objeto"
+        const val REMINDER_MINUTES_LABEL = "Recordar"
+        const val SAVE_BUTTON = "GUARDAR"
+        const val SAVE_SNACKBAR = "Vista de formulario lista para guardar."
+        const val ACTIVE_LABEL = "Tarea activa"
+        const val REMINDER_LABEL = "Recordatorio"
+        const val REQUIRE_DESCRIPTION_LABEL = "Requerir descripcion"
+        const val REQUIRE_PROOF_LABEL = "Requerir evidencia"
+        const val ROTATING_LABEL = "Rotativa"
     }
 
     object Accessibility {

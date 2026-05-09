@@ -1,5 +1,5 @@
 [versions]
-agp = "9.2.1"
+agp = "9.1.1"
 coreKtx = "1.18.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -13,6 +13,8 @@ lifecycleViewmodelCompose = "2.10.0"
 coroutines = "1.10.2"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
+foundation = "1.11.1"
+phosphorIcon = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,6 +48,8 @@ org-jetbrains-kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", na
 squareup-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 squareup-retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 squareup-okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+phosphor-icon = { group = "com.adamglin", name = "phosphor-icon", version.ref = "phosphorIcon" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
