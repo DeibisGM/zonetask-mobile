@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +22,7 @@ import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.spaces.CreateSpaceScreen
 import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
+import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 
@@ -83,6 +85,13 @@ fun AppNavHost() {
                 .getStateFlow<String?>("successMessage", null)
                 .collectAsStateWithLifecycle()
 
+            LaunchedEffect(successMessage) {
+                successMessage?.let { message ->
+                    snackbarHostState.showSnackbar(message)
+                    backStackEntry.savedStateHandle["successMessage"] = null
+                }
+            }
+
             ZoneTaskScaffold(
                 title = UserMessages.Screens.SPACES_TITLE,
                 showBack = false,
@@ -112,7 +121,7 @@ fun AppNavHost() {
                 title = "Crear un nuevo espacio",
                 showBack = true,
                 onBackClick = { navController.popBackStack() },
-                snackbarHostState = SnackbarHostState()
+                snackbarHostState = snackbarHostState
             ) { padding ->
                 CreateSpaceScreen(
                     ownerId = currentUserId,
@@ -138,12 +147,40 @@ fun AppNavHost() {
                 showBack = true,
                 onBackClick = { navController.popBackStack() },
                 snackbarHostState = SnackbarHostState()
-            ) { padding -> 
+            ) { padding ->
                 SpaceDetailScreen(
                     spaceId = spaceId,
+                    userId = currentUserId,
+                    modifier = Modifier.padding(padding),
+                    onNavigateToPermissions = { id ->
+                        navController.navigate(
+                            "${AppDestinations.SPACE_PERMISSIONS_ROUTE}/$id"
+                        )
+                    },
                     onCreateTaskClick = {
                         navController.navigate(AppDestinations.taskCreateRoute(spaceId))
-                    },
+                    }
+                )
+            }
+        }
+
+        composable(
+            route = AppDestinations.SPACE_PERMISSIONS,
+            arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
+            val permissionsSnackbarHostState = remember { SnackbarHostState() }
+
+            ZoneTaskScaffold(
+                title = UserMessages.SpacePermissions.TITLE,
+                showBack = true,
+                onBackClick = { navController.popBackStack() },
+                snackbarHostState = permissionsSnackbarHostState
+            ) { padding ->
+                SpacePermissionsScreen(
+                    spaceId = spaceId,
+                    userId = currentUserId,
+                    snackbarHostState = permissionsSnackbarHostState,
                     modifier = Modifier.padding(padding)
                 )
             }

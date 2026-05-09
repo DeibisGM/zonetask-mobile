@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -40,16 +41,22 @@ import com.app.zonetask.ui.theme.AppIconTint
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 
+private const val ROLE_OWNER  = "owner"
+private const val ROLE_ADMIN  = "admin"
+
 @Composable
 fun SpaceCard(
     space: Space,
-    isOwner: Boolean,
+    userRole: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isDeleting: Boolean = false,
     onDelete: (() -> Unit)? = null,
     onDeleteNotAllowed: (() -> Unit)? = null
 ) {
+    val isOwner    = userRole == ROLE_OWNER
+    val canDelete  = isOwner   
+
     var showConfirmDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showConfirmDialog) {
@@ -77,7 +84,6 @@ fun SpaceCard(
             modifier            = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Title row
             Row(
                 modifier          = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -89,7 +95,6 @@ fun SpaceCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Opción B — botón siempre visible, comportamiento según rol
                 if (isDeleting) {
                     CircularProgressIndicator(
                         modifier    = Modifier
@@ -98,7 +103,7 @@ fun SpaceCard(
                         color       = MaterialTheme.colorScheme.error,
                         strokeWidth = 2.dp
                     )
-                } else if (isOwner) {
+                } else if (canDelete) {
                     IconButton(
                         onClick  = { showConfirmDialog = true },
                         modifier = Modifier.size(36.dp)
@@ -133,7 +138,6 @@ fun SpaceCard(
                 )
             }
 
-            // Info row — tipo y Opción A (badge de rol)
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 verticalAlignment     = Alignment.CenterVertically,
@@ -151,29 +155,43 @@ fun SpaceCard(
                     text = UserMessages.Spaces.TYPE_PREFIX + space.spaceType
                 )
 
-                // Opción A — chip de rol
+                val (chipLabel, chipIcon, chipColor) = when (userRole) {
+                    ROLE_OWNER -> Triple(
+                        UserMessages.Spaces.ROLE_OWNER,
+                        Icons.Outlined.Star,
+                        AppPrimary
+                    )
+                    ROLE_ADMIN -> Triple(
+                        UserMessages.Spaces.ROLE_ADMIN,
+                        Icons.Outlined.Shield,
+                        AppPrimary.copy(alpha = 0.75f)
+                    )
+                    else -> Triple(
+                        UserMessages.Spaces.ROLE_MEMBER,
+                        Icons.Outlined.Person,
+                        AppSecondaryText
+                    )
+                }
+
                 AssistChip(
                     onClick = {},
                     label = {
                         Text(
-                            text  = if (isOwner) UserMessages.Spaces.ROLE_OWNER
-                            else UserMessages.Spaces.ROLE_MEMBER,
+                            text  = chipLabel,
                             style = MaterialTheme.typography.labelSmall
                         )
                     },
                     leadingIcon = {
                         Icon(
-                            imageVector        = if (isOwner) Icons.Outlined.Star
-                            else Icons.Outlined.Person,
+                            imageVector        = chipIcon,
                             contentDescription = null,
                             modifier           = Modifier.size(14.dp)
                         )
                     },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (isOwner) AppPrimary.copy(alpha = 0.1f)
-                        else AppSecondaryText.copy(alpha = 0.1f),
-                        labelColor     = if (isOwner) AppPrimary else AppSecondaryText,
-                        leadingIconContentColor = if (isOwner) AppPrimary else AppSecondaryText
+                        containerColor          = chipColor.copy(alpha = 0.1f),
+                        labelColor              = chipColor,
+                        leadingIconContentColor = chipColor
                     ),
                     border = null
                 )
