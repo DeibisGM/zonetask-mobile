@@ -3,6 +3,7 @@ package com.app.zonetask.di
 import com.app.zonetask.data.remote.RetrofitClient
 import com.app.zonetask.data.remote.repository.TaskLookupRepository
 import com.app.zonetask.data.remote.repository.TaskRepository
+import com.app.zonetask.data.remote.repository.UserRepository
 import com.app.zonetask.data.repository.SpaceRepository
 
 object AppContainer {
@@ -18,5 +19,9 @@ object AppContainer {
 
     val taskRepository: TaskRepository by lazy {
         TaskRepository(RetrofitClient.taskApiService)
+    }
+
+    val userRepository: UserRepository by lazy {
+        UserRepository(RetrofitClient.userApiService)
     }
 }

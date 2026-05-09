@@ -4,13 +4,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
 import com.app.zonetask.di.AppContainer
 import kotlinx.coroutines.launch
 
-class TaskCreateViewModel : ViewModel() {
+class TaskCreateViewModel(
+    initialSpaceId: Int = 1,
+    initialCreatedBy: Int = 1
+) : ViewModel() {
 
     var uiState by mutableStateOf(TaskCreateUiState())
         private set
@@ -19,8 +23,12 @@ class TaskCreateViewModel : ViewModel() {
         private set
 
     init {
+        uiState = uiState.copy(
+            spaceId = initialSpaceId,
+            createdBy = initialCreatedBy
+        )
         // Load dropdown data as soon as the screen opens.
-        loadFormOptions()
+        loadFormOptions(initialSpaceId)
     }
     
     fun updateState(block: TaskCreateUiState.() -> TaskCreateUiState) {
@@ -147,4 +155,17 @@ class TaskCreateViewModel : ViewModel() {
             showErrors = showErrors
         )
     }
+}
+
+class TaskCreateViewModelFactory(
+    private val initialSpaceId: Int,
+    private val initialCreatedBy: Int
+) : ViewModelProvider.Factory {
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        TaskCreateViewModel(
+            initialSpaceId = initialSpaceId,
+            initialCreatedBy = initialCreatedBy
+        ) as T
 }
