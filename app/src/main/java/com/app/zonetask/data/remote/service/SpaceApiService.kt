@@ -4,7 +4,9 @@ import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.SpaceResponse
 import retrofit2.Response
 import retrofit2.http.GET
+import retrofit2.http.DELETE
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface SpaceApiService {
 
@@ -17,4 +19,10 @@ interface SpaceApiService {
     suspend fun getSpaceById(
         @Path("spaceId") spaceId: Int
     ): Response<SpaceResponse>
+
+    @DELETE(AppConstants.Api.Paths.DELETE_SPACE)
+    suspend fun deleteSpace(
+        @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int
+    ): Response<Unit>
 }

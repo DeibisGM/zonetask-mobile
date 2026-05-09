@@ -8,6 +8,7 @@ object AppConstants {
         object Paths {
             const val USER_SPACES = "users/{userId}/spaces"
             const val SPACE_BY_ID = "spaces/{spaceId}"
+            const val DELETE_SPACE = "spaces/{spaceId}"
         }
     }
 }

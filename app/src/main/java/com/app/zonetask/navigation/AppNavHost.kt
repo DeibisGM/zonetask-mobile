@@ -37,7 +37,7 @@ fun AppNavHost() {
             ) { padding ->
                 SpacesScreen(
                     snackbarHostState = snackbarHostState,
-                    userId           = 2,
+                    userId           = 3,
                     modifier         = Modifier.padding(padding),
                     onSpaceClick     = { space ->
                         navController.navigate(

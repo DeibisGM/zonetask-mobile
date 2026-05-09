@@ -44,6 +44,14 @@ fun SpacesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is SpacesEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
+            }
+        }
+    }
+
     LaunchedEffect(successMessage) {
         if (successMessage != null) {
             snackbarHostState.showSnackbar(message = successMessage)
@@ -51,8 +59,6 @@ fun SpacesScreen(
         }
     }
 
-    // If there's already data loaded, show the error as a snackbar instead of
-    // replacing the whole screen — the user keeps seeing their list.
     LaunchedEffect(uiState.errorBanner) {
         val error = uiState.errorBanner
         if (error != null && uiState.spaces.isNotEmpty()) {
@@ -75,7 +81,6 @@ fun SpacesScreen(
             }
         }
 
-        // Initial load failed — same two-line pattern as SpaceDetailScreen
         uiState.errorBanner != null && uiState.spaces.isEmpty() -> {
             Box(
                 modifier         = modifier.fillMaxSize(),
@@ -116,8 +121,8 @@ fun SpacesScreen(
 
         else -> {
             LazyColumn(
-                modifier        = modifier.fillMaxSize(),
-                contentPadding  = PaddingValues(
+                modifier            = modifier.fillMaxSize(),
+                contentPadding      = PaddingValues(
                     start  = 16.dp,
                     end    = 16.dp,
                     top    = 12.dp,
@@ -125,10 +130,20 @@ fun SpacesScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(uiState.spaces) { space ->
+                items(
+                    items = uiState.spaces,
+                    key   = { it.spaceId }
+                ) { space ->
+                    val isOwner = space.ownerId == viewModel.userId
                     SpaceCard(
-                        space   = space,
-                        onClick = { onSpaceClick(space) }
+                        space              = space,
+                        isOwner            = isOwner,
+                        onClick            = { onSpaceClick(space) },
+                        isDeleting         = uiState.deletingSpaceId == space.spaceId,
+                        onDelete           = if (isOwner) {
+                            { viewModel.deleteSpace(space.spaceId) }
+                        } else null,
+                        onDeleteNotAllowed = { viewModel.notifyDeleteNotAllowed() }
                     )
                 }
             }
