@@ -4,14 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
+import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.SpacePermissionsResponse
+import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.data.repository.SpaceRepository
 import com.app.zonetask.di.AppContainer
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.app.zonetask.ui.common.resolveDueTimeUiState
 
 class SpaceDetailViewModel(
     private val spaceRepository: SpaceRepository,
@@ -67,9 +71,10 @@ class SpaceDetailViewModel(
         viewModelScope.launch {
             when (val result = AppContainer.taskRepository.getTasksBySpace(spaceId)) {
                 is ApiResult.Success -> {
+                    val tasks = buildSpaceTaskItems(result.data)
                     _uiState.value = _uiState.value.copy(
                         tasksLoading = false,
-                        tasks = result.data,
+                        tasks = tasks,
                         tasksError = null
                     )
                 }
@@ -82,6 +87,25 @@ class SpaceDetailViewModel(
                 }
             }
         }
+    }
+
+    private suspend fun buildSpaceTaskItems(tasks: List<TaskResponse>): List<SpaceTaskUiState> = coroutineScope {
+        tasks.map { task ->
+            async {
+                val assignmentsResult = AppContainer.taskRepository.getTaskAssignments(task.taskId)
+                val assignments = when (assignmentsResult) {
+                    is ApiResult.Success -> assignmentsResult.data
+                    is ApiResult.Error -> emptyList()
+                }
+
+                val dueTimeState = assignments.resolveDueTimeUiState()
+                SpaceTaskUiState(
+                    task = task,
+                    dueLabel = dueTimeState.label,
+                    dueStatusKey = dueTimeState.statusKey
+                )
+            }
+        }.map { it.await() }
     }
 
     private fun ApiResult<SpacePermissionsResponse>.asSpacePermissionsOrNull(): SpacePermissionsResponse? {

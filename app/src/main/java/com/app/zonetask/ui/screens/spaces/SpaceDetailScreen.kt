@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Info
@@ -53,7 +54,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.Space
-import com.app.zonetask.data.remote.dto.TaskResponse
+import com.app.zonetask.ui.screens.spaces.SpaceTaskUiState
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppIconTint
 import com.app.zonetask.ui.theme.AppPrimary
@@ -209,7 +210,7 @@ fun SpaceDetailScreen(
 private fun SpaceDetailContent(
     space: Space,
     userRole: String,
-    tasks: List<TaskResponse>,
+    tasks: List<SpaceTaskUiState>,
     tasksLoading: Boolean,
     tasksError: String?,
     onNavigateToPermissions: () -> Unit,
@@ -297,7 +298,7 @@ private fun SpaceDetailContent(
             }
 
             else -> {
-                items(tasks, key = { it.taskId }) { task ->
+                items(tasks, key = { it.task.taskId }) { task ->
                     TaskRow(task = task)
                 }
             }
@@ -361,7 +362,7 @@ private fun SpaceDetailContent(
 }
 
 @Composable
-private fun TaskRow(task: TaskResponse) {
+private fun TaskRow(task: SpaceTaskUiState) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -374,11 +375,11 @@ private fun TaskRow(task: TaskResponse) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = task.title,
+                text = task.task.title,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            task.description?.takeIf { it.isNotBlank() }?.let { desc ->
+            task.task.description?.takeIf { it.isNotBlank() }?.let { desc ->
                 Text(
                     text = desc,
                     style = MaterialTheme.typography.bodyMedium,
@@ -386,10 +387,36 @@ private fun TaskRow(task: TaskResponse) {
                 )
             }
             Text(
-                text = "Frecuencia: ${task.frequency}",
+                text = "Frecuencia: ${task.task.frequency}",
                 style = MaterialTheme.typography.labelMedium,
                 color = AppSecondaryText
             )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.AccessTime,
+                    contentDescription = null,
+                    tint = when (task.dueStatusKey) {
+                        "overdue" -> Color(0xFFE57373)
+                        "upcoming" -> AppPrimary
+                        "completed" -> AppPrimary
+                        else -> AppSecondaryText
+                    },
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = task.dueLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = when (task.dueStatusKey) {
+                        "overdue" -> Color(0xFFE57373)
+                        "upcoming" -> AppPrimary
+                        "completed" -> AppPrimary
+                        else -> AppSecondaryText
+                    }
+                )
+            }
         }
     }
 }

@@ -9,6 +9,10 @@ data class TaskAssignmentResponse(
     val assignedAt: String,
     @SerializedName("dueAt")
     val dueAt: String? = null,
+    @SerializedName("dueStatusKey")
+    val dueStatusKey: String = "none",
+    @SerializedName("dueStatusLabel")
+    val dueStatusLabel: String = "",
     @SerializedName("status")
     val status: String,
     @SerializedName("isAuto")

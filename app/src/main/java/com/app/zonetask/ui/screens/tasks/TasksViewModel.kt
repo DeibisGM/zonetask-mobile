@@ -7,6 +7,7 @@ import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.di.AppContainer
+import com.app.zonetask.ui.common.resolveDueTimeUiState
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -186,12 +187,15 @@ class TasksViewModel(
             }
             .distinctBy { it.userId }
 
+        val dueTimeState = assignments.resolveDueTimeUiState()
         val zoneName = task.zoneId?.let { zoneNamesById[it] ?: "Zona $it" } ?: "Sin zona"
         return TaskItemUiState(
             task = task,
             zoneName = zoneName,
             assignees = assignees,
-            statusLabel = resolveStatusLabel(assignments)
+            statusLabel = resolveStatusLabel(assignments),
+            dueLabel = dueTimeState.label,
+            dueStatusKey = dueTimeState.statusKey
         )
     }
 
@@ -206,6 +210,7 @@ class TasksViewModel(
             else -> assignments.first().status.replace('_', ' ').replaceFirstChar { it.uppercase() }
         }
     }
+
 }
 
 class TasksViewModelFactory(
