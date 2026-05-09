@@ -44,6 +44,34 @@ class TasksViewModel(
         _uiState.value.selectedSpaceId?.let { loadTasksForSpace(it) }
     }
 
+    fun deleteTask(taskId: Int, onResult: (Boolean, String) -> Unit) {
+        if (_uiState.value.deletingTaskId != null) return
+
+        _uiState.value = _uiState.value.copy(deletingTaskId = taskId)
+
+        viewModelScope.launch {
+            when (val result = AppContainer.taskRepository.deleteTask(taskId)) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        deletingTaskId = null,
+                        zoneGroups = _uiState.value.zoneGroups
+                            .mapNotNull { group ->
+                                val remainingTasks = group.tasks.filterNot { it.task.taskId == taskId }
+                                if (remainingTasks.isEmpty()) null
+                                else group.copy(tasks = remainingTasks)
+                            }
+                    )
+                    onResult(true, "Eliminado")
+                }
+
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(deletingTaskId = null)
+                    onResult(false, result.message)
+                }
+            }
+        }
+    }
+
     private fun loadInitialData() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
