@@ -2,6 +2,7 @@ package com.app.zonetask.data.repository
 
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateSpaceRequest
+import com.app.zonetask.data.remote.dto.EditSpaceRequest
 import com.app.zonetask.data.remote.dto.SpacePermissionsResponse
 import com.app.zonetask.data.remote.dto.UpdateMemberRoleRequest
 import com.app.zonetask.data.remote.dto.toDomain
@@ -149,6 +150,20 @@ class SpaceRepository(
         }
     }
 
+    suspend fun updateSpace(spaceId: Int, request: EditSpaceRequest): ApiResult<Space> {
+        return try {
+            val response = apiService.updateSpace(spaceId, request)
+            if (response.isSuccessful) {
+                val space = response.body()?.toDomain()
+                    ?: return ApiResult.Error(message = "Error al actualizar el espacio")
+                ApiResult.Success(space)
+            } else {
+                ApiResult.Error(message = httpErrorMessage(response.code()), statusCode = response.code())
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
     private fun httpErrorMessage(code: Int): String = when (code) {
         401 -> "Sesión expirada, vuelve a iniciar sesión"
         403 -> "No tienes permisos para esto"

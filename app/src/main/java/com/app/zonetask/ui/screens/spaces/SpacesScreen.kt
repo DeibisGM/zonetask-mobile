@@ -33,7 +33,7 @@ fun SpacesScreen(
     snackbarHostState: SnackbarHostState,
     userId: Int,
     modifier: Modifier = Modifier,
-    successMessage: String? = null,
+    reloadTrigger        : Boolean  = false,
     onSuccessMessageShown: () -> Unit = {},
     onSpaceClick: (Space) -> Unit = {},
     onNavigate: (String) -> Unit = {},
@@ -46,18 +46,9 @@ fun SpacesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is SpacesEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
-            }
-        }
-    }
-
-    LaunchedEffect(successMessage) {
-        if (successMessage != null) {
-            snackbarHostState.showSnackbar(message = successMessage)
-            onSuccessMessageShown()
+    LaunchedEffect(reloadTrigger) {
+        if (reloadTrigger) {
+            viewModel.fetchSpaces()
         }
     }
 
