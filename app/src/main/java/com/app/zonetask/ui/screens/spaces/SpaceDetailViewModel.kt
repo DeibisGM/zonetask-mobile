@@ -12,7 +12,8 @@ import kotlinx.coroutines.launch
 
 class SpaceDetailViewModel(
     private val spaceRepository: SpaceRepository,
-    private val spaceId: Int
+    private val spaceId: Int,
+    private val userId: Int
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SpaceDetailUiState())
@@ -28,7 +29,14 @@ class SpaceDetailViewModel(
         viewModelScope.launch {
             when (val result = spaceRepository.getSpaceById(spaceId)) {
                 is ApiResult.Success -> {
-                    _uiState.value = SpaceDetailUiState(space = result.data)
+                    val space = result.data
+
+                    val userRole = if (space.ownerId == userId) "owner" else "member"
+
+                    _uiState.value = SpaceDetailUiState(
+                        space    = space,
+                        userRole = userRole
+                    )
                 }
                 is ApiResult.Error -> {
                     _uiState.value = SpaceDetailUiState(errorBanner = result.message)
@@ -40,13 +48,15 @@ class SpaceDetailViewModel(
 
 class SpaceDetailViewModelFactory(
     private val spaceRepository: SpaceRepository,
-    private val spaceId: Int
+    private val spaceId: Int,
+    private val userId: Int
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
         SpaceDetailViewModel(
             spaceRepository = spaceRepository,
-            spaceId         = spaceId
+            spaceId         = spaceId,
+            userId          = userId
         ) as T
 }

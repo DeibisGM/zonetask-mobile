@@ -5,21 +5,27 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,14 +45,20 @@ import com.app.zonetask.ui.theme.AppIconTint
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 
+private const val ROLE_OWNER = "owner"
+private const val ROLE_ADMIN = "admin"
+
 @Composable
 fun SpaceDetailScreen(
     spaceId: Int,
+    userId: Int,
     modifier: Modifier = Modifier,
+    onNavigateToPermissions: (Int) -> Unit = {},
     viewModel: SpaceDetailViewModel = viewModel(
         factory = SpaceDetailViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
-            spaceId         = spaceId
+            spaceId         = spaceId,
+            userId          = userId
         )
     )
 ) {
@@ -55,11 +67,15 @@ fun SpaceDetailScreen(
     when {
         uiState.isLoading -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text  = UserMessages.Spaces.LOADING,
-                    color = AppSecondaryText,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = AppPrimary)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text  = UserMessages.Spaces.LOADING,
+                        color = AppSecondaryText,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             }
         }
 
@@ -87,8 +103,10 @@ fun SpaceDetailScreen(
 
         uiState.space != null -> {
             SpaceDetailContent(
-                space    = uiState.space!!,
-                modifier = modifier
+                space                   = uiState.space!!,
+                userRole                = uiState.userRole,
+                onNavigateToPermissions = { onNavigateToPermissions(spaceId) },
+                modifier                = modifier
             )
         }
     }
@@ -97,8 +115,12 @@ fun SpaceDetailScreen(
 @Composable
 private fun SpaceDetailContent(
     space: Space,
+    userRole: String,
+    onNavigateToPermissions: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val canViewPermissions = userRole == ROLE_OWNER || userRole == ROLE_ADMIN
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -120,20 +142,53 @@ private fun SpaceDetailContent(
             border = BorderStroke(1.dp, AppBorder)
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-
                 DetailRow(
                     icon  = Icons.Outlined.Category,
                     label = UserMessages.SpaceDetail.TYPE_LABEL,
                     value = space.spaceType
                 )
-
                 HorizontalDivider(color = AppBorder)
-
                 DetailRow(
                     icon  = Icons.Outlined.Info,
                     label = UserMessages.SpaceDetail.DESC_LABEL,
                     value = space.description ?: UserMessages.SpaceDetail.NO_DESCRIPTION
                 )
+            }
+        }
+
+        if (canViewPermissions) {
+            Surface(
+                onClick = onNavigateToPermissions,
+                shape   = RoundedCornerShape(16.dp),
+                color   = MaterialTheme.colorScheme.surface,
+                border  = BorderStroke(1.dp, AppPrimary.copy(alpha = 0.4f))
+            ) {
+                Row(
+                    modifier          = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector        = Icons.Outlined.AdminPanelSettings,
+                        contentDescription = null,
+                        tint               = AppPrimary,
+                        modifier           = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text     = UserMessages.SpaceDetail.PERMISSIONS_BUTTON,
+                        style    = MaterialTheme.typography.bodyMedium,
+                        color    = AppPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector        = Icons.Outlined.ChevronRight,
+                        contentDescription = null,
+                        tint               = AppPrimary,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
