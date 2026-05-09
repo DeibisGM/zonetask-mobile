@@ -1,5 +1,6 @@
 package com.app.zonetask.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,19 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Bold
-import com.adamglin.phosphoricons.bold.CaretLeft
-import com.adamglin.phosphoricons.bold.CaretDown
-import com.adamglin.phosphoricons.bold.House
-import com.adamglin.phosphoricons.bold.CheckSquare
-import com.adamglin.phosphoricons.bold.ChatCircle
-import com.adamglin.phosphoricons.bold.User
-import com.adamglin.phosphoricons.bold.GearSix
-import com.adamglin.phosphoricons.bold.List
+import com.app.zonetask.R
 import com.app.zonetask.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -74,7 +66,7 @@ fun TaskCreateScaffold(
                         if (showBack) {
                             IconButton(onClick = onBackClick) {
                                 Icon(
-                                    imageVector = PhosphorIcons.Bold.CaretLeft,
+                                    painter = painterResource(id = R.drawable.ic_caret_left),
                                     contentDescription = null,
                                     tint = AppOnSurface
                                 )
@@ -82,7 +74,7 @@ fun TaskCreateScaffold(
                         } else {
                             IconButton(onClick = { scope.launch { drawerState.open() } }) {
                                 Icon(
-                                    imageVector = PhosphorIcons.Bold.List,
+                                    painter = painterResource(id = R.drawable.ic_list),
                                     contentDescription = "Menu",
                                     tint = AppOnSurface
                                 )
@@ -132,7 +124,7 @@ fun TaskDropdown(
                 shape = RoundedCornerShape(14.dp),
                 trailingIcon = {
                     Icon(
-                        imageVector = PhosphorIcons.Bold.CaretDown,
+                        painter = painterResource(id = R.drawable.ic_caret_down),
                         contentDescription = null,
                         tint = if (error != null) MaterialTheme.colorScheme.error else AppSecondaryText
                     )
@@ -239,7 +231,7 @@ fun TaskTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
-    leadingIcon: ImageVector? = null,
+    @DrawableRes leadingIcon: Int? = null,
     singleLine: Boolean = true,
     error: String? = null
 ) {
@@ -259,7 +251,7 @@ fun TaskTextField(
             singleLine = singleLine,
             isError = error != null,
             placeholder = placeholder?.let { { Text(text = it) } },
-            leadingIcon = leadingIcon?.let { { Icon(imageVector = it, contentDescription = null) } },
+            leadingIcon = leadingIcon?.let { { Icon(painter = painterResource(id = it), contentDescription = null) } },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = AppPrimary,
                 unfocusedBorderColor = AppBorder,
@@ -305,7 +297,7 @@ fun TaskDropdownField(
             shape = RoundedCornerShape(14.dp),
             trailingIcon = {
                 Icon(
-                    imageVector = PhosphorIcons.Bold.CaretDown,
+                    painter = painterResource(id = R.drawable.ic_caret_down),
                     contentDescription = null,
                     tint = AppSecondaryText
                 )
@@ -452,7 +444,7 @@ fun TaskActionButtonsRow(
 }
 
 data class TaskBottomNavItem(
-    val icon: ImageVector,
+    @DrawableRes val iconRes: Int,
     val contentDescription: String,
     val route: String,
     val selected: Boolean = false
@@ -464,11 +456,11 @@ fun TaskBottomNavBar(
     onNavigate: (String) -> Unit = {}
 ) {
     val items = listOf(
-        TaskBottomNavItem(PhosphorIcons.Bold.House, "Inicio", "home", selectedIndex == 0),
-        TaskBottomNavItem(PhosphorIcons.Bold.CheckSquare, "Tareas", "task_create", selectedIndex == 1),
-        TaskBottomNavItem(PhosphorIcons.Bold.ChatCircle, "Chat", "chat", selectedIndex == 2),
-        TaskBottomNavItem(PhosphorIcons.Bold.User, "Perfil", "profile", selectedIndex == 3),
-        TaskBottomNavItem(PhosphorIcons.Bold.GearSix, "Ajustes", "settings", selectedIndex == 4)
+        TaskBottomNavItem(R.drawable.ic_house, "Inicio", "home", selectedIndex == 0),
+        TaskBottomNavItem(R.drawable.ic_check_square, "Tareas", "task_create", selectedIndex == 1),
+        TaskBottomNavItem(R.drawable.ic_chat_circle, "Chat", "chat", selectedIndex == 2),
+        TaskBottomNavItem(R.drawable.ic_user, "Perfil", "profile", selectedIndex == 3),
+        TaskBottomNavItem(R.drawable.ic_gear_six, "Ajustes", "settings", selectedIndex == 4)
     )
 
     Column(
@@ -519,7 +511,7 @@ private fun RowScope.BottomNavCell(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = item.icon,
+                        painter = painterResource(id = item.iconRes),
                         contentDescription = item.contentDescription,
                         tint = AppBackground
                     )
@@ -527,7 +519,7 @@ private fun RowScope.BottomNavCell(
             }
         } else {
             Icon(
-                imageVector = item.icon,
+                painter = painterResource(id = item.iconRes),
                 contentDescription = item.contentDescription,
                 tint = AppOnSurface
             )

@@ -2,6 +2,7 @@ package com.app.zonetask.data.remote.service
 
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
+import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import retrofit2.Response
 import retrofit2.http.Body
@@ -26,4 +27,9 @@ interface TaskApiService {
     suspend fun getTasksByZone(
         @Path("zoneId") zoneId: Int
     ): Response<List<TaskResponse>>
+
+    @GET("api/tasks/{taskId}/assignments")
+    suspend fun getTaskAssignments(
+        @Path("taskId") taskId: Int
+    ): Response<List<TaskAssignmentResponse>>
 }

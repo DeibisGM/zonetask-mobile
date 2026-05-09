@@ -2,6 +2,7 @@ package com.app.zonetask.data.remote.repository
 
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
+import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.data.remote.service.TaskApiService
 import java.net.SocketTimeoutException
@@ -56,6 +57,23 @@ class TaskRepository(
     suspend fun getTasksByZone(zoneId: Int): ApiResult<List<TaskResponse>> {
         return try {
             val response = apiService.getTasksByZone(zoneId)
+
+            if (response.isSuccessful) {
+                ApiResult.Success(response.body().orEmpty())
+            } else {
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
+    suspend fun getTaskAssignments(taskId: Int): ApiResult<List<TaskAssignmentResponse>> {
+        return try {
+            val response = apiService.getTaskAssignments(taskId)
 
             if (response.isSuccessful) {
                 ApiResult.Success(response.body().orEmpty())
