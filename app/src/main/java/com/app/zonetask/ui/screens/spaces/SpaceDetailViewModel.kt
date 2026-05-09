@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
+import com.app.zonetask.data.remote.dto.MarkTaskCompletionRequestDto
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.SpacePermissionsResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
@@ -67,7 +68,7 @@ class SpaceDetailViewModel(
     }
 
     fun loadTasks() {
-        _uiState.value = _uiState.value.copy(tasksLoading = true, tasksError = null)
+        _uiState.value = _uiState.value.copy(tasksLoading = true, tasksError = null, completionError = null)
         viewModelScope.launch {
             when (val result = AppContainer.taskRepository.getTasksBySpace(spaceId)) {
                 is ApiResult.Success -> {
@@ -75,7 +76,8 @@ class SpaceDetailViewModel(
                     _uiState.value = _uiState.value.copy(
                         tasksLoading = false,
                         tasks = tasks,
-                        tasksError = null
+                        tasksError = null,
+                        completionError = null
                     )
                 }
 
@@ -83,6 +85,41 @@ class SpaceDetailViewModel(
                     _uiState.value = _uiState.value.copy(
                         tasksLoading = false,
                         tasksError = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun completeAssignment(assignmentId: Int) {
+        // The detail screen can show many tasks, but only one completion request should be in flight.
+        if (_uiState.value.completingAssignmentId != null) return
+
+        // Store the current assignment id so errors and loading state belong to this action.
+        _uiState.value = _uiState.value.copy(
+            completingAssignmentId = assignmentId,
+            completionError = null
+        )
+
+        viewModelScope.launch {
+            // Completion is assignment-based, so the task itself does not need to be sent.
+            when (val result = AppContainer.taskRepository.completeTaskAssignment(
+                assignmentId = assignmentId,
+                request = MarkTaskCompletionRequestDto(requestingUserId = userId)
+            )) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        completingAssignmentId = null,
+                        completionError = null
+                    )
+                    // Refresh this space because completion is derived from task_completion on reload.
+                    loadTasks()
+                }
+
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        completingAssignmentId = null,
+                        completionError = result.message
                     )
                 }
             }
@@ -98,11 +135,14 @@ class SpaceDetailViewModel(
                     is ApiResult.Error -> emptyList()
                 }
 
-                val dueTimeState = assignments.resolveDueTimeUiState()
+                // The assignment list determines both due label and whether "Completar" should be visible.
+                val dueTimeState = assignments.resolveDueTimeUiState(userId)
                 SpaceTaskUiState(
                     task = task,
                     dueLabel = dueTimeState.label,
-                    dueStatusKey = dueTimeState.statusKey
+                    dueStatusKey = dueTimeState.statusKey,
+                    completionAssignmentId = dueTimeState.assignmentId,
+                    canComplete = dueTimeState.canComplete
                 )
             }
         }.map { it.await() }

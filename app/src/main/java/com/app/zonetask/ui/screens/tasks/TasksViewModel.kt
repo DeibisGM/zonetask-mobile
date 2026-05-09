@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
+import com.app.zonetask.data.remote.dto.MarkTaskCompletionRequestDto
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.di.AppContainer
@@ -43,6 +44,41 @@ class TasksViewModel(
 
     fun retrySelectedSpace() {
         _uiState.value.selectedSpaceId?.let { loadTasksForSpace(it) }
+    }
+
+    fun completeAssignment(assignmentId: Int) {
+        // Avoid sending two completion requests if the user taps the button repeatedly.
+        if (_uiState.value.completingAssignmentId != null) return
+
+        // Track the assignment being completed so the UI can block another completion attempt.
+        _uiState.value = _uiState.value.copy(
+            completingAssignmentId = assignmentId,
+            completionError = null
+        )
+
+        viewModelScope.launch {
+            // Only the assignment id and current user id are needed; comments/evidence are outside this MVP.
+            when (val result = AppContainer.taskRepository.completeTaskAssignment(
+                assignmentId = assignmentId,
+                request = MarkTaskCompletionRequestDto(requestingUserId = userId)
+            )) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        completingAssignmentId = null,
+                        completionError = null
+                    )
+                    // Reload assignments so completion-derived state reflects the new task_completion row.
+                    _uiState.value.selectedSpaceId?.let { loadTasksForSpace(it) }
+                }
+
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        completingAssignmentId = null,
+                        completionError = result.message
+                    )
+                }
+            }
+        }
     }
 
     fun deleteTask(taskId: Int, onResult: (Boolean, String) -> Unit) {
@@ -133,6 +169,7 @@ class TasksViewModel(
             _uiState.value = _uiState.value.copy(
                 isLoadingTasks = true,
                 taskErrorMessage = null,
+                completionError = null,
                 zoneGroups = emptyList()
             )
 
@@ -142,7 +179,8 @@ class TasksViewModel(
                     _uiState.value = _uiState.value.copy(
                         isLoadingTasks = false,
                         zoneGroups = result.data,
-                        taskErrorMessage = null
+                        taskErrorMessage = null,
+                        completionError = null
                     )
                 }
 
@@ -215,7 +253,8 @@ class TasksViewModel(
             }
             .distinctBy { it.userId }
 
-        val dueTimeState = assignments.resolveDueTimeUiState()
+        // dueTimeState also tells the card whether this user can complete the active assignment.
+        val dueTimeState = assignments.resolveDueTimeUiState(userId)
         val zoneName = task.zoneId?.let { zoneNamesById[it] ?: "Zona $it" } ?: "Sin zona"
         return TaskItemUiState(
             task = task,
@@ -223,7 +262,9 @@ class TasksViewModel(
             assignees = assignees,
             statusLabel = resolveStatusLabel(assignments),
             dueLabel = dueTimeState.label,
-            dueStatusKey = dueTimeState.statusKey
+            dueStatusKey = dueTimeState.statusKey,
+            completionAssignmentId = dueTimeState.assignmentId,
+            canComplete = dueTimeState.canComplete
         )
     }
 

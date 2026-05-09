@@ -93,6 +93,7 @@ fun TasksScreen(
         onRetry = viewModel::retrySelectedSpace,
         onCreateTask = onCreateTask,
         onEditTask = onEditTask,
+        onCompleteTask = viewModel::completeAssignment,
         onDeleteTask = { task ->
             viewModel.deleteTask(task.task.taskId) { _, message ->
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -110,6 +111,7 @@ private fun TasksContent(
     onRetry: () -> Unit,
     onCreateTask: (spaceId: Int) -> Unit,
     onEditTask: (spaceId: Int, taskId: Int) -> Unit,
+    onCompleteTask: (Int) -> Unit,
     onDeleteTask: (TaskItemUiState) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -190,6 +192,15 @@ private fun TasksContent(
             }
         }
 
+        uiState.completionError?.let { error ->
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+
         // ── Main content ─────────────────────────────────────────────────
         when {
             uiState.isLoadingSpaces && uiState.spaces.isEmpty() -> {
@@ -265,6 +276,7 @@ private fun TasksContent(
                             group = group,
                             spaceId = uiState.selectedSpaceId,
                             onEditTask = onEditTask,
+                            onCompleteTask = onCompleteTask,
                             onDeleteTask = { taskToDelete = it }
                         )
                     }
@@ -377,6 +389,7 @@ private fun ZoneSection(
     group: ZoneTaskGroupUiState,
     spaceId: Int?,
     onEditTask: (spaceId: Int, taskId: Int) -> Unit,
+    onCompleteTask: (Int) -> Unit,
     onDeleteTask: (TaskItemUiState) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -416,6 +429,10 @@ private fun ZoneSection(
                     onEditClick = {
                         onEditTask(spaceId ?: task.task.spaceId, task.task.taskId)
                     },
+                    onCompleteClick = {
+                        // completionAssignmentId points to the active assignment, not the task row.
+                        task.completionAssignmentId?.let(onCompleteTask)
+                    },
                     onDeleteClick = { onDeleteTask(task) }
                 )
             }
@@ -432,6 +449,7 @@ private fun String.stripSeconds(): String {
 private fun TaskCard(
     task: TaskItemUiState,
     onEditClick: () -> Unit,
+    onCompleteClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     Card(
@@ -574,6 +592,17 @@ private fun TaskCard(
                         text = time.stripSeconds(),
                         style = MaterialTheme.typography.bodySmall,
                         color = AppSecondaryText
+                    )
+                }
+            }
+
+            if (task.canComplete && task.completionAssignmentId != null) {
+                // Hide the action for completed tasks and for assignments owned by someone else.
+                TextButton(onClick = onCompleteClick) {
+                    Text(
+                        text = "Completar",
+                        color = AppPrimary,
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
             }

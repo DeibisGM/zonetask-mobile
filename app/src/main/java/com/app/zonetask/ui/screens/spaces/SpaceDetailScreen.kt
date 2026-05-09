@@ -161,6 +161,8 @@ fun SpaceDetailScreen(
                     tasks = uiState.tasks,
                     tasksLoading = uiState.tasksLoading,
                     tasksError = uiState.tasksError,
+                    completionError = uiState.completionError,
+                    onCompleteTask = viewModel::completeAssignment,
                     onNavigateToPermissions = { onNavigateToPermissions(spaceId) },
                     onCreateTaskClick = onCreateTaskClick,
                     modifier = Modifier.padding(bottom = 88.dp)
@@ -214,6 +216,8 @@ private fun SpaceDetailContent(
     tasks: List<SpaceTaskUiState>,
     tasksLoading: Boolean,
     tasksError: String?,
+    completionError: String?,
+    onCompleteTask: (Int) -> Unit,
     onNavigateToPermissions: () -> Unit,
     onCreateTaskClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -267,6 +271,16 @@ private fun SpaceDetailContent(
             )
         }
 
+        completionError?.let { error ->
+            item {
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+
         when {
             tasksLoading -> {
                 item {
@@ -300,7 +314,13 @@ private fun SpaceDetailContent(
 
             else -> {
                 items(tasks, key = { it.task.taskId }) { task ->
-                    TaskRow(task = task)
+                    TaskRow(
+                        task = task,
+                        onCompleteClick = {
+                            // Complete the active assignment shown for this task, not the task definition.
+                            task.completionAssignmentId?.let(onCompleteTask)
+                        }
+                    )
                 }
             }
         }
@@ -363,7 +383,7 @@ private fun SpaceDetailContent(
 }
 
 @Composable
-private fun TaskRow(task: SpaceTaskUiState) {
+private fun TaskRow(task: SpaceTaskUiState, onCompleteClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -392,6 +412,16 @@ private fun TaskRow(task: SpaceTaskUiState) {
                 style = MaterialTheme.typography.labelMedium,
                 color = AppSecondaryText
             )
+            if (task.canComplete && task.completionAssignmentId != null) {
+                // The API will still validate ownership; this keeps the UI focused on actionable work.
+                TextButton(onClick = onCompleteClick) {
+                    Text(
+                        text = "Completar",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = AppPrimary
+                    )
+                }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
