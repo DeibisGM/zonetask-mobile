@@ -11,6 +11,7 @@ object AppConstants {
         object Paths {
             const val USER_SPACES = "api/spaces/users/{userId}/spaces"
             const val SPACE_BY_ID = "api/spaces/spaces/{spaceId}"
+            const val CREATE_SPACE = "api/spaces/spaces"
             const val DELETE_SPACE = "api/spaces/spaces/{spaceId}"
 
             const val TASK_FORM_OPTIONS = "api/lookups/task-form-options"
