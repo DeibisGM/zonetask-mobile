@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material3.AssistChip
@@ -25,6 +27,7 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.widget.Toast
 import com.app.zonetask.R
 import com.app.zonetask.domain.model.Space
 import com.app.zonetask.ui.theme.AppBorder
@@ -65,11 +71,21 @@ fun TasksScreen(
     onCreateTask: (spaceId: Int) -> Unit = {},
     onEditTask: (spaceId: Int, taskId: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
+    reloadTrigger: Boolean = false,
+    onRefreshHandled: () -> Unit = {},
     viewModel: TasksViewModel = viewModel(
         factory = TasksViewModelFactory(userId)
     )
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(reloadTrigger) {
+        if (reloadTrigger) {
+            viewModel.retrySelectedSpace()
+            onRefreshHandled()
+        }
+    }
 
     TasksContent(
         uiState = uiState,
@@ -77,6 +93,11 @@ fun TasksScreen(
         onRetry = viewModel::retrySelectedSpace,
         onCreateTask = onCreateTask,
         onEditTask = onEditTask,
+        onDeleteTask = { task ->
+            viewModel.deleteTask(task.task.taskId) { _, message ->
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        },
         modifier = modifier
     )
 }
@@ -89,9 +110,11 @@ private fun TasksContent(
     onRetry: () -> Unit,
     onCreateTask: (spaceId: Int) -> Unit,
     onEditTask: (spaceId: Int, taskId: Int) -> Unit,
+    onDeleteTask: (TaskItemUiState) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showSpacePicker by remember { mutableStateOf(false) }
+    var taskToDelete by remember { mutableStateOf<TaskItemUiState?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -241,7 +264,8 @@ private fun TasksContent(
                         ZoneSection(
                             group = group,
                             spaceId = uiState.selectedSpaceId,
-                            onEditTask = onEditTask
+                            onEditTask = onEditTask,
+                            onDeleteTask = { taskToDelete = it }
                         )
                     }
                     item { Spacer(modifier = Modifier.height(12.dp)) }
@@ -251,6 +275,30 @@ private fun TasksContent(
     }
 
     // ── Space picker bottom sheet ─────────────────────────────────────────
+    if (taskToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { taskToDelete = null },
+            title = { Text("Eliminar tarea") },
+            text = { Text("¿Quieres eliminar esta tarea? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val task = taskToDelete ?: return@TextButton
+                        onDeleteTask(task)
+                        taskToDelete = null
+                    }
+                ) {
+                    Text("ELIMINAR", color = Color(0xFFE53935))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { taskToDelete = null }) {
+                    Text("CANCELAR")
+                }
+            }
+        )
+    }
+
     if (showSpacePicker) {
         ModalBottomSheet(
             onDismissRequest = { showSpacePicker = false },
@@ -328,7 +376,8 @@ private fun SpacePickerItem(
 private fun ZoneSection(
     group: ZoneTaskGroupUiState,
     spaceId: Int?,
-    onEditTask: (spaceId: Int, taskId: Int) -> Unit
+    onEditTask: (spaceId: Int, taskId: Int) -> Unit,
+    onDeleteTask: (TaskItemUiState) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
@@ -366,7 +415,8 @@ private fun ZoneSection(
                     task = task,
                     onEditClick = {
                         onEditTask(spaceId ?: task.task.spaceId, task.task.taskId)
-                    }
+                    },
+                    onDeleteClick = { onDeleteTask(task) }
                 )
             }
         }
@@ -381,7 +431,8 @@ private fun String.stripSeconds(): String {
 @Composable
 private fun TaskCard(
     task: TaskItemUiState,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -410,11 +461,20 @@ private fun TaskCard(
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onEditClick) {
-                        Text(
-                            text = "Editar",
-                            color = AppPrimary,
-                            style = MaterialTheme.typography.labelMedium
+                    IconButton(onClick = onEditClick) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = "Editar tarea",
+                            tint = AppPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    IconButton(onClick = onDeleteClick) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = "Eliminar tarea",
+                            tint = Color(0xFFE53935),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     AssistChip(
@@ -493,3 +553,4 @@ private fun TaskCard(
         }
     }
 }
+
