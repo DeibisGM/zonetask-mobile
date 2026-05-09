@@ -1,10 +1,12 @@
 package com.app.zonetask.core
 
+import com.app.zonetask.BuildConfig
+
 object AppConstants {
 
     object Api {
-        // Local backend base URL for the phone or emulator.
-        const val BASE_URL = "http://10.0.2.2:5248/"
+        // Base URL injected from the Android build so the IP can change without touching code.
+        val BASE_URL: String = BuildConfig.API_BASE_URL
 
         object Paths {
             // API routes used by the task creation flow.
