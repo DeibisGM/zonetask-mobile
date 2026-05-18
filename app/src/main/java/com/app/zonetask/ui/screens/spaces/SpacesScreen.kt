@@ -24,6 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.Space
+import com.app.zonetask.domain.model.SpaceRole
 import com.app.zonetask.ui.components.SpaceCard
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
@@ -47,17 +48,15 @@ fun SpacesScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(reloadTrigger) {
-        if (reloadTrigger) {
-            viewModel.fetchSpaces()
-        }
+        if (reloadTrigger) viewModel.fetchSpaces()
     }
 
-    // Errores tras carga exitosa se muestran como snackbar sin reemplazar la lista
-    LaunchedEffect(uiState.errorBanner) {
-        val error = uiState.errorBanner
-        if (error != null && uiState.spaces.isNotEmpty()) {
-            snackbarHostState.showSnackbar(message = error)
-            viewModel.clearErrorBanner()
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is SpacesEvent.ShowMessage ->
+                    snackbarHostState.showSnackbar(event.message)
+            }
         }
     }
 
@@ -117,10 +116,10 @@ fun SpacesScreen(
             LazyColumn(
                 modifier       = modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    start   = 16.dp,
-                    end     = 16.dp,
-                    top     = 12.dp,
-                    bottom  = 96.dp
+                    start  = 16.dp,
+                    end    = 16.dp,
+                    top    = 12.dp,
+                    bottom = 96.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -128,19 +127,17 @@ fun SpacesScreen(
                     items = uiState.spaces,
                     key   = { it.spaceId }
                 ) { space ->
-                    // Rol real proveniente del backend; fallback a "member" mientras carga
-                    val userRole = uiState.spaceRoles[space.spaceId] ?: "member"
-                    val isOwner  = userRole == "owner"
+                    val userRole  = uiState.spaceRoles[space.spaceId] ?: SpaceRole.MEMBER
+                    val canDelete = space.spaceId in uiState.deletableSpaceIds
 
                     SpaceCard(
-                        space              = space,
-                        userRole           = userRole,
-                        onClick            = { onSpaceClick(space) },
-                        isDeleting         = uiState.deletingSpaceId == space.spaceId,
-                        onDelete           = if (isOwner) {
-                            { viewModel.deleteSpace(space.spaceId) }
-                        } else null,
-                        onDeleteNotAllowed = { viewModel.notifyDeleteNotAllowed() }
+                        space             = space,
+                        userRole          = userRole,
+                        canDelete         = canDelete,
+                        isDeleting        = uiState.deletingSpaceId == space.spaceId,
+                        onDeleteConfirmed  = { viewModel.deleteSpace(space.spaceId) },
+                        onDeleteNotAllowed = { viewModel.notifyDeleteNotAllowed() },
+                        onClick            = { onSpaceClick(space) }
                     )
                 }
             }

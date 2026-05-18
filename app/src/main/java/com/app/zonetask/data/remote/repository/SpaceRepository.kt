@@ -1,5 +1,6 @@
 package com.app.zonetask.data.repository
 
+import com.app.zonetask.data.remote.ApiErrorHandler
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateSpaceRequest
 import com.app.zonetask.data.remote.dto.EditSpaceRequest
@@ -9,9 +10,6 @@ import com.app.zonetask.data.remote.dto.toDomain
 import com.app.zonetask.data.remote.service.SpaceApiService
 import com.app.zonetask.domain.model.Space
 import com.app.zonetask.domain.model.SpaceMember
-import java.io.IOException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 
 class SpaceRepository(
     private val apiService: SpaceApiService
@@ -20,16 +18,15 @@ class SpaceRepository(
         return try {
             val response = apiService.getSpacesByUser(userId)
             if (response.isSuccessful) {
-                val spaces = response.body()?.map { it.toDomain() }.orEmpty()
-                ApiResult.Success(spaces)
+                ApiResult.Success(response.body()?.map { it.toDomain() }.orEmpty())
             } else {
                 ApiResult.Error(
-                    message = httpErrorMessage(response.code()),
+                    message = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }
         } catch (e: Exception) {
-            ApiResult.Error(networkErrorMessage(e))
+            ApiResult.Error(ApiErrorHandler.fromException(e))
         }
     }
 
@@ -42,12 +39,12 @@ class SpaceRepository(
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(
-                    message = httpErrorMessage(response.code()),
+                    message = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }
         } catch (e: Exception) {
-            ApiResult.Error(networkErrorMessage(e))
+            ApiResult.Error(ApiErrorHandler.fromException(e))
         }
     }
 
@@ -56,16 +53,16 @@ class SpaceRepository(
             val response = apiService.createSpace(request)
             if (response.isSuccessful) {
                 val space = response.body()?.toDomain()
-                    ?: return ApiResult.Error(message = "Error al crear el espacio")
+                    ?: return ApiResult.Error("Error al crear el espacio")
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(
-                    message = httpErrorMessage(response.code()),
+                    message = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }
         } catch (e: Exception) {
-            ApiResult.Error(message = networkErrorMessage(e))
+            ApiResult.Error(ApiErrorHandler.fromException(e))
         }
     }
 
@@ -76,12 +73,12 @@ class SpaceRepository(
                 ApiResult.Success(Unit)
             } else {
                 ApiResult.Error(
-                    message = httpErrorMessage(response.code()),
+                    message = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }
         } catch (e: Exception) {
-            ApiResult.Error(networkErrorMessage(e))
+            ApiResult.Error(ApiErrorHandler.fromException(e))
         }
     }
 
@@ -94,12 +91,12 @@ class SpaceRepository(
                 ApiResult.Success(body)
             } else {
                 ApiResult.Error(
-                    message = httpErrorMessage(response.code()),
+                    message = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }
         } catch (e: Exception) {
-            ApiResult.Error(networkErrorMessage(e))
+            ApiResult.Error(ApiErrorHandler.fromException(e))
         }
     }
 
@@ -107,16 +104,15 @@ class SpaceRepository(
         return try {
             val response = apiService.getSpaceMembers(spaceId, userId)
             if (response.isSuccessful) {
-                val members = response.body()?.map { it.toDomain() }.orEmpty()
-                ApiResult.Success(members)
+                ApiResult.Success(response.body()?.map { it.toDomain() }.orEmpty())
             } else {
                 ApiResult.Error(
-                    message = httpErrorMessage(response.code()),
+                    message = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }
         } catch (e: Exception) {
-            ApiResult.Error(networkErrorMessage(e))
+            ApiResult.Error(ApiErrorHandler.fromException(e))
         }
     }
 
@@ -141,12 +137,12 @@ class SpaceRepository(
                 ApiResult.Success(member)
             } else {
                 ApiResult.Error(
-                    message = httpErrorMessage(response.code()),
+                    message = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }
         } catch (e: Exception) {
-            ApiResult.Error(networkErrorMessage(e))
+            ApiResult.Error(ApiErrorHandler.fromException(e))
         }
     }
 
@@ -155,28 +151,16 @@ class SpaceRepository(
             val response = apiService.updateSpace(spaceId, request)
             if (response.isSuccessful) {
                 val space = response.body()?.toDomain()
-                    ?: return ApiResult.Error(message = "Error al actualizar el espacio")
+                    ?: return ApiResult.Error("Error al actualizar el espacio")
                 ApiResult.Success(space)
             } else {
-                ApiResult.Error(message = httpErrorMessage(response.code()), statusCode = response.code())
+                ApiResult.Error(
+                    message = ApiErrorHandler.fromHttpCode(response.code()),
+                    statusCode = response.code()
+                )
             }
         } catch (e: Exception) {
-            ApiResult.Error(message = networkErrorMessage(e))
+            ApiResult.Error(ApiErrorHandler.fromException(e))
         }
-    }
-    private fun httpErrorMessage(code: Int): String = when (code) {
-        401 -> "Sesión expirada, vuelve a iniciar sesión"
-        403 -> "No tienes permisos para esto"
-        404 -> "Recurso no encontrado"
-        500 -> "Error interno del servidor"
-        502, 503 -> "Servicio no disponible, intenta más tarde"
-        else -> "Error del servidor ($code)"
-    }
-
-    private fun networkErrorMessage(e: Exception): String = when (e) {
-        is UnknownHostException -> "Sin conexión a internet"
-        is SocketTimeoutException -> "El servidor tardó demasiado en responder"
-        is IOException -> "Error de red, verifica tu conexión"
-        else -> "Error inesperado"
     }
 }

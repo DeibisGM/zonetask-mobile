@@ -20,5 +20,7 @@ data class SpaceDetailUiState(
     val tasksError: String? = null,
     val completionError: String? = null,
     val completingAssignmentId: Int? = null,
-    val errorBanner: String? = null
+    val errorBanner: String? = null,
+    val isDeleting: Boolean = false,
+    val deleteSuccess: Boolean = false
 )

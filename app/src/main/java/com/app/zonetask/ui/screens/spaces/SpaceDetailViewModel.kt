@@ -35,91 +35,113 @@ class SpaceDetailViewModel(
     fun loadSpace() {
         _uiState.value = _uiState.value.copy(isLoading = true, errorBanner = null)
         viewModelScope.launch {
-            val spaceDeferred = async { spaceRepository.getSpaceById(spaceId) }
+            val spaceDeferred       = async { spaceRepository.getSpaceById(spaceId) }
             val permissionsDeferred = async { spaceRepository.getSpacePermissions(spaceId, userId) }
 
-            val spaceResult = spaceDeferred.await()
+            val spaceResult       = spaceDeferred.await()
             val permissionsResult = permissionsDeferred.await()
 
             if (spaceResult is ApiResult.Error) {
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
+                    isLoading   = false,
                     errorBanner = spaceResult.message
                 )
                 return@launch
             }
 
-            val space = (spaceResult as ApiResult.Success).data
+            val space       = (spaceResult as ApiResult.Success).data
             val permissions = permissionsResult.asSpacePermissionsOrNull()
 
             val userRole = when {
-                permissions != null -> permissions.requestingUserRole
+                permissions != null  -> permissions.requestingUserRole
                 space.ownerId == userId -> "owner"
-                else -> "member"
+                else                 -> "member"
             }
 
             _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                space = space,
-                userRole = userRole,
+                isLoading   = false,
+                space       = space,
+                userRole    = userRole,
                 errorBanner = null
             )
         }
     }
 
     fun loadTasks() {
-        _uiState.value = _uiState.value.copy(tasksLoading = true, tasksError = null, completionError = null)
+        _uiState.value = _uiState.value.copy(
+            tasksLoading    = true,
+            tasksError      = null,
+            completionError = null
+        )
         viewModelScope.launch {
             when (val result = AppContainer.taskRepository.getTasksBySpace(spaceId)) {
                 is ApiResult.Success -> {
                     val tasks = buildSpaceTaskItems(result.data)
                     _uiState.value = _uiState.value.copy(
-                        tasksLoading = false,
-                        tasks = tasks,
-                        tasksError = null,
+                        tasksLoading    = false,
+                        tasks           = tasks,
+                        tasksError      = null,
                         completionError = null
                     )
                 }
-
                 is ApiResult.Error -> {
                     _uiState.value = _uiState.value.copy(
                         tasksLoading = false,
-                        tasksError = result.message
+                        tasksError   = result.message
                     )
                 }
             }
         }
     }
 
+    fun deleteSpace() {
+        _uiState.value = _uiState.value.copy(isDeleting = true, errorBanner = null)
+        viewModelScope.launch {
+            when (val result = spaceRepository.deleteSpace(spaceId, userId)) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isDeleting    = false,
+                        deleteSuccess = true
+                    )
+                }
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isDeleting  = false,
+                        errorBanner = result.message
+                    )
+                }
+            }
+        }
+    }
+
+    fun consumeDeleteSuccess() {
+        _uiState.value = _uiState.value.copy(deleteSuccess = false)
+    }
+
     fun completeAssignment(assignmentId: Int) {
-        // The detail screen can show many tasks, but only one completion request should be in flight.
         if (_uiState.value.completingAssignmentId != null) return
 
-        // Store the current assignment id so errors and loading state belong to this action.
         _uiState.value = _uiState.value.copy(
             completingAssignmentId = assignmentId,
-            completionError = null
+            completionError        = null
         )
 
         viewModelScope.launch {
-            // Completion is assignment-based, so the task itself does not need to be sent.
             when (val result = AppContainer.taskRepository.completeTaskAssignment(
                 assignmentId = assignmentId,
-                request = MarkTaskCompletionRequestDto(requestingUserId = userId)
+                request      = MarkTaskCompletionRequestDto(requestingUserId = userId)
             )) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         completingAssignmentId = null,
-                        completionError = null
+                        completionError        = null
                     )
-                    // Refresh this space because completion is derived from task_completion on reload.
                     loadTasks()
                 }
-
                 is ApiResult.Error -> {
                     _uiState.value = _uiState.value.copy(
                         completingAssignmentId = null,
-                        completionError = result.message
+                        completionError        = result.message
                     )
                 }
             }
@@ -132,17 +154,16 @@ class SpaceDetailViewModel(
                 val assignmentsResult = AppContainer.taskRepository.getTaskAssignments(task.taskId)
                 val assignments = when (assignmentsResult) {
                     is ApiResult.Success -> assignmentsResult.data
-                    is ApiResult.Error -> emptyList()
+                    is ApiResult.Error   -> emptyList()
                 }
 
-                // The assignment list determines both due label and whether "Completar" should be visible.
                 val dueTimeState = assignments.resolveDueTimeUiState(userId)
                 SpaceTaskUiState(
-                    task = task,
-                    dueLabel = dueTimeState.label,
-                    dueStatusKey = dueTimeState.statusKey,
+                    task                   = task,
+                    dueLabel               = dueTimeState.label,
+                    dueStatusKey           = dueTimeState.statusKey,
                     completionAssignmentId = dueTimeState.assignmentId,
-                    canComplete = dueTimeState.canComplete
+                    canComplete            = dueTimeState.canComplete
                 )
             }
         }.map { it.await() }
@@ -151,7 +172,7 @@ class SpaceDetailViewModel(
     private fun ApiResult<SpacePermissionsResponse>.asSpacePermissionsOrNull(): SpacePermissionsResponse? {
         return when (this) {
             is ApiResult.Success -> data
-            is ApiResult.Error -> null
+            is ApiResult.Error   -> null
         }
     }
 }
@@ -165,7 +186,7 @@ class SpaceDetailViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
         SpaceDetailViewModel(
             spaceRepository = spaceRepository,
-            spaceId = spaceId,
-            userId = userId
+            spaceId         = spaceId,
+            userId          = userId
         ) as T
 }
