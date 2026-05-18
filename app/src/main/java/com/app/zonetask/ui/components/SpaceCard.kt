@@ -36,27 +36,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.domain.model.Space
+import com.app.zonetask.domain.model.SpaceRole
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppIconTint
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 
-private const val ROLE_OWNER  = "owner"
-private const val ROLE_ADMIN  = "admin"
-
 @Composable
 fun SpaceCard(
     space: Space,
-    userRole: String,
+    // SpaceRole tipado — sin strings sueltos, el compilador verifica exhaustividad
+    userRole: SpaceRole,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    // canDelete viene calculado desde UiState.deletableSpaceIds — la Card no deriva lógica
+    canDelete: Boolean = false,
     isDeleting: Boolean = false,
-    onDelete: (() -> Unit)? = null,
+    onDeleteConfirmed: (() -> Unit)? = null,
     onDeleteNotAllowed: (() -> Unit)? = null
 ) {
-    val isOwner    = userRole == ROLE_OWNER
-    val canDelete = isOwner
-
     var showConfirmDialog by rememberSaveable { mutableStateOf(false) }
 
     if (showConfirmDialog) {
@@ -64,7 +62,7 @@ fun SpaceCard(
             spaceName = space.name,
             onConfirm = {
                 showConfirmDialog = false
-                onDelete?.invoke()
+                onDeleteConfirmed?.invoke()
             },
             onDismiss = { showConfirmDialog = false }
         )
@@ -95,37 +93,41 @@ fun SpaceCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                if (isDeleting) {
-                    CircularProgressIndicator(
-                        modifier    = Modifier
-                            .size(36.dp)
-                            .padding(8.dp),
-                        color       = MaterialTheme.colorScheme.error,
-                        strokeWidth = 2.dp
-                    )
-                } else if (canDelete) {
-                    IconButton(
-                        onClick  = { showConfirmDialog = true },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector        = Icons.Outlined.DeleteOutline,
-                            contentDescription = UserMessages.Spaces.DELETE_CONFIRM,
-                            tint               = MaterialTheme.colorScheme.error,
-                            modifier           = Modifier.size(20.dp)
+                when {
+                    isDeleting -> {
+                        CircularProgressIndicator(
+                            modifier    = Modifier
+                                .size(36.dp)
+                                .padding(8.dp),
+                            color       = MaterialTheme.colorScheme.error,
+                            strokeWidth = 2.dp
                         )
                     }
-                } else {
-                    IconButton(
-                        onClick  = { onDeleteNotAllowed?.invoke() },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector        = Icons.Outlined.Block,
-                            contentDescription = UserMessages.Spaces.DELETE_NOT_OWNER,
-                            tint               = AppSecondaryText,
-                            modifier           = Modifier.size(20.dp)
-                        )
+                    canDelete -> {
+                        IconButton(
+                            onClick  = { showConfirmDialog = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector        = Icons.Outlined.DeleteOutline,
+                                contentDescription = UserMessages.Spaces.DELETE_CONFIRM,
+                                tint               = MaterialTheme.colorScheme.error,
+                                modifier           = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    else -> {
+                        IconButton(
+                            onClick  = { onDeleteNotAllowed?.invoke() },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector        = Icons.Outlined.Block,
+                                contentDescription = UserMessages.Spaces.DELETE_NOT_OWNER,
+                                tint               = AppSecondaryText,
+                                modifier           = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -156,17 +158,17 @@ fun SpaceCard(
                 )
 
                 val (chipLabel, chipIcon, chipColor) = when (userRole) {
-                    ROLE_OWNER -> Triple(
+                    SpaceRole.OWNER -> Triple(
                         UserMessages.Spaces.ROLE_OWNER,
                         Icons.Outlined.Star,
                         AppPrimary
                     )
-                    ROLE_ADMIN -> Triple(
+                    SpaceRole.ADMIN -> Triple(
                         UserMessages.Spaces.ROLE_ADMIN,
                         Icons.Outlined.Shield,
                         AppPrimary.copy(alpha = 0.75f)
                     )
-                    else -> Triple(
+                    SpaceRole.MEMBER -> Triple(
                         UserMessages.Spaces.ROLE_MEMBER,
                         Icons.Outlined.Person,
                         AppSecondaryText

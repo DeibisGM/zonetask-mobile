@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.repository.SpaceRepository
+import com.app.zonetask.domain.model.SpaceRole
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -42,8 +43,7 @@ class SpacesViewModel(
                 is ApiResult.Success -> {
                     val spaces = result.data
 
-                    // Pedir los permisos de todos los espacios en paralelo
-                    val rolesMap = spaces
+                    val rolesMap: Map<Int, SpaceRole> = spaces
                         .map { space ->
                             async {
                                 val permResult = spaceRepository.getSpacePermissions(
@@ -52,9 +52,9 @@ class SpacesViewModel(
                                 )
                                 val role = when {
                                     permResult is ApiResult.Success ->
-                                        permResult.data.requestingUserRole
-                                    space.ownerId == userId -> "owner"
-                                    else -> "member"
+                                        SpaceRole.from(permResult.data.requestingUserRole)
+                                    space.ownerId == userId -> SpaceRole.OWNER
+                                    else -> SpaceRole.MEMBER
                                 }
                                 space.spaceId to role
                             }
@@ -107,10 +107,6 @@ class SpacesViewModel(
                 }
             }
         }
-    }
-
-    fun clearErrorBanner() {
-        _uiState.value = _uiState.value.copy(errorBanner = null)
     }
 
     fun notifyDeleteNotAllowed() {
