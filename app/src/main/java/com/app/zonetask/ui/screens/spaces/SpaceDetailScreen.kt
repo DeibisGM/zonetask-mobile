@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -72,6 +73,7 @@ fun SpaceDetailScreen(
     onDeleteSuccess  : () -> Unit = {},
     onNavigateToPermissions: (Int) -> Unit = {},
     onCreateTaskClick: () -> Unit = {},
+    onOpenPlansClick : () -> Unit = {},
     viewModel: SpaceDetailViewModel = viewModel(
         factory = SpaceDetailViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
@@ -170,6 +172,7 @@ fun SpaceDetailScreen(
                     onCompleteTask  = viewModel::completeAssignment,
                     onNavigateToPermissions = { onNavigateToPermissions(spaceId) },
                     onCreateTaskClick = onCreateTaskClick,
+                    onOpenPlansClick  = onOpenPlansClick,
                     modifier        = Modifier.padding(bottom = 88.dp)
                 )
 
@@ -233,6 +236,7 @@ private fun SpaceDetailContent(
     onCompleteTask: (Int) -> Unit,
     onNavigateToPermissions: () -> Unit,
     onCreateTaskClick: () -> Unit,
+    onOpenPlansClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val canViewPermissions = userRole == ROLE_OWNER || userRole == ROLE_ADMIN
@@ -349,6 +353,43 @@ private fun SpaceDetailContent(
                     text     = "Crear otra tarea",
                     modifier = Modifier.padding(start = 8.dp)
                 )
+            }
+        }
+
+        // Floor-plan entry point — available to all space members.
+        item {
+            Surface(
+                onClick = onOpenPlansClick,
+                shape   = RoundedCornerShape(16.dp),
+                color   = MaterialTheme.colorScheme.surface,
+                border  = BorderStroke(1.dp, AppPrimary.copy(alpha = 0.4f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector        = Icons.Outlined.GridView,
+                        contentDescription = null,
+                        tint               = AppPrimary,
+                        modifier           = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text     = "Planos del espacio",
+                        style    = MaterialTheme.typography.bodyMedium,
+                        color    = AppPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector        = Icons.Outlined.ChevronRight,
+                        contentDescription = null,
+                        tint               = AppPrimary,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                }
             }
         }
 

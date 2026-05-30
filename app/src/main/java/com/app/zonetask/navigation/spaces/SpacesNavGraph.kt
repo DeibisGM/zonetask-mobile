@@ -124,8 +124,9 @@ fun NavGraphBuilder.spacesNavGraph(
                 },
                 onNavigateToPermissions = actions.onOpenPermissions,
                 onCreateTaskClick = { actions.onCreateTaskForSpace(spaceId) },
+                onOpenPlansClick = { actions.onOpenPlans(spaceId) },
                 onEditClick = actions.onOpenEdit,
-                onDeleteSuccess = { actions.onSpaceDeleted("Espacio eliminado") } // navigate to list with message
+                onDeleteSuccess = { actions.onSpaceDeleted("Espacio eliminado") }
             )
         }
     }

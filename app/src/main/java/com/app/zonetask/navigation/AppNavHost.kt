@@ -18,6 +18,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.app.zonetask.core.UserMessages
+import com.app.zonetask.navigation.plans.PlansDestinations
+import com.app.zonetask.navigation.plans.PlansNavActions
+import com.app.zonetask.navigation.plans.PlansNavKeys
+import com.app.zonetask.navigation.plans.plansNavGraph
 import com.app.zonetask.navigation.spaces.SpacesDestinations
 import com.app.zonetask.navigation.spaces.SpacesNavActions
 import com.app.zonetask.navigation.spaces.SpacesNavKeys
@@ -39,6 +43,7 @@ fun AppNavHost() {
     }
 
     val spacesNavActions = rememberSpacesNavActions(navController, currentUserId)
+    val plansNavActions  = rememberPlansNavActions(navController)
 
     NavHost(
         navController = navController,
@@ -62,6 +67,11 @@ fun AppNavHost() {
             rootSnackbarHostState = snackbarHostState,
             actions = spacesNavActions,
             onTabSelected = onTabSelected
+        )
+
+        plansNavGraph(
+            actions = plansNavActions,
+            rootSnackbarHostState = snackbarHostState
         )
 
         tasksGraph(
@@ -100,6 +110,9 @@ private fun rememberSpacesNavActions(
         onCreateTaskForSpace = { spaceId ->
             navController.navigate(AppDestinations.taskCreateRoute(spaceId))
         },
+        onOpenPlans = { spaceId ->
+            navController.navigate(PlansDestinations.list(spaceId))
+        },
         onBack = { navController.popBackStack() },
 
         onSpaceCreated = { message ->
@@ -120,6 +133,27 @@ private fun rememberSpacesNavActions(
                 .savedStateHandle[SpacesNavKeys.SUCCESS_MESSAGE] = message
             navController.popBackStack(SpacesDestinations.LIST, inclusive = false)
         }
+    )
+}
+
+@Composable
+private fun rememberPlansNavActions(
+    navController: NavHostController
+): PlansNavActions = remember(navController) {
+    PlansNavActions(
+        onOpenList   = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
+        onCreatePlan = { spaceId -> navController.navigate(PlansDestinations.newPlan(spaceId)) },
+        onOpenPlan   = { spaceId, planId -> navController.navigate(PlansDestinations.editor(spaceId, planId)) },
+        onPlanSaved  = { message ->
+            navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.set(PlansNavKeys.PLAN_SAVED_MESSAGE, message)
+            navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.set(PlansNavKeys.RELOAD_PLANS, true)
+            navController.popBackStack()
+        },
+        onBack = { navController.popBackStack() }
     )
 }
 
