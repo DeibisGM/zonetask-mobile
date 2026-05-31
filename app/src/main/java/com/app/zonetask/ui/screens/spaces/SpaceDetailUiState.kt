@@ -5,7 +5,7 @@ import com.app.zonetask.domain.model.Space
 
 data class SpaceTaskUiState(
     val task: TaskResponse,
-    val dueLabel: String = "Sin fecha límite",
+    val dueLabel: String = "No due date",
     val dueStatusKey: String = "none",
     val completionAssignmentId: Int? = null,
     val canComplete: Boolean = false
