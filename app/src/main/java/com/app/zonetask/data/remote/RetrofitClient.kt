@@ -4,6 +4,7 @@ import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.TaskApiService
 import com.app.zonetask.data.remote.service.SpaceApiService
+import com.app.zonetask.data.remote.service.InvitationApiService
 import com.app.zonetask.data.remote.service.UserApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -44,5 +45,9 @@ object RetrofitClient {
 
     val userApiService: UserApiService by lazy {
         retrofit.create(UserApiService::class.java)
+    }
+
+    val invitationApiService: InvitationApiService by lazy {
+        retrofit.create(InvitationApiService::class.java)
     }
 }

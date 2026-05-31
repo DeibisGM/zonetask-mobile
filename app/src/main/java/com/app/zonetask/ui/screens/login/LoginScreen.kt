@@ -32,7 +32,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewModelScope
-import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.UserResponse
 import com.app.zonetask.di.AppContainer
@@ -40,7 +39,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (Int) -> Unit,
+    onLoginSuccess: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(
         factory = LoginViewModelFactory(AppContainer.userRepository)
@@ -86,6 +85,18 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = uiState.emailInput,
+                    onValueChange = viewModel::onEmailInputChanged,
+                    label = { Text("Correo electrónico") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Done
                     ),
                     singleLine = true
@@ -119,8 +130,8 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         keyboardController?.hide()
-                        viewModel.login {
-                            onLoginSuccess(it)
+                        viewModel.login { userId, email ->
+                            onLoginSuccess(userId, email)
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -145,10 +156,12 @@ data class LoginUiState(
     val isLoading: Boolean = true,
     val users: List<UserResponse> = emptyList(),
     val userIdInput: String = "",
+    val emailInput: String = "",
     val errorMessage: String? = null
 ) {
     val canSubmit: Boolean
-        get() = userIdInput.toIntOrNull()?.let { it > 0 } == true
+        get() = userIdInput.toIntOrNull()?.let { it > 0 } == true &&
+                emailInput.isNotBlank()
 }
 
 class LoginViewModel(
@@ -196,12 +209,19 @@ class LoginViewModel(
         )
     }
 
+    fun onEmailInputChanged(value: String) {
+        uiState = uiState.copy(
+            emailInput = value,
+            errorMessage = null
+        )
+    }
+
     fun useFirstAvailableUser() {
         val firstUserId = uiState.users.firstOrNull()?.userId ?: return
         uiState = uiState.copy(userIdInput = firstUserId.toString(), errorMessage = null)
     }
 
-    fun login(onSuccess: (Int) -> Unit) {
+    fun login(onSuccess: (Int, String) -> Unit) {
         val userId = uiState.userIdInput.toIntOrNull()
 
         if (userId == null || userId <= 0) {
@@ -209,7 +229,12 @@ class LoginViewModel(
             return
         }
 
-        onSuccess(userId)
+        if (uiState.emailInput.isBlank()) {
+            uiState = uiState.copy(errorMessage = "Ingresá un correo electrónico.")
+            return
+        }
+
+        onSuccess(userId, uiState.emailInput.trim())
     }
 }
 

@@ -33,6 +33,11 @@ object AppConstants {
             const val SPACE_MEMBERS = "api/spaces/{spaceId}/members"
             const val UPDATE_MEMBER_ROLE =
                 "api/spaces/{spaceId}/members/{memberId}/role"
+
+            // Invitation endpoints
+            const val CREATE_INVITATION = "api/invitations"
+            const val USER_INVITATIONS  = "api/users/{userId}/invitations"
+            const val RESPOND_INVITATION = "api/invitations/{invitationId}/respond"
         }
     }
 }
