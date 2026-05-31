@@ -6,6 +6,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -18,14 +19,20 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.app.zonetask.core.UserMessages
+import com.app.zonetask.navigation.plans.PlansDestinations
+import com.app.zonetask.navigation.plans.PlansNavActions
+import com.app.zonetask.navigation.plans.PlansNavKeys
+import com.app.zonetask.navigation.plans.plansNavGraph
 import com.app.zonetask.navigation.spaces.SpacesDestinations
 import com.app.zonetask.navigation.spaces.SpacesNavActions
 import com.app.zonetask.navigation.spaces.SpacesNavKeys
 import com.app.zonetask.navigation.spaces.spacesNavGraph
 import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
+import com.app.zonetask.ui.screens.home.HomeScreen
 import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
+import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 
 @Composable
@@ -33,12 +40,14 @@ fun AppNavHost() {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     var currentUserId by rememberSaveable { mutableIntStateOf(0) }
+    var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
 
     val onTabSelected: (NavDestination) -> Unit = { destination ->
-        navigateToTab(navController, destination, currentUserId)
+        navigateToTab(navController, destination, currentUserId, currentSpaceId)
     }
 
     val spacesNavActions = rememberSpacesNavActions(navController, currentUserId)
+    val plansNavActions  = rememberPlansNavActions(navController)
 
     NavHost(
         navController = navController,
@@ -50,9 +59,80 @@ fun AppNavHost() {
             LoginScreen(
                 onLoginSuccess = { userId ->
                     currentUserId = userId
-                    navController.navigate(SpacesDestinations.list(userId)) {
+                    navController.navigate(AppDestinations.homeRoute(0)) {
                         popUpTo(AppDestinations.LOGIN) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(
+            route = AppDestinations.HOME,
+            arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 0
+
+            ZoneTaskScaffold(
+                title = "",
+                showBack = false,
+                onBackClick = {},
+                showTopBar = false,
+                currentDestination = NavDestination.HOME,
+                onDestinationSelected = onTabSelected,
+                snackbarHostState = snackbarHostState
+            ) { padding ->
+                HomeScreen(
+                    spaceId = spaceId,
+                    userId = currentUserId,
+                    modifier = Modifier.padding(padding),
+                    onNavigateToCreateSpace = {
+                        navController.navigate(SpacesDestinations.CREATE)
+                    },
+                    onNavigateToCreateTask = {
+                        val sid = if (currentSpaceId > 0) currentSpaceId else spaceId
+                        if (sid > 0) {
+                            navController.navigate(AppDestinations.taskCreateRoute(sid))
+                        }
+                    },
+                    onNavigateToManageSpaces = {
+                        navController.navigate(SpacesDestinations.list(currentUserId))
+                    },
+                    onNavigateToTaskDetail = { sid, taskId ->
+                        navController.navigate(AppDestinations.taskDetailRoute(sid, taskId))
+                    },
+                    onSpaceChanged = { newSpaceId ->
+                        currentSpaceId = newSpaceId
+                        navController.navigate(AppDestinations.homeRoute(newSpaceId)) {
+                            popUpTo(AppDestinations.HOME) { inclusive = true }
+                        }
+                    }
+                )
+            }
+        }
+
+        composable(
+            route = AppDestinations.TASK_DETAIL,
+            arguments = listOf(
+                navArgument("spaceId") { type = NavType.IntType },
+                navArgument("taskId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 1
+            val taskId  = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+
+            TaskDetailScreen(
+                spaceId = spaceId,
+                taskId = taskId,
+                modifier = Modifier.fillMaxSize(),
+                onBack = { navController.popBackStack() },
+                onEdit = { id ->
+                    navController.navigate(AppDestinations.taskEditRoute(spaceId, id))
+                },
+                onDeleted = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("taskChanged", true)
+                    navController.popBackStack()
                 }
             )
         }
@@ -62,6 +142,11 @@ fun AppNavHost() {
             rootSnackbarHostState = snackbarHostState,
             actions = spacesNavActions,
             onTabSelected = onTabSelected
+        )
+
+        plansNavGraph(
+            actions = plansNavActions,
+            rootSnackbarHostState = snackbarHostState
         )
 
         tasksGraph(
@@ -76,12 +161,17 @@ fun AppNavHost() {
 private fun navigateToTab(
     navController: NavHostController,
     destination: NavDestination,
-    userId: Int
+    userId: Int,
+    currentSpaceId: Int
 ) {
     if (userId <= 0) return
     val route = when (destination) {
-        NavDestination.SPACES -> SpacesDestinations.list(userId)
-        NavDestination.TASKS  -> AppDestinations.tasksRoute(userId)
+        NavDestination.HOME -> {
+            val sid = if (currentSpaceId > 0) currentSpaceId else 0
+            AppDestinations.homeRoute(sid)
+        }
+        NavDestination.TASKS   -> AppDestinations.tasksRoute(userId)
+        NavDestination.SETTINGS -> SpacesDestinations.list(userId)
         else -> return
     }
     navController.navigate(route) { launchSingleTop = true }
@@ -99,6 +189,9 @@ private fun rememberSpacesNavActions(
         onOpenPermissions    = { id -> navController.navigate(SpacesDestinations.permissions(id)) },
         onCreateTaskForSpace = { spaceId ->
             navController.navigate(AppDestinations.taskCreateRoute(spaceId))
+        },
+        onOpenPlans = { spaceId ->
+            navController.navigate(PlansDestinations.list(spaceId))
         },
         onBack = { navController.popBackStack() },
 
@@ -120,6 +213,27 @@ private fun rememberSpacesNavActions(
                 .savedStateHandle[SpacesNavKeys.SUCCESS_MESSAGE] = message
             navController.popBackStack(SpacesDestinations.LIST, inclusive = false)
         }
+    )
+}
+
+@Composable
+private fun rememberPlansNavActions(
+    navController: NavHostController
+): PlansNavActions = remember(navController) {
+    PlansNavActions(
+        onOpenList   = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
+        onCreatePlan = { spaceId -> navController.navigate(PlansDestinations.newPlan(spaceId)) },
+        onOpenPlan   = { spaceId, planId -> navController.navigate(PlansDestinations.editor(spaceId, planId)) },
+        onPlanSaved  = { message ->
+            navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.set(PlansNavKeys.PLAN_SAVED_MESSAGE, message)
+            navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.set(PlansNavKeys.RELOAD_PLANS, true)
+            navController.popBackStack()
+        },
+        onBack = { navController.popBackStack() }
     )
 }
 
@@ -199,6 +313,9 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
                 },
                 onEditTask = { spaceId, taskId ->
                     navController.navigate(AppDestinations.taskEditRoute(spaceId, taskId))
+                },
+                onTaskClick = { spaceId, taskId ->
+                    navController.navigate(AppDestinations.taskDetailRoute(spaceId, taskId))
                 }
             )
         }

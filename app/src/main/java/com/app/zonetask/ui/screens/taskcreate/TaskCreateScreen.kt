@@ -24,7 +24,7 @@ import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppOnSurface
 import com.app.zonetask.ui.theme.AppPrimary
-import com.app.zonetask.ui.theme.AppSurface
+import com.app.zonetask.ui.theme.AppTopBar
 import com.app.zonetask.ui.theme.AppSecondaryText
 import java.text.SimpleDateFormat
 import java.util.*
@@ -132,7 +132,7 @@ fun TaskCreateScreen(
                 }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("CANCELAR") }
+                TextButton(onClick = { showTimePicker = false }) {                 Text("CANCEL") }
             },
             text = {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -150,7 +150,7 @@ fun TaskCreateScreen(
                     Text("OK")
                 }
             },
-            title = { Text("Error al guardar") },
+            title = { Text("Save error") },
             text = {
                 Text(
                     text = saveErrorMessage.orEmpty(),
@@ -176,13 +176,13 @@ fun TaskCreateScreen(
         showBack = true,
         onBackClick = onClose,
         onNavigate = onNavigate,
-        topBarColor = AppSurface,
+        topBarColor = AppTopBar,
         bottomBar = {
             Column(modifier = Modifier.background(AppBackground)) {
                 if (!isWaitingForInitialData) {
                     TaskActionButtonsRow(
-                        cancelText = "CANCELAR",
-                        saveText = UserMessages.TaskCreate.SAVE_BUTTON,
+                        cancelText = "Cancel",
+                        saveText = "Save",
                         onCancelClick = {
                             if (viewModel.isEditMode) {
                                 onClose()
@@ -224,7 +224,7 @@ fun TaskCreateScreen(
                     CircularProgressIndicator(color = AppPrimary)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Cargando formulario...",
+                        text = "Loading form...",
                         color = AppSecondaryText,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -255,46 +255,46 @@ private fun TaskCreateContent(
     onUpdate: (TaskCreateUiState.() -> TaskCreateUiState) -> Unit
 ) {
     val frequencyOptions = listOf(
-        "Una vez" to "once",
-        "Diaria" to "daily",
-        "Cada 2 días" to "every_2_days",
-        "Cada 3 días" to "every_3_days",
-        "Semanal" to "weekly",
-        "Quincenal" to "biweekly",
-        "Mensual" to "monthly",
-        "Personalizado" to "custom"
+        "Once" to "once",
+        "Daily" to "daily",
+        "Every 2 days" to "every_2_days",
+        "Every 3 days" to "every_3_days",
+        "Weekly" to "weekly",
+        "Biweekly" to "biweekly",
+        "Monthly" to "monthly",
+        "Custom" to "custom"
     )
 
     val targetLevelOptions = listOf(
-        "Espacio" to "space",
-        "Zona" to "zone",
-        "Objeto" to "object"
+        "Space" to "space",
+        "Zone" to "zone",
+        "Object" to "object"
     )
 
     val zoneOptions = formOptions.zones.ifEmpty {
-        listOf("Cargando zonas..." to "")
+        listOf("Loading zones..." to "")
     }
 
     val estimatedTimeOptions = listOf(
-        "5 minutos" to "5",
-        "15 minutos" to "15",
-        "30 minutos" to "30",
-        "45 minutos" to "45",
-        "1 hora" to "60",
-        "1.5 horas" to "90",
-        "2 horas" to "120",
-        "3 horas" to "180",
-        "5 horas" to "300"
+        "5 min" to "5",
+        "15 min" to "15",
+        "30 min" to "30",
+        "45 min" to "45",
+        "1 hour" to "60",
+        "1.5 hours" to "90",
+        "2 hours" to "120",
+        "3 hours" to "180",
+        "5 hours" to "300"
     )
 
     val reminderOptions = listOf(
-        "Al momento" to "0",
-        "5 minutos antes" to "5",
-        "15 minutos antes" to "15",
-        "30 minutos antes" to "30",
-        "1 hora antes" to "60",
-        "2 horas antes" to "120",
-        "1 día antes" to "1440"
+        "At time" to "0",
+        "5 min before" to "5",
+        "15 min before" to "15",
+        "30 min before" to "30",
+        "1 hour before" to "60",
+        "2 hours before" to "120",
+        "1 day before" to "1440"
     )
 
     Column(
@@ -315,7 +315,7 @@ private fun TaskCreateContent(
                 onValueChange = { value -> 
                     if (value.length <= 150) onUpdate { copy(title = value) }
                 },
-                placeholder = "Ej: Limpiar la sala",
+                               placeholder = "E.g. Clean the kitchen",
                 error = if (uiState.showErrors && !uiState.isTitleValid) "Campo obligatorio" else null
             )
 
@@ -325,13 +325,13 @@ private fun TaskCreateContent(
                 onValueChange = { value -> 
                     if (value.length <= 500) onUpdate { copy(description = value) }
                 },
-                placeholder = "Detalla lo que se debe hacer...",
+                               placeholder = "Describe what needs to be done...",
                 singleLine = false
             )
             
             TaskDropdown(
                 label = UserMessages.TaskCreate.TARGET_LEVEL_LABEL + " *",
-                value = targetLevelOptions.find { it.second == uiState.targetLevel }?.first ?: "Espacio",
+                    value = targetLevelOptions.find { it.second == uiState.targetLevel }?.first ?: "Space",
                 options = targetLevelOptions,
                 onOptionSelected = { selectedValue -> 
                     onUpdate { copy(targetLevel = selectedValue) }
@@ -340,7 +340,7 @@ private fun TaskCreateContent(
 
             TaskDropdown(
                 label = UserMessages.TaskCreate.ZONE_LABEL + " *",
-                value = zoneOptions.find { it.second == uiState.zoneId.toString() }?.first ?: "Zona General",
+                    value = zoneOptions.find { it.second == uiState.zoneId.toString() }?.first ?: "General Zone",
                 options = zoneOptions,
                 onOptionSelected = { selectedValue ->
                     onUpdate { copy(zoneId = selectedValue.toIntOrNull() ?: 1, selectedObjectIds = emptyList()) }
@@ -349,9 +349,9 @@ private fun TaskCreateContent(
 
             TaskDropdown(
                 label = UserMessages.TaskCreate.CATEGORY_LABEL,
-                value = formOptions.categories.find { it.second == uiState.categoryId.toString() }?.first
-                    ?: "Selecciona una categoria",
-                options = formOptions.categories.ifEmpty { listOf("Cargando categorias..." to "") },
+                    value = formOptions.categories.find { it.second == uiState.categoryId.toString() }?.first
+                        ?: "Select a category",
+                options = formOptions.categories.ifEmpty { listOf("Loading categories..." to "") },
                 onOptionSelected = { selectedValue ->
                     onUpdate { copy(categoryId = selectedValue.toIntOrNull() ?: 1) }
                 }
@@ -364,7 +364,7 @@ private fun TaskCreateContent(
         ) {
             TaskDropdown(
                 label = UserMessages.TaskCreate.FREQUENCY_LABEL + " *",
-                value = frequencyOptions.find { it.second == uiState.frequency }?.first ?: "Una vez",
+                value = frequencyOptions.find { it.second == uiState.frequency }?.first ?: "Once",
                 options = frequencyOptions,
                 onOptionSelected = { selectedValue ->
                     onUpdate { copy(frequency = selectedValue) }
@@ -392,7 +392,7 @@ private fun TaskCreateContent(
                         label = UserMessages.TaskCreate.END_DATE_LABEL,
                         value = uiState.endDate ?: "",
                         onValueChange = {},
-                        placeholder = "Opcional",
+                        placeholder = "Optional",
                         modifier = Modifier.fillMaxWidth()
                     )
                     Box(modifier = Modifier.matchParentSize().clickable { onShowEndDate() })
@@ -417,7 +417,7 @@ private fun TaskCreateContent(
                 
                 TaskDropdown(
                     label = UserMessages.TaskCreate.ESTIMATED_MINUTES_LABEL + " *",
-                    value = estimatedTimeOptions.find { it.second == uiState.estimatedMinutes?.toString() }?.first ?: "No definido",
+                    value = estimatedTimeOptions.find { it.second == uiState.estimatedMinutes?.toString() }?.first ?: "Not set",
                     options = estimatedTimeOptions,
                     onOptionSelected = { selectedValue ->
                         onUpdate { copy(estimatedMinutes = selectedValue.toIntOrNull()) }
@@ -468,7 +468,7 @@ private fun TaskCreateContent(
                         modifier = Modifier.weight(1f)
                     )
                     TaskRadioRow(
-                        label = "Si",
+                        label = "Yes",
                         selected = uiState.reminderEnabled,
                         onSelected = { onUpdate { copy(reminderEnabled = true) } },
                         modifier = Modifier.weight(1f)
@@ -478,7 +478,7 @@ private fun TaskCreateContent(
                 if (uiState.reminderEnabled) {
                     TaskDropdown(
                         label = UserMessages.TaskCreate.REMINDER_MINUTES_LABEL,
-                        value = reminderOptions.find { it.second == uiState.reminderMinutes.toString() }?.first ?: "15 minutos antes",
+                        value = reminderOptions.find { it.second == uiState.reminderMinutes.toString() }?.first ?: "15 min before",
                         options = reminderOptions,
                         onOptionSelected = { selectedValue ->
                             onUpdate { copy(reminderMinutes = selectedValue.toIntOrNull() ?: 30) }
@@ -489,7 +489,7 @@ private fun TaskCreateContent(
                 Divider(color = AppBorder, modifier = Modifier.padding(vertical = 4.dp))
 
                 Text(
-                    text = "Objetos de la zona",
+                    text = "Objects in zone",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppOnSurface
                 )
@@ -507,7 +507,7 @@ private fun TaskCreateContent(
                         modifier = Modifier.weight(1f)
                     )
                     TaskRadioRow(
-                        label = "Si",
+                        label = "Yes",
                         selected = uiState.objectSelectionEnabled,
                         onSelected = {
                             onUpdate { copy(objectSelectionEnabled = true) }
@@ -519,19 +519,19 @@ private fun TaskCreateContent(
                 if (uiState.objectSelectionEnabled) {
                     if (uiState.zoneId == null) {
                         Text(
-                            text = "Selecciona una zona primero",
+                            text = "Select a zone first",
                             style = MaterialTheme.typography.bodySmall,
                             color = AppSecondaryText
                         )
                     } else if (formOptions.objectsLoading) {
                         Text(
-                            text = "Cargando objetos...",
+                            text = "Loading objects...",
                             style = MaterialTheme.typography.bodySmall,
                             color = AppSecondaryText
                         )
                     } else if (formOptions.objects.isEmpty()) {
                         Text(
-                            text = "No hay objetos en esta zona",
+                            text = "No objects in this zone",
                             style = MaterialTheme.typography.bodySmall,
                             color = AppSecondaryText
                         )
