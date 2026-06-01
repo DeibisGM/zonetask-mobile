@@ -2,32 +2,37 @@ package com.app.zonetask.ui.screens.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,6 +40,11 @@ import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.UserResponse
 import com.app.zonetask.di.AppContainer
+import com.app.zonetask.ui.theme.AppBackground
+import com.app.zonetask.ui.theme.AppBorder
+import com.app.zonetask.ui.theme.AppPrimary
+import com.app.zonetask.ui.theme.AppSecondaryText
+import com.app.zonetask.ui.theme.AppSurface
 import kotlinx.coroutines.launch
 
 @Composable
@@ -52,102 +62,142 @@ fun LoginScreen(
         viewModel.loadUsers()
     }
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center
+            .background(AppBackground)
+            .padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        ElevatedCard(
+        Text(
+            text = "ZoneTask",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Manage your space easily",
+            style = MaterialTheme.typography.bodyLarge,
+            color = AppSecondaryText,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        OutlinedTextField(
+            value = uiState.userIdInput,
+            onValueChange = viewModel::onUserIdInputChanged,
+            label = { Text("User ID") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = AppPrimary,
+                unfocusedBorderColor = AppBorder,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                cursorColor = AppPrimary,
+                focusedLabelColor = AppSecondaryText,
+                unfocusedLabelColor = AppSecondaryText,
+                focusedContainerColor = AppSurface,
+                unfocusedContainerColor = AppSurface
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next
+            )
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = uiState.emailInput,
+            onValueChange = viewModel::onEmailInputChanged,
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = AppPrimary,
+                unfocusedBorderColor = AppBorder,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                cursorColor = AppPrimary,
+                focusedLabelColor = AppSecondaryText,
+                unfocusedLabelColor = AppSecondaryText,
+                focusedContainerColor = AppSurface,
+                unfocusedContainerColor = AppSurface
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Done
+            )
+        )
+
+        if (uiState.errorMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = uiState.errorMessage!!,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        if (uiState.users.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Available: ${uiState.users.joinToString { it.userId.toString() }}",
+                style = MaterialTheme.typography.labelSmall,
+                color = AppSecondaryText.copy(alpha = 0.6f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = {
+                keyboardController?.hide()
+                viewModel.login { userId, email ->
+                    onLoginSuccess(userId, email)
+                }
+            },
             modifier = Modifier
-                .widthIn(max = 360.dp)
-                .padding(20.dp)
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
+            enabled = uiState.canSubmit && !uiState.isLoading
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
                 Text(
-                    text = "Entrar",
-                    style = MaterialTheme.typography.headlineSmall
+                    text = "Sign In",
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.labelLarge
                 )
-
-                Text(
-                    text = "Elegí un usuario existente para ver sus espacios.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                OutlinedTextField(
-                    value = uiState.userIdInput,
-                    onValueChange = viewModel::onUserIdInputChanged,
-                    label = { Text("ID de usuario") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = uiState.emailInput,
-                    onValueChange = viewModel::onEmailInputChanged,
-                    label = { Text("Correo electrónico") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Done
-                    ),
-                    singleLine = true
-                )
-
-                if (uiState.isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    if (uiState.users.isNotEmpty()) {
-                        Text(
-                            text = "Usuarios disponibles: ${uiState.users.joinToString { it.userId.toString() }}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                if (uiState.errorMessage != null) {
-                    Text(
-                        text = uiState.errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        keyboardController?.hide()
-                        viewModel.login { userId, email ->
-                            onLoginSuccess(userId, email)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = uiState.canSubmit && !uiState.isLoading
-                ) {
-                    Text("Entrar")
-                }
-
-                TextButton(
-                    onClick = viewModel::useFirstAvailableUser,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = uiState.users.isNotEmpty() && !uiState.isLoading
-                ) {
-                    Text("Usar primer usuario disponible")
-                }
             }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(
+            onClick = viewModel::useFirstAvailableUser,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = uiState.users.isNotEmpty() && !uiState.isLoading
+        ) {
+            Text(
+                text = "Use first available user",
+                color = AppSecondaryText
+            )
         }
     }
 }
@@ -185,7 +235,7 @@ class LoginViewModel(
                             users.firstOrNull()?.userId?.toString().orEmpty()
                         },
                         errorMessage = if (users.isEmpty()) {
-                            "No se encontraron usuarios en la base de datos."
+                            "No users found in database."
                         } else {
                             null
                         }
@@ -225,12 +275,12 @@ class LoginViewModel(
         val userId = uiState.userIdInput.toIntOrNull()
 
         if (userId == null || userId <= 0) {
-            uiState = uiState.copy(errorMessage = "Ingresá un ID de usuario válido.")
+            uiState = uiState.copy(errorMessage = "Enter a valid user ID.")
             return
         }
 
         if (uiState.emailInput.isBlank()) {
-            uiState = uiState.copy(errorMessage = "Ingresá un correo electrónico.")
+            uiState = uiState.copy(errorMessage = "Enter a valid email.")
             return
         }
 

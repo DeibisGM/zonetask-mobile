@@ -18,8 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material3.AssistChip
@@ -60,9 +58,7 @@ import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
-
-private val CardColor = Color(0xFF181818)
-private val TopBarColor = Color(0xFF141414)
+import com.app.zonetask.ui.theme.AppTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +66,7 @@ fun TasksScreen(
     userId: Int,
     onCreateTask: (spaceId: Int) -> Unit = {},
     onEditTask: (spaceId: Int, taskId: Int) -> Unit = { _, _ -> },
+    onTaskClick: (spaceId: Int, taskId: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     reloadTrigger: Boolean = false,
     onRefreshHandled: () -> Unit = {},
@@ -93,6 +90,7 @@ fun TasksScreen(
         onRetry = viewModel::retrySelectedSpace,
         onCreateTask = onCreateTask,
         onEditTask = onEditTask,
+        onTaskClick = onTaskClick,
         onCompleteTask = viewModel::completeAssignment,
         onDeleteTask = { task ->
             viewModel.deleteTask(task.task.taskId) { _, message ->
@@ -111,6 +109,7 @@ private fun TasksContent(
     onRetry: () -> Unit,
     onCreateTask: (spaceId: Int) -> Unit,
     onEditTask: (spaceId: Int, taskId: Int) -> Unit,
+    onTaskClick: (spaceId: Int, taskId: Int) -> Unit,
     onCompleteTask: (Int) -> Unit,
     onDeleteTask: (TaskItemUiState) -> Unit,
     modifier: Modifier = Modifier
@@ -121,11 +120,10 @@ private fun TasksContent(
 
     Column(modifier = modifier.fillMaxSize()) {
 
-        // ── Custom top bar ────────────────────────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(TopBarColor)
+                .background(AppTopBar)
                 .padding(start = 20.dp, end = 4.dp, top = 18.dp, bottom = 18.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -148,7 +146,6 @@ private fun TasksContent(
             }
         }
 
-        // ── Space combobox ────────────────────────────────────────────────
         Surface(
             onClick = { if (uiState.spaces.isNotEmpty()) showSpacePicker = true },
             modifier = Modifier
@@ -201,7 +198,6 @@ private fun TasksContent(
             )
         }
 
-        // ── Main content ─────────────────────────────────────────────────
         when {
             uiState.isLoadingSpaces && uiState.spaces.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -275,7 +271,7 @@ private fun TasksContent(
                         ZoneSection(
                             group = group,
                             spaceId = uiState.selectedSpaceId,
-                            onEditTask = onEditTask,
+                            onTaskClick = onTaskClick,
                             onCompleteTask = onCompleteTask,
                             onDeleteTask = { taskToDelete = it }
                         )
@@ -286,7 +282,6 @@ private fun TasksContent(
         }
     }
 
-    // ── Space picker bottom sheet ─────────────────────────────────────────
     if (taskToDelete != null) {
         AlertDialog(
             onDismissRequest = { taskToDelete = null },
@@ -315,7 +310,7 @@ private fun TasksContent(
         ModalBottomSheet(
             onDismissRequest = { showSpacePicker = false },
             sheetState = sheetState,
-            containerColor = Color(0xFF141414),
+            containerColor = AppTopBar,
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             Column(
@@ -388,7 +383,7 @@ private fun SpacePickerItem(
 private fun ZoneSection(
     group: ZoneTaskGroupUiState,
     spaceId: Int?,
-    onEditTask: (spaceId: Int, taskId: Int) -> Unit,
+    onTaskClick: (spaceId: Int, taskId: Int) -> Unit,
     onCompleteTask: (Int) -> Unit,
     onDeleteTask: (TaskItemUiState) -> Unit
 ) {
@@ -426,14 +421,14 @@ private fun ZoneSection(
             group.tasks.forEach { task ->
                 TaskCard(
                     task = task,
-                    onEditClick = {
-                        onEditTask(spaceId ?: task.task.spaceId, task.task.taskId)
+                    onClick = {
+                        val sid = spaceId ?: task.task.spaceId
+                        onTaskClick(sid, task.task.taskId)
                     },
+                    onDeleteClick = { onDeleteTask(task) },
                     onCompleteClick = {
-                        // completionAssignmentId points to the active assignment, not the task row.
                         task.completionAssignmentId?.let(onCompleteTask)
-                    },
-                    onDeleteClick = { onDeleteTask(task) }
+                    }
                 )
             }
         }
@@ -448,21 +443,21 @@ private fun String.stripSeconds(): String {
 @Composable
 private fun TaskCard(
     task: TaskItemUiState,
-    onEditClick: () -> Unit,
-    onCompleteClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onCompleteClick: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardColor),
+        colors = CardDefaults.cardColors(containerColor = AppSurface),
         border = BorderStroke(1.dp, AppBorder),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Row 1 – title + status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top,
@@ -478,62 +473,44 @@ private fun TaskCard(
                     modifier = Modifier.weight(1f, fill = false).padding(end = 12.dp)
                 )
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onEditClick) {
-                        Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = "Editar tarea",
-                            tint = AppPrimary,
-                            modifier = Modifier.size(20.dp)
+                AssistChip(
+                    onClick = {},
+                    label = {
+                        Text(
+                            text = task.statusLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold
                         )
-                    }
-                    IconButton(onClick = onDeleteClick) {
+                    },
+                    leadingIcon = {
                         Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = "Eliminar tarea",
-                            tint = Color(0xFFE53935),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                text = task.statusLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Outlined.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = when (task.statusLabel) {
-                                    "Completada" -> AppPrimary
-                                    "En progreso" -> Color(0xFF8BB7FF)
-                                    "Pendiente" -> Color(0xFFE0B35A)
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                }
-                            )
-                        },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = when (task.statusLabel) {
-                                "Completada" -> AppPrimary.copy(alpha = 0.16f)
-                                "En progreso" -> Color(0xFF304E7B)
-                                "Pendiente" -> Color(0xFF3A2F16)
-                                else -> AppSurface
-                            },
-                            labelColor = when (task.statusLabel) {
+                            imageVector = Icons.Outlined.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = when (task.statusLabel) {
                                 "Completada" -> AppPrimary
                                 "En progreso" -> Color(0xFF8BB7FF)
                                 "Pendiente" -> Color(0xFFE0B35A)
                                 else -> MaterialTheme.colorScheme.onSurface
                             }
-                        ),
-                        border = null
-                    )
-                }
+                        )
+                    },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = when (task.statusLabel) {
+                            "Completada" -> AppPrimary.copy(alpha = 0.16f)
+                            "En progreso" -> Color(0xFF304E7B)
+                            "Pendiente" -> Color(0xFF3A2F16)
+                            else -> AppSurface
+                        },
+                        labelColor = when (task.statusLabel) {
+                            "Completada" -> AppPrimary
+                            "En progreso" -> Color(0xFF8BB7FF)
+                            "Pendiente" -> Color(0xFFE0B35A)
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                    ),
+                    border = null
+                )
             }
 
             task.assignees.firstOrNull()?.let { assignee ->
@@ -597,7 +574,6 @@ private fun TaskCard(
             }
 
             if (task.canComplete && task.completionAssignmentId != null) {
-                // Hide the action for completed tasks and for assignments owned by someone else.
                 TextButton(onClick = onCompleteClick) {
                     Text(
                         text = "Completar",
@@ -609,4 +585,3 @@ private fun TaskCard(
         }
     }
 }
-

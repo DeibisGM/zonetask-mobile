@@ -5,6 +5,8 @@ data class CreateSpaceUiState(
     val description  : String  = "",
     val spaceType    : String  = "",
     val coverImageUrl: String  = "",
+    val rotationType : String  = "",
+    val requireProof : Boolean = false,
     val isLoading    : Boolean = false,
     val errorBanner  : String? = null,
     val isSuccess    : Boolean = false

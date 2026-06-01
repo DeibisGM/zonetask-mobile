@@ -38,6 +38,11 @@ object AppConstants {
             const val CREATE_INVITATION = "api/invitations"
             const val USER_INVITATIONS  = "api/users/{userId}/invitations"
             const val RESPOND_INVITATION = "api/invitations/{invitationId}/respond"
+            // Floor plan endpoints
+            const val SPACE_PLANS = "api/spaces/{spaceId}/plans"
+            const val PLAN_BY_ID  = "api/plans/{planId}"
+            const val CREATE_PLAN = "api/plans"
+            const val UPDATE_PLAN = "api/plans/{planId}"
         }
     }
 }

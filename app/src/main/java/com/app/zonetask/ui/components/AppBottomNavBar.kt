@@ -10,27 +10,23 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.app.zonetask.R
 import com.app.zonetask.ui.theme.AppPrimary
 
 enum class NavDestination(
-    val label: String,
     @DrawableRes val iconRes: Int,
     val enabled: Boolean
 ) {
-    HOME(label = "Home", iconRes = R.drawable.ic_house, enabled = false),
-    TASKS(label = "Tasks", iconRes = R.drawable.ic_check_square, enabled = true),
-    CHAT(label = "Chat", iconRes = R.drawable.ic_chat_circle, enabled = false),
-    PROFILE(label = "Profile", iconRes = R.drawable.ic_user, enabled = false),
-    SPACES(label = "Spaces", iconRes = R.drawable.ic_buildings, enabled = true)
+    HOME(iconRes = R.drawable.ic_house, enabled = true),
+    TASKS(iconRes = R.drawable.ic_check_square, enabled = true),
+    CHAT(iconRes = R.drawable.ic_chat_circle, enabled = false),
+    PROFILE(iconRes = R.drawable.ic_user, enabled = false),
+    SETTINGS(iconRes = R.drawable.ic_gear_six, enabled = false)
 }
 
 @Composable
@@ -62,18 +58,12 @@ fun AppBottomNavBar(
                     icon = {
                         Icon(
                             painter = painterResource(id = destination.iconRes),
-                            contentDescription = destination.label,
+                            contentDescription = null,
                             modifier = Modifier.size(28.dp),
                             tint = tint
                         )
                     },
-                    label = {
-                        Text(
-                            text = destination.label,
-                            fontSize = 11.sp,
-                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
-                        )
-                    },
+                    label = { },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = AppPrimary,
                         selectedTextColor = AppPrimary,

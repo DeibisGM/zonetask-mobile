@@ -5,6 +5,7 @@ import com.app.zonetask.data.remote.repository.TaskLookupRepository
 import com.app.zonetask.data.remote.repository.TaskRepository
 import com.app.zonetask.data.remote.repository.UserRepository
 import com.app.zonetask.data.repository.InvitationRepository
+import com.app.zonetask.data.repository.FloorPlanRepository
 import com.app.zonetask.data.repository.SpaceRepository
 
 object AppContainer {
@@ -12,6 +13,10 @@ object AppContainer {
     // Small manual DI setup for the screens in this module.
     val spaceRepository: SpaceRepository by lazy {
         SpaceRepository(RetrofitClient.spaceApiService)
+    }
+
+    val floorPlanRepository: FloorPlanRepository by lazy {
+        FloorPlanRepository(RetrofitClient.floorPlanApiService)
     }
 
     val taskLookupRepository: TaskLookupRepository by lazy {

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.ui.theme.AppOnPrimary
 import com.app.zonetask.ui.theme.AppPrimary
+import com.app.zonetask.ui.theme.AppTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,7 +31,7 @@ fun ZoneTaskScaffold(
     title: String,
     showBack: Boolean = false,
     onBackClick: () -> Unit = {},
-    currentDestination: NavDestination = NavDestination.SPACES,
+    currentDestination: NavDestination = NavDestination.SETTINGS,
     onDestinationSelected: (NavDestination) -> Unit = {},
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
@@ -51,7 +52,8 @@ fun ZoneTaskScaffold(
                         Text(
                             text = title,
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onBackground
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                         )
                     },
                     navigationIcon = {
@@ -77,7 +79,7 @@ fun ZoneTaskScaffold(
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background
+                        containerColor = AppTopBar
                     )
                 )
             }

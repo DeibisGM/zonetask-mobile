@@ -26,8 +26,8 @@ import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 
-private val SPACE_TYPE_OPTIONS    = listOf("Casa de habitacion", "Apartamento", "Oficina", "Local comercial")
-private val ROTATION_TYPE_OPTIONS = listOf("Manual", "Automático", "Semanal")
+private val SPACE_TYPE_OPTIONS    = listOf("House", "Apartment", "Office", "Commercial")
+private val ROTATION_TYPE_OPTIONS = listOf("Manual", "Automatic", "Weekly")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +45,7 @@ fun EditSpaceScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) onSaved("Espacio actualizado correctamente")
+        if (uiState.isSuccess) onSaved("Space updated")
     }
 
     if (uiState.isLoadingData) {
@@ -85,13 +85,13 @@ fun EditSpaceScreen(
                 modifier           = Modifier.size(32.dp)
             )
         }
-        Text(text = "Foto de perfil", style = MaterialTheme.typography.bodyMedium, color = AppSecondaryText)
+            Text(text = "Profile photo", style = MaterialTheme.typography.bodyMedium, color = AppSecondaryText)
 
         if (uiState.errorBanner != null) {
             Text(text = uiState.errorBanner!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
 
-        FormField(label = "Nombre del espacio") {
+        FormField(label = "Space name") {
             OutlinedTextField(
                 value         = uiState.name,
                 onValueChange = viewModel::onNameChange,
@@ -102,7 +102,7 @@ fun EditSpaceScreen(
             )
         }
 
-        FormField(label = "Descripción") {
+        FormField(label = "Description") {
             OutlinedTextField(
                 value         = uiState.description,
                 onValueChange = viewModel::onDescriptionChange,
@@ -110,11 +110,11 @@ fun EditSpaceScreen(
                 maxLines      = 4,
                 shape         = RoundedCornerShape(12.dp),
                 colors        = editTextFieldColors(),
-                placeholder   = { Text(text = "Opcional", color = AppSecondaryText) }
+                placeholder   = { Text(text = "Optional", color = AppSecondaryText) }
             )
         }
 
-        FormField(label = "Tipo de espacio") {
+        FormField(label = "Space type") {
             ExposedDropdownMenuBox(
                 expanded         = spaceTypeExpanded,
                 onExpandedChange = { spaceTypeExpanded = it }
@@ -139,7 +139,7 @@ fun EditSpaceScreen(
             }
         }
 
-        FormField(label = "Tipo de Rotación") {
+        FormField(label = "Rotation type") {
             ExposedDropdownMenuBox(
                 expanded         = rotationTypeExpanded,
                 onExpandedChange = { rotationTypeExpanded = it }
@@ -170,7 +170,7 @@ fun EditSpaceScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text     = "¿Se requiere prueba para completar tareas?",
+                text     = "Require proof to complete tasks?",
                 style    = MaterialTheme.typography.bodyMedium,
                 color    = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f)
@@ -184,15 +184,13 @@ fun EditSpaceScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedButton(
+        Button(
             onClick  = { },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(48.dp),
             shape    = RoundedCornerShape(14.dp),
-            border   = androidx.compose.foundation.BorderStroke(1.dp, AppPrimary)
+            colors   = ButtonDefaults.buttonColors(containerColor = AppPrimary.copy(alpha = 0.85f))
         ) {
-            Icon(imageVector = Icons.Default.GridView, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "CREAR PLANO", color = AppPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+            Text(text = "CREATE PLAN", color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
         }
 
         Button(
@@ -207,7 +205,7 @@ fun EditSpaceScreen(
             } else {
                 Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Editar", color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
+                Text(text = "Save", color = Color.White, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
             }
         }
     }

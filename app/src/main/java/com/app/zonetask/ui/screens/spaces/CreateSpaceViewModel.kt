@@ -35,6 +35,14 @@ class CreateSpaceViewModel(
         _uiState.value = _uiState.value.copy(coverImageUrl = value, errorBanner = null)
     }
 
+    fun onRotationTypeChange(value: String) {
+        _uiState.value = _uiState.value.copy(rotationType = value, errorBanner = null)
+    }
+
+    fun onRequireProofChange(value: Boolean) {
+        _uiState.value = _uiState.value.copy(requireProof = value, errorBanner = null)
+    }
+
     fun clearErrorBanner() {
         _uiState.value = _uiState.value.copy(errorBanner = null)
     }
@@ -43,11 +51,11 @@ class CreateSpaceViewModel(
         val state = _uiState.value
 
         if (state.name.isBlank()) {
-            _uiState.value = state.copy(errorBanner = "El nombre del espacio es requerido")
+            _uiState.value = state.copy(errorBanner = "Space name is required")
             return
         }
         if (state.spaceType.isBlank()) {
-            _uiState.value = state.copy(errorBanner = "El tipo de espacio es requerido")
+            _uiState.value = state.copy(errorBanner = "Space type is required")
             return
         }
 
@@ -59,7 +67,9 @@ class CreateSpaceViewModel(
                 description   = state.description.trim().ifBlank { null },
                 spaceType     = state.spaceType.trim(),
                 coverImageUrl = state.coverImageUrl.trim().ifBlank { null },
-                ownerId       = ownerId
+                ownerId       = ownerId,
+                rotationType  = state.rotationType.trim().ifBlank { null },
+                requireProof  = state.requireProof
             )
 
             when (val result = spaceRepository.createSpace(request)) {

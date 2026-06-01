@@ -54,7 +54,7 @@ fun NavGraphBuilder.spacesNavGraph(
             title = UserMessages.Screens.SPACES_TITLE,
             showBack = false,
             onBackClick = {},
-            currentDestination = NavDestination.SPACES,
+            currentDestination = NavDestination.SETTINGS,
             onDestinationSelected = onTabSelected,
             snackbarHostState = rootSnackbarHostState,
             onAddClick = actions.onOpenCreate
@@ -76,7 +76,7 @@ fun NavGraphBuilder.spacesNavGraph(
     // Create space
     composable(route = SpacesDestinations.CREATE) {
         ZoneTaskScaffold(
-            title = "Crear un nuevo espacio",
+            title = "Create new space",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = rootSnackbarHostState
@@ -126,8 +126,9 @@ fun NavGraphBuilder.spacesNavGraph(
                 },
                 onNavigateToPermissions = actions.onOpenPermissions,
                 onCreateTaskClick = { actions.onCreateTaskForSpace(spaceId) },
+                onOpenPlansClick = { actions.onOpenPlans(spaceId) },
                 onEditClick = actions.onOpenEdit,
-                onDeleteSuccess = { actions.onSpaceDeleted("Espacio eliminado") } // navigate to list with message
+                onDeleteSuccess = { actions.onSpaceDeleted("Space deleted") }
             )
         }
     }
@@ -146,7 +147,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val editSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Editar espacio",
+            title = "Edit space",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = editSnackbarHostState
