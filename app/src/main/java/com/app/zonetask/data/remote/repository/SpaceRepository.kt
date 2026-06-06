@@ -35,7 +35,7 @@ class SpaceRepository(
             val response = apiService.getSpaceById(spaceId)
             if (response.isSuccessful) {
                 val space = response.body()?.toDomain()
-                    ?: return ApiResult.Error("Espacio no encontrado")
+                    ?: return ApiResult.Error("Space not found")
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(
@@ -53,7 +53,7 @@ class SpaceRepository(
             val response = apiService.createSpace(request)
             if (response.isSuccessful) {
                 val space = response.body()?.toDomain()
-                    ?: return ApiResult.Error("Error al crear el espacio")
+                    ?: return ApiResult.Error("Failed to create space")
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(
@@ -87,7 +87,7 @@ class SpaceRepository(
             val response = apiService.getSpacePermissions(spaceId, userId)
             if (response.isSuccessful) {
                 val body = response.body()
-                    ?: return ApiResult.Error("Respuesta vacía del servidor")
+                    ?: return ApiResult.Error("Empty response from server")
                 ApiResult.Success(body)
             } else {
                 ApiResult.Error(
@@ -133,7 +133,7 @@ class SpaceRepository(
             )
             if (response.isSuccessful) {
                 val member = response.body()?.toDomain()
-                    ?: return ApiResult.Error("Respuesta vacía del servidor")
+                    ?: return ApiResult.Error("Empty response from server")
                 ApiResult.Success(member)
             } else {
                 ApiResult.Error(
@@ -151,7 +151,7 @@ class SpaceRepository(
             val response = apiService.updateSpace(spaceId, request)
             if (response.isSuccessful) {
                 val space = response.body()?.toDomain()
-                    ?: return ApiResult.Error("Error al actualizar el espacio")
+                    ?: return ApiResult.Error("Failed to update space")
                 ApiResult.Success(space)
             } else {
                 ApiResult.Error(

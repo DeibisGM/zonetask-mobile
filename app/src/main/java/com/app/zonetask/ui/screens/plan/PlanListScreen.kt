@@ -17,9 +17,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,7 +36,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,6 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.FloorPlan
 import com.app.zonetask.ui.theme.AppBorder
+import com.app.zonetask.ui.theme.AppOnPrimary
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
@@ -86,7 +86,7 @@ fun PlanListScreen(
                         CircularProgressIndicator(color = AppPrimary)
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text  = "Cargando planos...",
+                            text  = "Loading plans...",
                             color = AppSecondaryText,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -107,7 +107,7 @@ fun PlanListScreen(
                             textAlign = TextAlign.Center
                         )
                         TextButton(onClick = viewModel::loadPlans) {
-                            Text("Reintentar", color = AppPrimary)
+                            Text("Retry", color = AppPrimary)
                         }
                     }
                 }
@@ -134,13 +134,13 @@ fun PlanListScreen(
                                     modifier           = Modifier.size(48.dp)
                                 )
                                 Text(
-                                    text      = "No hay planos en este espacio.",
+                                    text      = "No floor plans in this space yet.",
                                     color     = AppSecondaryText,
                                     style     = MaterialTheme.typography.bodyMedium,
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
-                                    text      = "Crea un plano en blanco para empezar.",
+                                    text      = "Create a blank plan to get started.",
                                     color     = AppSecondaryText,
                                     style     = MaterialTheme.typography.bodySmall,
                                     textAlign = TextAlign.Center
@@ -150,7 +150,7 @@ fun PlanListScreen(
                     } else {
                         item {
                             Text(
-                                text  = "Planos del espacio",
+                                text  = "Space plans",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontWeight = FontWeight.SemiBold
@@ -181,14 +181,14 @@ fun PlanListScreen(
                         Icon(
                             imageVector        = Icons.Outlined.Add,
                             contentDescription = null,
-                            tint               = Color(0xFF000000),
+                            tint               = AppOnPrimary,
                             modifier           = Modifier.size(18.dp)
                         )
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
-                            text       = "NUEVO PLANO",
-                            color      = Color(0xFF000000),
-                            fontWeight = FontWeight.Bold,
+                            text       = "New plan",
+                            color      = AppOnPrimary,
+                            fontWeight = FontWeight.SemiBold,
                             style      = MaterialTheme.typography.labelLarge
                         )
                     }
@@ -233,7 +233,7 @@ private fun PlanCard(plan: FloorPlan, onClick: () -> Unit) {
                 )
             }
             Icon(
-                imageVector        = Icons.Outlined.OpenInNew,
+                imageVector        = Icons.AutoMirrored.Outlined.OpenInNew,
                 contentDescription = null,
                 tint               = AppSecondaryText,
                 modifier           = Modifier.size(18.dp)

@@ -12,8 +12,8 @@ data class TaskItemUiState(
     val task: TaskResponse,
     val zoneName: String,
     val assignees: List<TaskAssigneeUiState> = emptyList(),
-    val statusLabel: String = "Pendiente",
-    val dueLabel: String = "Sin fecha límite",
+    val statusLabel: String = "Pending",
+    val dueLabel: String = "No due date",
     val dueStatusKey: String = "none",
     val completionAssignmentId: Int? = null,
     val canComplete: Boolean = false

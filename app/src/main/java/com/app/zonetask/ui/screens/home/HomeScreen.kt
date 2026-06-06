@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -176,18 +177,27 @@ fun HomeScreen(
                             )
                         } else {
                             Column(
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(bottom = 96.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.GridView,
+                                    contentDescription = null,
+                                    tint = AppSecondaryText.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(56.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "No floor plan",
+                                    text = "No floor plan yet",
                                     style = MaterialTheme.typography.titleMedium,
                                     color = AppSecondaryText
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Create one from your spaces",
+                                    text = "Create one from your space's Floor plans",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = AppSecondaryText.copy(alpha = 0.7f)
                                 )

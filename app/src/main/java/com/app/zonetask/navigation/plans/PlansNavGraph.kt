@@ -45,7 +45,7 @@ fun NavGraphBuilder.plansNavGraph(
         val listSnackbar = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title         = "Planos del espacio",
+            title         = "Floor plans",
             showBack      = true,
             onBackClick   = actions.onBack,
             snackbarHostState = listSnackbar
@@ -72,7 +72,7 @@ fun NavGraphBuilder.plansNavGraph(
             ?.getInt(PlansDestinations.ARG_SPACE_ID) ?: return@composable
 
         ZoneTaskScaffold(
-            title         = "Nuevo plano",
+            title         = "New plan",
             showBack      = true,
             onBackClick   = actions.onBack,
             snackbarHostState = rootSnackbarHostState
@@ -99,7 +99,7 @@ fun NavGraphBuilder.plansNavGraph(
         val planId  = backStackEntry.arguments?.getInt(PlansDestinations.ARG_PLAN_ID)  ?: return@composable
 
         ZoneTaskScaffold(
-            title         = "Editar plano",
+            title         = "Edit plan",
             showBack      = true,
             onBackClick   = actions.onBack,
             snackbarHostState = rootSnackbarHostState

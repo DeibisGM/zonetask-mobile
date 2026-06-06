@@ -2,7 +2,7 @@ package com.app.zonetask.core
 
 object UserMessages {
 
-    const val TAP_TO_RETRY_SUFFIX = " Toca para reintentar."
+    const val TAP_TO_RETRY_SUFFIX = " Tap to retry."
 
     object Spaces {
         const val LOADING               = "Loading spaces..."

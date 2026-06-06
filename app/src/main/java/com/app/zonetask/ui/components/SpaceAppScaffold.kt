@@ -72,7 +72,7 @@ fun ZoneTaskScaffold(
                             IconButton(onClick = onAddClick) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
-                                    contentDescription = "Agregar",
+                                    contentDescription = "Add",
                                     tint = MaterialTheme.colorScheme.onBackground
                                 )
                             }

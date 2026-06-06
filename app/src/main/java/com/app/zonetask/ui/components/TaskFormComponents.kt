@@ -456,11 +456,11 @@ fun TaskBottomNavBar(
     onNavigate: (String) -> Unit = {}
 ) {
     val items = listOf(
-        TaskBottomNavItem(R.drawable.ic_house, "Inicio", "home", selectedIndex == 0),
-        TaskBottomNavItem(R.drawable.ic_check_square, "Tareas", "task_create", selectedIndex == 1),
+        TaskBottomNavItem(R.drawable.ic_house, "Home", "home", selectedIndex == 0),
+        TaskBottomNavItem(R.drawable.ic_check_square, "Tasks", "task_create", selectedIndex == 1),
         TaskBottomNavItem(R.drawable.ic_chat_circle, "Chat", "chat", selectedIndex == 2),
-        TaskBottomNavItem(R.drawable.ic_user, "Perfil", "profile", selectedIndex == 3),
-        TaskBottomNavItem(R.drawable.ic_gear_six, "Ajustes", "settings", selectedIndex == 4)
+        TaskBottomNavItem(R.drawable.ic_user, "Profile", "profile", selectedIndex == 3),
+        TaskBottomNavItem(R.drawable.ic_gear_six, "Settings", "settings", selectedIndex == 4)
     )
 
     Column(

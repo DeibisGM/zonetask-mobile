@@ -172,7 +172,7 @@ fun TaskCreateScreen(
     }
 
     TaskCreateScaffold(
-        title = if (viewModel.isEditMode) "Editar tarea" else UserMessages.Screens.CREATE_TASK_TITLE,
+        title = if (viewModel.isEditMode) "Edit task" else UserMessages.Screens.CREATE_TASK_TITLE,
         showBack = true,
         onBackClick = onClose,
         onNavigate = onNavigate,

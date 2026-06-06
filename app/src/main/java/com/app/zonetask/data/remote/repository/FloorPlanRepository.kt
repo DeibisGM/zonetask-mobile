@@ -32,7 +32,7 @@ class FloorPlanRepository(
             val response = apiService.getPlanById(planId)
             if (response.isSuccessful) {
                 val plan = response.body()?.toDomain()
-                    ?: return ApiResult.Error("Plano no encontrado")
+                    ?: return ApiResult.Error("Plan not found")
                 ApiResult.Success(plan)
             } else {
                 ApiResult.Error(
@@ -50,7 +50,7 @@ class FloorPlanRepository(
             val response = apiService.createPlan(request)
             if (response.isSuccessful) {
                 val plan = response.body()?.toDomain()
-                    ?: return ApiResult.Error("Error al crear el plano")
+                    ?: return ApiResult.Error("Failed to create plan")
                 ApiResult.Success(plan)
             } else {
                 ApiResult.Error(
@@ -68,7 +68,7 @@ class FloorPlanRepository(
             val response = apiService.updatePlan(planId, request)
             if (response.isSuccessful) {
                 val plan = response.body()?.toDomain()
-                    ?: return ApiResult.Error("Error al actualizar el plano")
+                    ?: return ApiResult.Error("Failed to update plan")
                 ApiResult.Success(plan)
             } else {
                 ApiResult.Error(

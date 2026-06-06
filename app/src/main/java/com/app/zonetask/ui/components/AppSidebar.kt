@@ -70,7 +70,7 @@ fun AppSidebar(
                         color = AppOnSurface
                     )
                     Text(
-                        text = "Gestión de Espacios",
+                        text = "Space management",
                         style = MaterialTheme.typography.bodySmall,
                         color = AppSecondaryText
                     )
@@ -81,17 +81,17 @@ fun AppSidebar(
 
             SidebarItem(
                 iconRes = R.drawable.ic_house,
-                label = "Inicio",
+                label = "Home",
                 onClick = { onNavigate("home") }
             )
             SidebarItem(
                 iconRes = R.drawable.ic_check_square,
-                label = "Tareas",
+                label = "Tasks",
                 onClick = { onNavigate("task_create") }
             )
             SidebarItem(
                 iconRes = R.drawable.ic_buildings,
-                label = "Espacios",
+                label = "Spaces",
                 onClick = { onNavigate("spaces") }
             )
             SidebarItem(
@@ -106,12 +106,12 @@ fun AppSidebar(
 
             SidebarItem(
                 iconRes = R.drawable.ic_user,
-                label = "Mi Perfil",
+                label = "My profile",
                 onClick = { onNavigate("profile") }
             )
             SidebarItem(
                 iconRes = R.drawable.ic_sign_out,
-                label = "Cerrar Sesión",
+                label = "Sign out",
                 onClick = onLogout,
                 color = Color(0xFFE57373)
             )

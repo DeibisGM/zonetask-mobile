@@ -90,7 +90,7 @@ class TaskRepository(
 
             if (response.isSuccessful) {
                 val body = response.body()
-                    ?: return ApiResult.Error(message = "No se pudo cargar la tarea")
+                    ?: return ApiResult.Error(message = "Couldn't load the task")
 
                 ApiResult.Success(body)
             } else {
@@ -184,17 +184,17 @@ class TaskRepository(
     }
 
     private fun httpErrorMessage(code: Int): String = when (code) {
-        401 -> "Sesión expirada, vuelve a iniciar sesión"
-        404 -> "Recurso no encontrado"
-        500 -> "Error interno del servidor"
-        502, 503 -> "Servicio no disponible, intenta más tarde"
-        else -> "Error del servidor ($code)"
+        401 -> "Session expired, please sign in again"
+        404 -> "Resource not found"
+        500 -> "Internal server error"
+        502, 503 -> "Service unavailable, try again later"
+        else -> "Server error ($code)"
     }
 
     private fun networkErrorMessage(e: Exception): String = when (e) {
-        is UnknownHostException -> "Sin conexión a internet"
-        is SocketTimeoutException -> "El servidor tardó demasiado en responder"
-        is IOException -> "Error de red, verifica tu conexión"
-        else -> e.message ?: "Error desconocido"
+        is UnknownHostException -> "No internet connection"
+        is SocketTimeoutException -> "The server took too long to respond"
+        is IOException -> "Network error, check your connection"
+        else -> e.message ?: "Unknown error"
     }
 }

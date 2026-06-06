@@ -56,11 +56,11 @@ class EditSpaceViewModel(
         val state = _uiState.value
 
         if (state.name.isBlank()) {
-            _uiState.value = state.copy(errorBanner = "El nombre del espacio es requerido")
+            _uiState.value = state.copy(errorBanner = "Space name is required")
             return
         }
         if (state.spaceType.isBlank()) {
-            _uiState.value = state.copy(errorBanner = "El tipo de espacio es requerido")
+            _uiState.value = state.copy(errorBanner = "Space type is required")
             return
         }
 

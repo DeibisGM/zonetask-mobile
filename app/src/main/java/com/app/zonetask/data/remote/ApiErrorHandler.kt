@@ -7,19 +7,19 @@ import java.net.UnknownHostException
 object ApiErrorHandler {
 
     fun fromHttpCode(code: Int): String = when (code) {
-        401  -> "Sesión expirada, vuelve a iniciar sesión"
-        403  -> "No tienes permisos para esto"
-        404  -> "Recurso no encontrado"
-        500  -> "Error interno del servidor"
+        401  -> "Session expired, please sign in again"
+        403  -> "You don't have permission to do this"
+        404  -> "Resource not found"
+        500  -> "Internal server error"
         502,
-        503  -> "Servicio no disponible, intenta más tarde"
-        else -> "Error del servidor ($code)"
+        503  -> "Service unavailable, try again later"
+        else -> "Server error ($code)"
     }
 
     fun fromException(e: Exception): String = when (e) {
-        is UnknownHostException   -> "Sin conexión a internet"
-        is SocketTimeoutException -> "El servidor tardó demasiado en responder"
-        is IOException            -> "Error de red, verifica tu conexión"
-        else                      -> "Error inesperado"
+        is UnknownHostException   -> "No internet connection"
+        is SocketTimeoutException -> "The server took too long to respond"
+        is IOException            -> "Network error, check your connection"
+        else                      -> "Unexpected error"
     }
 }

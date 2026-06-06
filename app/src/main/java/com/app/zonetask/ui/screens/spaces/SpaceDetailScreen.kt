@@ -59,6 +59,7 @@ import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.Space
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppError
+import com.app.zonetask.ui.theme.AppOnPrimary
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
@@ -368,9 +369,9 @@ fun SpaceDetailScreen(
                             shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
                         ) {
-                            Icon(Icons.Outlined.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.Edit, null, tint = AppOnPrimary, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("EDIT", color = Color.White, fontWeight = FontWeight.SemiBold)
+                            Text("Edit", color = AppOnPrimary, fontWeight = FontWeight.SemiBold)
                         }
 
                         Button(
@@ -385,7 +386,7 @@ fun SpaceDetailScreen(
                             } else {
                                 Icon(Icons.Outlined.Delete, null, tint = Color.White, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("DELETE", color = Color.White, fontWeight = FontWeight.SemiBold)
+                                Text("Delete", color = Color.White, fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }

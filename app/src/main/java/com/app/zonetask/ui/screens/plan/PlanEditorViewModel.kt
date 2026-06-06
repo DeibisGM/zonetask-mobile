@@ -72,7 +72,7 @@ class PlanEditorViewModel(
         val state = _uiState.value
 
         if (state.name.isBlank()) {
-            _uiState.value = state.copy(errorBanner = "El nombre del plano es requerido")
+            _uiState.value = state.copy(errorBanner = "Plan name is required")
             return
         }
 
@@ -80,11 +80,11 @@ class PlanEditorViewModel(
         val height = state.canvasHeight.toFloatOrNull()
 
         if (width == null || width <= 0f) {
-            _uiState.value = state.copy(errorBanner = "El ancho del plano debe ser mayor a 0")
+            _uiState.value = state.copy(errorBanner = "Width must be greater than 0")
             return
         }
         if (height == null || height <= 0f) {
-            _uiState.value = state.copy(errorBanner = "El alto del plano debe ser mayor a 0")
+            _uiState.value = state.copy(errorBanner = "Height must be greater than 0")
             return
         }
 

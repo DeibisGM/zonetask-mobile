@@ -232,7 +232,7 @@ private fun RoleActionsCard(roleActions: Map<String, List<String>>) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text     = "Acción",
+                    text     = "Action",
                     style    = MaterialTheme.typography.labelSmall,
                     color    = AppSecondaryText,
                     modifier = Modifier.weight(1f)
@@ -358,7 +358,7 @@ private fun MemberRow(
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text  = "Usuario ${member.userId}",
+                text  = "User ${member.userId}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -411,7 +411,7 @@ private fun RoleChangeDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text  = "${UserMessages.SpacePermissions.SELECT_NEW_ROLE} (Usuario ${member.userId})",
+                    text  = "${UserMessages.SpacePermissions.SELECT_NEW_ROLE} (User ${member.userId})",
                     style = MaterialTheme.typography.bodySmall,
                     color = AppSecondaryText
                 )

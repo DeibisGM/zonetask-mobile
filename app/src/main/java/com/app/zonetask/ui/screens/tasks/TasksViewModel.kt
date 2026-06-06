@@ -98,7 +98,7 @@ class TasksViewModel(
                                 else group.copy(tasks = remainingTasks)
                             }
                     )
-                    onResult(true, "Eliminado")
+                    onResult(true, "Deleted")
                 }
 
                 is ApiResult.Error -> {
@@ -132,7 +132,7 @@ class TasksViewModel(
                             spaces = spaces,
                             selectedSpaceId = firstSpace?.spaceId,
                             selectedSpaceName = firstSpace?.name.orEmpty(),
-                            errorMessage = if (spaces.isEmpty()) "No tenés espacios todavía." else null
+                            errorMessage = if (spaces.isEmpty()) "You don't have any spaces yet." else null
                         )
                     }
 
@@ -151,7 +151,7 @@ class TasksViewModel(
                             val fullName = listOfNotNull(user.firstName, user.lastName)
                                 .filter { it.isNotBlank() }
                                 .joinToString(" ")
-                            fullName.ifBlank { user.username.ifBlank { "Usuario ${user.userId}" } }
+                            fullName.ifBlank { user.username.ifBlank { "User ${user.userId}" } }
                         }
                     }
                 }
@@ -222,7 +222,7 @@ class TasksViewModel(
             .map { (zoneId, zoneTasks) ->
                 ZoneTaskGroupUiState(
                     zoneId = zoneId,
-                    zoneName = zoneId?.let { zoneNamesById[it] ?: "Zona $it" } ?: "Sin zona",
+                    zoneName = zoneId?.let { zoneNamesById[it] ?: "Zone $it" } ?: "No zone",
                     tasks = zoneTasks.sortedBy { it.task.title.lowercase() }
                 )
             }
@@ -255,7 +255,7 @@ class TasksViewModel(
 
         // dueTimeState also tells the card whether this user can complete the active assignment.
         val dueTimeState = assignments.resolveDueTimeUiState(userId)
-        val zoneName = task.zoneId?.let { zoneNamesById[it] ?: "Zona $it" } ?: "Sin zona"
+        val zoneName = task.zoneId?.let { zoneNamesById[it] ?: "Zone $it" } ?: "No zone"
         return TaskItemUiState(
             task = task,
             zoneName = zoneName,
@@ -269,13 +269,13 @@ class TasksViewModel(
     }
 
     private fun resolveStatusLabel(assignments: List<TaskAssignmentResponse>): String {
-        if (assignments.isEmpty()) return "Sin asignar"
+        if (assignments.isEmpty()) return "Unassigned"
 
         val normalizedStatuses = assignments.map { it.status.lowercase() }
         return when {
-            normalizedStatuses.all { it == "completed" } -> "Completada"
-            normalizedStatuses.any { it == "in_progress" } -> "En progreso"
-            normalizedStatuses.any { it == "pending" } -> "Pendiente"
+            normalizedStatuses.all { it == "completed" } -> "Completed"
+            normalizedStatuses.any { it == "in_progress" } -> "In progress"
+            normalizedStatuses.any { it == "pending" } -> "Pending"
             else -> assignments.first().status.replace('_', ' ').replaceFirstChar { it.uppercase() }
         }
     }

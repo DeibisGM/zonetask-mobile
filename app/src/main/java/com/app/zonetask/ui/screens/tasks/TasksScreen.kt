@@ -55,6 +55,7 @@ import android.widget.Toast
 import com.app.zonetask.R
 import com.app.zonetask.domain.model.Space
 import com.app.zonetask.ui.theme.AppBorder
+import com.app.zonetask.ui.theme.AppError
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
@@ -128,7 +129,7 @@ private fun TasksContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Tareas",
+                text = "Tasks",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -138,7 +139,7 @@ private fun TasksContent(
                 IconButton(onClick = { onCreateTask(uiState.selectedSpaceId!!) }) {
                     Icon(
                         imageVector = Icons.Outlined.Add,
-                        contentDescription = "Nueva tarea",
+                        contentDescription = "New task",
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(26.dp)
                     )
@@ -164,12 +165,12 @@ private fun TasksContent(
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
-                        text = "Seleccionar espacio",
+                        text = "Select space",
                         style = MaterialTheme.typography.labelSmall,
                         color = AppSecondaryText
                     )
                     Text(
-                        text = uiState.selectedSpaceName.ifBlank { "Elige un espacio" },
+                        text = uiState.selectedSpaceName.ifBlank { "Choose a space" },
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium,
                         color = if (uiState.selectedSpaceName.isBlank()) AppSecondaryText
@@ -202,7 +203,7 @@ private fun TasksContent(
             uiState.isLoadingSpaces && uiState.spaces.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "Cargando...",
+                        text = "Loading...",
                         color = AppSecondaryText,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -218,7 +219,7 @@ private fun TasksContent(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         TextButton(onClick = onRetry) {
-                            Text(text = "Reintentar", color = AppPrimary)
+                            Text(text = "Retry", color = AppPrimary)
                         }
                     }
                 }
@@ -227,7 +228,7 @@ private fun TasksContent(
             uiState.isLoadingTasks -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "Cargando tareas...",
+                        text = "Loading tasks...",
                         color = AppSecondaryText,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -243,7 +244,7 @@ private fun TasksContent(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         TextButton(onClick = onRetry) {
-                            Text(text = "Reintentar", color = AppPrimary)
+                            Text(text = "Retry", color = AppPrimary)
                         }
                     }
                 }
@@ -252,7 +253,7 @@ private fun TasksContent(
             uiState.zoneGroups.isEmpty() && uiState.selectedSpaceId != null -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "No hay tareas en este espacio.",
+                        text = "No tasks in this space yet.",
                         color = AppSecondaryText,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -285,8 +286,8 @@ private fun TasksContent(
     if (taskToDelete != null) {
         AlertDialog(
             onDismissRequest = { taskToDelete = null },
-            title = { Text("Eliminar tarea") },
-            text = { Text("¿Quieres eliminar esta tarea? Esta acción no se puede deshacer.") },
+            title = { Text("Delete task") },
+            text = { Text("Delete this task? This action can't be undone.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -295,12 +296,12 @@ private fun TasksContent(
                         taskToDelete = null
                     }
                 ) {
-                    Text("ELIMINAR", color = Color(0xFFE53935))
+                    Text("Delete", color = AppError, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { taskToDelete = null }) {
-                    Text("CANCELAR")
+                    Text("Cancel")
                 }
             }
         )
@@ -321,7 +322,7 @@ private fun TasksContent(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "Seleccionar espacio",
+                    text = "Select space",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -488,24 +489,24 @@ private fun TaskCard(
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                             tint = when (task.statusLabel) {
-                                "Completada" -> AppPrimary
-                                "En progreso" -> Color(0xFF8BB7FF)
-                                "Pendiente" -> Color(0xFFE0B35A)
+                                "Completed" -> AppPrimary
+                                "In progress" -> Color(0xFF8BB7FF)
+                                "Pending" -> Color(0xFFE0B35A)
                                 else -> MaterialTheme.colorScheme.onSurface
                             }
                         )
                     },
                     colors = AssistChipDefaults.assistChipColors(
                         containerColor = when (task.statusLabel) {
-                            "Completada" -> AppPrimary.copy(alpha = 0.16f)
-                            "En progreso" -> Color(0xFF304E7B)
-                            "Pendiente" -> Color(0xFF3A2F16)
+                            "Completed" -> AppPrimary.copy(alpha = 0.16f)
+                            "In progress" -> Color(0xFF304E7B)
+                            "Pending" -> Color(0xFF3A2F16)
                             else -> AppSurface
                         },
                         labelColor = when (task.statusLabel) {
-                            "Completada" -> AppPrimary
-                            "En progreso" -> Color(0xFF8BB7FF)
-                            "Pendiente" -> Color(0xFFE0B35A)
+                            "Completed" -> AppPrimary
+                            "In progress" -> Color(0xFF8BB7FF)
+                            "Pending" -> Color(0xFFE0B35A)
                             else -> MaterialTheme.colorScheme.onSurface
                         }
                     ),
@@ -515,14 +516,14 @@ private fun TaskCard(
 
             task.assignees.firstOrNull()?.let { assignee ->
                 Text(
-                    text = "Asignado a ${assignee.displayName}",
+                    text = "Assigned to ${assignee.displayName}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppSecondaryText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             } ?: Text(
-                text = "Sin asignados visibles",
+                text = "No assignees",
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppSecondaryText
             )
@@ -576,7 +577,7 @@ private fun TaskCard(
             if (task.canComplete && task.completionAssignmentId != null) {
                 TextButton(onClick = onCompleteClick) {
                     Text(
-                        text = "Completar",
+                        text = "Complete",
                         color = AppPrimary,
                         style = MaterialTheme.typography.labelMedium
                     )

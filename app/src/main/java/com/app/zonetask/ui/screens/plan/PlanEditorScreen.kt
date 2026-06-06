@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -41,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.components.FloorPlanCanvas
+import com.app.zonetask.ui.theme.AppOnPrimary
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
@@ -76,7 +79,7 @@ fun PlanEditorScreen(
     LaunchedEffect(state.isSaved) {
         if (state.isSaved) {
             viewModel.consumeSaved()
-            onSaved("Plano guardado correctamente")
+            onSaved("Plan saved")
         }
     }
 
@@ -89,8 +92,8 @@ fun PlanEditorScreen(
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title   = { Text("¿Salir sin guardar?") },
-            text    = { Text("Tienes cambios sin guardar. Si sales ahora se perderán.") },
+            title   = { Text("Discard changes?") },
+            text    = { Text("You have unsaved changes. They'll be lost if you leave now.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -98,12 +101,12 @@ fun PlanEditorScreen(
                         onBack()
                     }
                 ) {
-                    Text("Descartar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text("Discard", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDiscardDialog = false }) {
-                    Text("Seguir editando")
+                    Text("Keep editing")
                 }
             }
         )
@@ -135,7 +138,7 @@ fun PlanEditorScreen(
                 onValueChange = viewModel::onNameChange,
                 modifier      = Modifier.fillMaxWidth(),
                 singleLine    = true,
-                label         = { Text("Nombre del plano") },
+                label         = { Text("Plan name") },
                 shape         = RoundedCornerShape(12.dp),
                 colors        = planFieldColors()
             )
@@ -149,7 +152,7 @@ fun PlanEditorScreen(
                     onValueChange = viewModel::onCanvasWidthChange,
                     modifier      = Modifier.weight(1f),
                     singleLine    = true,
-                    label         = { Text("Ancho") },
+                    label         = { Text("Width") },
                     suffix        = { Text("px") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape         = RoundedCornerShape(12.dp),
@@ -160,7 +163,7 @@ fun PlanEditorScreen(
                     onValueChange = viewModel::onCanvasHeightChange,
                     modifier      = Modifier.weight(1f),
                     singleLine    = true,
-                    label         = { Text("Alto") },
+                    label         = { Text("Height") },
                     suffix        = { Text("px") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape         = RoundedCornerShape(12.dp),
@@ -206,20 +209,21 @@ fun PlanEditorScreen(
                 if (state.isSaving) {
                     CircularProgressIndicator(
                         modifier    = Modifier.size(20.dp),
-                        color       = Color(0xFF000000),
+                        color       = AppOnPrimary,
                         strokeWidth = 2.dp
                     )
                 } else {
                     Icon(
                         imageVector        = Icons.Outlined.Save,
                         contentDescription = null,
-                        tint               = Color(0xFF000000),
+                        tint               = AppOnPrimary,
                         modifier           = Modifier.size(18.dp)
                     )
+                    Spacer(Modifier.width(8.dp))
                     Text(
-                        text       = "  GUARDAR PLANO",
-                        color      = Color(0xFF000000),
-                        fontWeight = FontWeight.Bold,
+                        text       = "Save plan",
+                        color      = AppOnPrimary,
+                        fontWeight = FontWeight.SemiBold,
                         style      = MaterialTheme.typography.labelLarge
                     )
                 }

@@ -16,7 +16,7 @@ class TaskLookupRepository(
 
             if (response.isSuccessful) {
                 val body = response.body()
-                    ?: return ApiResult.Error(message = "No se pudieron cargar las opciones")
+                    ?: return ApiResult.Error(message = "Couldn't load options")
 
                 ApiResult.Success(body)
             } else {

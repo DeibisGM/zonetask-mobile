@@ -9,9 +9,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
@@ -40,6 +42,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.app.zonetask.ui.theme.AppBorder
+import com.app.zonetask.ui.theme.AppOnPrimary
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSurface
 import kotlin.math.abs
@@ -132,21 +136,24 @@ fun FloorPlanCanvas(
             }
         }
 
-        // Center button
+        // Recenter button — appears only when the plan has been zoomed or panned away.
         AnimatedVisibility(
             visible = isOffCenter,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = bottomInset + 16.dp)
         ) {
             Button(
                 onClick = { scale = 1f; offset = Offset.Zero },
-                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary.copy(alpha = 0.9f)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.padding(bottom = bottomInset)
+                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
+                shape = RoundedCornerShape(50),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
             ) {
-                Icon(Icons.Filled.MyLocation, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                Text(" Center", color = Color.White, fontWeight = FontWeight.Medium)
+                Icon(Icons.Filled.MyLocation, null, tint = AppOnPrimary, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Center", color = AppOnPrimary, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -161,7 +168,7 @@ private fun DrawScope.drawGrid(
         cellPx *= factor
     }
     val stroke = (1.dp.toPx() / scale).coerceAtLeast(0.3f)
-    val gridColor = Color(0xFF2A2A2A)
+    val gridColor = AppBorder
     var x = cellPx
     while (x < planW) { drawLine(gridColor, Offset(x, 0f), Offset(x, planH), stroke); x += cellPx }
     var y = cellPx
