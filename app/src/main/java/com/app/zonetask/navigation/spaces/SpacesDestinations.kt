@@ -12,13 +12,15 @@ object SpacesDestinations {
     const val EDIT             = "edit_space/{$ARG_SPACE_ID}"
     const val PERMISSIONS      = "space_permissions/{$ARG_SPACE_ID}"
     const val COMPLETED_TASKS  = "completed_tasks/{$ARG_SPACE_ID}"
+    const val STATISTICS       = "statistics/{$ARG_SPACE_ID}/{$ARG_USER_ID}"
 
     // Type-safe builders — prefer over string concatenation at call sites.
-    fun list(userId: Int): String           = "spaces/$userId"
-    fun detail(spaceId: Int): String        = "space_detail/$spaceId"
-    fun edit(spaceId: Int): String          = "edit_space/$spaceId"
-    fun permissions(spaceId: Int): String   = "space_permissions/$spaceId"
-    fun completedTasks(spaceId: Int): String = "completed_tasks/$spaceId"
+    fun list(userId: Int): String                          = "spaces/$userId"
+    fun detail(spaceId: Int): String                       = "space_detail/$spaceId"
+    fun edit(spaceId: Int): String                         = "edit_space/$spaceId"
+    fun permissions(spaceId: Int): String                  = "space_permissions/$spaceId"
+    fun completedTasks(spaceId: Int): String               = "completed_tasks/$spaceId"
+    fun statistics(spaceId: Int, userId: Int): String      = "statistics/$spaceId/$userId"
 }
 
 // Keys for results passed between spaces screens via savedStateHandle.

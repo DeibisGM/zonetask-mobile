@@ -19,6 +19,7 @@ import com.app.zonetask.ui.screens.spaces.EditSpaceScreen
 import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
 import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
+import com.app.zonetask.ui.screens.statistics.IndividualStatisticsScreen
 import com.app.zonetask.ui.screens.taskhistory.CompletedTaskHistoryScreen
 
 fun NavGraphBuilder.spacesNavGraph(
@@ -127,6 +128,7 @@ fun NavGraphBuilder.spacesNavGraph(
                 onCreateTaskClick = { actions.onCreateTaskForSpace(spaceId) },
                 onOpenPlansClick = { actions.onOpenPlans(spaceId) },
                 onOpenCompletedTasksClick = { actions.onOpenCompletedTasks(spaceId) },
+                onOpenStatisticsClick = { actions.onOpenStatistics(spaceId, currentUserId) },
                 onEditClick = actions.onOpenEdit,
                 onDeleteSuccess = { actions.onSpaceDeleted("Space deleted") }
             )
@@ -209,6 +211,37 @@ fun NavGraphBuilder.spacesNavGraph(
         ) { padding ->
             CompletedTaskHistoryScreen(
                 spaceId = spaceId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Individual statistics
+    composable(
+        route = SpacesDestinations.STATISTICS,
+        arguments = listOf(
+            navArgument(SpacesDestinations.ARG_SPACE_ID) { type = NavType.IntType },
+            navArgument(SpacesDestinations.ARG_USER_ID)  { type = NavType.IntType }
+        )
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+        val userId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_USER_ID)
+            ?: return@composable
+
+        val statsSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "My Statistics",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = statsSnackbarHostState
+        ) { padding ->
+            IndividualStatisticsScreen(
+                spaceId  = spaceId,
+                userId   = userId,
                 modifier = Modifier.padding(padding)
             )
         }

@@ -8,6 +8,7 @@ data class SpacesNavActions(
     val onCreateTaskForSpace: (spaceId: Int) -> Unit,
     val onOpenPlans: (spaceId: Int) -> Unit,
     val onOpenCompletedTasks: (spaceId: Int) -> Unit,
+    val onOpenStatistics: (spaceId: Int, userId: Int) -> Unit,
     val onBack: () -> Unit,
     val onSpaceCreated: (message: String) -> Unit,
     val onSpaceEdited: (message: String) -> Unit,
