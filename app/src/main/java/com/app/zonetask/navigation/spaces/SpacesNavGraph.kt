@@ -21,6 +21,7 @@ import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.statistics.IndividualStatisticsScreen
 import com.app.zonetask.ui.screens.statistics.SpaceStatisticsScreen
+import com.app.zonetask.ui.screens.statistics.UserReportsScreen
 import com.app.zonetask.ui.screens.taskhistory.CompletedTaskHistoryScreen
 
 fun NavGraphBuilder.spacesNavGraph(
@@ -131,6 +132,7 @@ fun NavGraphBuilder.spacesNavGraph(
                 onOpenCompletedTasksClick = { actions.onOpenCompletedTasks(spaceId) },
                 onOpenStatisticsClick = { actions.onOpenStatistics(spaceId, currentUserId) },
                 onOpenSpaceStatisticsClick = { actions.onOpenSpaceStatistics(spaceId) },
+                onOpenUserReportsClick = { actions.onOpenUserReports(spaceId) },
                 onEditClick = actions.onOpenEdit,
                 onDeleteSuccess = { actions.onSpaceDeleted("Space deleted") }
             )
@@ -268,6 +270,30 @@ fun NavGraphBuilder.spacesNavGraph(
             IndividualStatisticsScreen(
                 spaceId  = spaceId,
                 userId   = userId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Reports by user
+    composable(
+        route = SpacesDestinations.USER_REPORTS,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_SPACE_ID) { type = NavType.IntType })
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+
+        val reportsSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Reports by User",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = reportsSnackbarHostState
+        ) { padding ->
+            UserReportsScreen(
+                spaceId  = spaceId,
                 modifier = Modifier.padding(padding)
             )
         }
