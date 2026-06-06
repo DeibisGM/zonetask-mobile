@@ -193,6 +193,9 @@ private fun rememberSpacesNavActions(
         onOpenPlans = { spaceId ->
             navController.navigate(PlansDestinations.list(spaceId))
         },
+        onOpenCompletedTasks = { spaceId ->
+            navController.navigate(SpacesDestinations.completedTasks(spaceId))
+        },
         onBack = { navController.popBackStack() },
 
         onSpaceCreated = { message ->

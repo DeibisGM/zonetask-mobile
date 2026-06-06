@@ -1,6 +1,7 @@
 package com.app.zonetask.data.remote
 
 import com.app.zonetask.core.AppConstants
+import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.TaskApiService
 import com.app.zonetask.data.remote.service.SpaceApiService
@@ -49,5 +50,9 @@ object RetrofitClient {
 
     val userApiService: UserApiService by lazy {
         retrofit.create(UserApiService::class.java)
+    }
+
+    val completionApiService: CompletionApiService by lazy {
+        retrofit.create(CompletionApiService::class.java)
     }
 }
