@@ -43,8 +43,9 @@ object AppConstants {
             // Completion history endpoint
             const val COMPLETED_TASKS = "api/spaces/{spaceId}/completed-tasks"
 
-            // Statistics endpoint
-            const val USER_STATISTICS = "api/spaces/{spaceId}/members/{userId}/statistics"
+            // Statistics endpoints
+            const val USER_STATISTICS   = "api/spaces/{spaceId}/members/{userId}/statistics"
+            const val SPACE_STATISTICS  = "api/spaces/{spaceId}/statistics"
         }
     }
 }
