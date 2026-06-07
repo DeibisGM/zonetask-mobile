@@ -7,6 +7,8 @@ data class UserResponse(
     val userId: Int,
     @SerializedName("username")
     val username: String = "",
+    @SerializedName("email")
+    val email: String = "",
     @SerializedName("firstName")
     val firstName: String = "",
     @SerializedName("lastName")
