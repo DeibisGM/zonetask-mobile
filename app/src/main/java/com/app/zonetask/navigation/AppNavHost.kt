@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +38,8 @@ import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 
+private const val REGISTRATION_NOTICE_KEY = "registrationNotice"
+
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
@@ -64,7 +67,17 @@ fun AppNavHost() {
         modifier = Modifier.fillMaxSize()
     ) {
 
-        composable(route = AppDestinations.LOGIN) {
+        composable(route = AppDestinations.LOGIN) { backStackEntry ->
+            val registrationNotice by backStackEntry.savedStateHandle
+                .getStateFlow<String?>(REGISTRATION_NOTICE_KEY, null)
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(registrationNotice) {
+                if (!registrationNotice.isNullOrBlank()) {
+                    backStackEntry.savedStateHandle[REGISTRATION_NOTICE_KEY] = null
+                }
+            }
+
             LoginScreen(
                 onLoginSuccess = { userId ->
                     currentUserId = userId
@@ -74,13 +87,20 @@ fun AppNavHost() {
                 },
                 onCreateAccount = {
                     navController.navigate(AppDestinations.REGISTER)
-                }
+                },
+                registrationNotice = registrationNotice
             )
         }
 
         composable(route = AppDestinations.REGISTER) {
             RegisterScreen(
-                onBackToLogin = {
+                onBackToLogin = { message ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(
+                            REGISTRATION_NOTICE_KEY,
+                            message ?: UserMessages.Login.REGISTRATION_NOTICE
+                        )
                     navController.popBackStack(AppDestinations.LOGIN, inclusive = false)
                 }
             )

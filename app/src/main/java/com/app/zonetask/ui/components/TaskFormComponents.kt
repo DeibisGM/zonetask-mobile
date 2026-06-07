@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -104,6 +105,8 @@ fun TaskDropdown(
     error: String? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var anchorWidthPx by remember { mutableIntStateOf(0) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
 
     // Read-only field with a custom dropdown menu.
     Column(modifier = modifier.fillMaxWidth()) {
@@ -117,7 +120,11 @@ fun TaskDropdown(
             OutlinedTextField(
                 value = value,
                 onValueChange = {},
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onGloballyPositioned { coordinates ->
+                        anchorWidthPx = coordinates.size.width
+                    },
                 readOnly = true,
                 enabled = false, 
                 isError = error != null,
@@ -154,9 +161,9 @@ fun TaskDropdown(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
                 modifier = Modifier
-                    .fillMaxWidth(0.9f)
+                    .width(with(density) { anchorWidthPx.toDp() })
                     .background(AppSurface)
-                    .border(1.dp, AppBorder, RoundedCornerShape(8.dp))
+                    .border(1.dp, AppBorder, RoundedCornerShape(14.dp))
             ) {
                 options.forEach { (labelStr, valStr) ->
                     DropdownMenuItem(
@@ -170,7 +177,10 @@ fun TaskDropdown(
                         onClick = {
                             onOptionSelected(valStr)
                             expanded = false
-                        }
+                        },
+                        colors = androidx.compose.material3.MenuDefaults.itemColors(
+                            textColor = AppOnSurface
+                        )
                     )
                 }
             }
