@@ -29,9 +29,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.app.zonetask.data.auth.FirebaseAuthRepository
+import com.app.zonetask.data.auth.BackendAuthRepository
 import com.app.zonetask.data.remote.ApiResult
-import com.app.zonetask.data.remote.repository.UserRepository
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.components.AuthCard
 import com.app.zonetask.ui.components.AuthHeader
@@ -49,10 +48,7 @@ fun LoginScreen(
     onLoginSuccess: (Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(
-            authRepository = AppContainer.authRepository,
-            userRepository = AppContainer.userRepository
-        )
+        factory = LoginViewModelFactory(AppContainer.authRepository)
     )
 ) {
     val uiState = viewModel.uiState
@@ -124,14 +120,14 @@ fun LoginScreen(
                 )
 
                 AuthNote(
-                    text = "La validación se hace con Firebase Auth y luego se enlaza con tu usuario del backend."
+                    text = "La validación se hace contra el backend, y el backend usa Firebase por debajo."
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             AuthNote(
-                text = "Si el inicio falla, revisa que `google-services.json` esté en `app/` y que Email/Password esté habilitado en Firebase Auth."
+                text = "Si el inicio falla, revisa que el backend esté corriendo y que el usuario exista en Firebase y en tu base de datos."
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -171,8 +167,7 @@ data class LoginUiState(
 }
 
 class LoginViewModel(
-    private val authRepository: FirebaseAuthRepository,
-    private val userRepository: UserRepository
+    private val authRepository: BackendAuthRepository
 ) : ViewModel() {
 
     var uiState by mutableStateOf(LoginUiState())
@@ -215,43 +210,41 @@ class LoginViewModel(
         uiState = uiState.copy(isLoading = true, errorMessage = null, resolvedUserId = null)
 
         viewModelScope.launch {
-            authRepository.signIn(uiState.email.trim(), uiState.password)
-                .onSuccess { sessionUser ->
-                    when (val result = userRepository.resolveUserIdByEmail(sessionUser.email)) {
-                        is ApiResult.Success -> {
-                            uiState = uiState.copy(
-                                isLoading = false,
-                                errorMessage = null,
-                                resolvedUserId = result.data
-                            )
-                        }
-
-                        is ApiResult.Error -> {
-                            authRepository.signOut()
-                            uiState = uiState.copy(
-                                isLoading = false,
-                                errorMessage = result.message
-                            )
-                        }
+            when (val result = authRepository.login(uiState.email.trim(), uiState.password)) {
+                is ApiResult.Success -> {
+                    val userId = result.data.user?.userId
+                    if (userId != null && userId > 0) {
+                        uiState = uiState.copy(
+                            isLoading = false,
+                            errorMessage = null,
+                            resolvedUserId = userId
+                        )
+                    } else {
+                        authRepository.clearSession()
+                        uiState = uiState.copy(
+                            isLoading = false,
+                            errorMessage = "El servidor no devolvió un usuario válido."
+                        )
                     }
                 }
-                .onFailure { error ->
+
+                is ApiResult.Error -> {
                     uiState = uiState.copy(
                         isLoading = false,
-                        errorMessage = error.localizedMessage ?: "No se pudo iniciar sesión."
+                        errorMessage = result.message
                     )
                 }
+            }
         }
     }
 }
 
 class LoginViewModelFactory(
-    private val authRepository: FirebaseAuthRepository,
-    private val userRepository: UserRepository
+    private val authRepository: BackendAuthRepository
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return LoginViewModel(authRepository, userRepository) as T
+        return LoginViewModel(authRepository) as T
     }
 }

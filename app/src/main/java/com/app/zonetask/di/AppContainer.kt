@@ -1,6 +1,6 @@
 package com.app.zonetask.di
 
-import com.app.zonetask.data.auth.FirebaseAuthRepository
+import com.app.zonetask.data.auth.BackendAuthRepository
 import com.app.zonetask.data.remote.RetrofitClient
 import com.app.zonetask.data.remote.repository.TaskLookupRepository
 import com.app.zonetask.data.remote.repository.TaskRepository
@@ -31,7 +31,7 @@ object AppContainer {
         UserRepository(RetrofitClient.userApiService)
     }
 
-    val authRepository: FirebaseAuthRepository by lazy {
-        FirebaseAuthRepository()
+    val authRepository: BackendAuthRepository by lazy {
+        BackendAuthRepository(RetrofitClient.authApiService)
     }
 }
