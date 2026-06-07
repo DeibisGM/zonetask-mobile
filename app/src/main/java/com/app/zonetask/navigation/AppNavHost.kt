@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.navigation.plans.PlansDestinations
 import com.app.zonetask.navigation.plans.PlansNavActions
@@ -31,16 +33,26 @@ import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.home.HomeScreen
 import com.app.zonetask.ui.screens.login.LoginScreen
+import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
+
+private const val REGISTRATION_NOTICE_KEY = "registrationNotice"
 
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
-    var currentUserId by rememberSaveable { mutableIntStateOf(0) }
+    var currentUserId by rememberSaveable {
+        mutableIntStateOf(AuthSessionStore.currentUser?.userId ?: 0)
+    }
     var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
+    val startDestination = if (currentUserId > 0) {
+        AppDestinations.homeRoute(0)
+    } else {
+        AppDestinations.LOGIN
+    }
 
     val onTabSelected: (NavDestination) -> Unit = { destination ->
         navigateToTab(navController, destination, currentUserId, currentSpaceId)
@@ -51,17 +63,46 @@ fun AppNavHost() {
 
     NavHost(
         navController = navController,
-        startDestination = AppDestinations.LOGIN,
+        startDestination = startDestination,
         modifier = Modifier.fillMaxSize()
     ) {
 
-        composable(route = AppDestinations.LOGIN) {
+        composable(route = AppDestinations.LOGIN) { backStackEntry ->
+            val registrationNotice by backStackEntry.savedStateHandle
+                .getStateFlow<String?>(REGISTRATION_NOTICE_KEY, null)
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(registrationNotice) {
+                if (!registrationNotice.isNullOrBlank()) {
+                    backStackEntry.savedStateHandle[REGISTRATION_NOTICE_KEY] = null
+                }
+            }
+
             LoginScreen(
                 onLoginSuccess = { userId ->
                     currentUserId = userId
                     navController.navigate(AppDestinations.homeRoute(0)) {
                         popUpTo(AppDestinations.LOGIN) { inclusive = true }
                     }
+                },
+                onCreateAccount = {
+                    navController.navigate(AppDestinations.REGISTER)
+                },
+                registrationNotice = registrationNotice
+            )
+        }
+
+        composable(route = AppDestinations.REGISTER) {
+            RegisterScreen(
+                onBackToLogin = { message ->
+                    // The registration flow stores a one-time message for the login screen before returning.
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set(
+                            REGISTRATION_NOTICE_KEY,
+                            message ?: UserMessages.Login.REGISTRATION_NOTICE
+                        )
+                    navController.popBackStack(AppDestinations.LOGIN, inclusive = false)
                 }
             )
         }

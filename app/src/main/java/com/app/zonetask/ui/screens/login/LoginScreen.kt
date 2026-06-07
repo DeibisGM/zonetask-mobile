@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +37,7 @@ import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.components.AuthCard
 import com.app.zonetask.ui.components.AuthHeader
+import com.app.zonetask.ui.components.AuthNote
 import com.app.zonetask.ui.components.AuthPasswordField
 import com.app.zonetask.ui.components.AuthPrimaryButton
 import com.app.zonetask.ui.components.AuthScreenShell
@@ -46,6 +49,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     onLoginSuccess: (Int) -> Unit,
+    onCreateAccount: () -> Unit,
+    registrationNotice: String? = null,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(
         factory = LoginViewModelFactory(AppContainer.authRepository)
@@ -75,10 +80,16 @@ fun LoginScreen(
                 subtitle = UserMessages.Login.SUBTITLE
             )
 
+            // The registration notice is injected only after a successful sign-up.
+            if (!registrationNotice.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                AuthNote(text = registrationNotice)
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             AuthCard(modifier = Modifier.fillMaxWidth()) {
-                // Email is validated as the user types, while empty state stays neutral.
+                // Email validation runs live while the empty field remains visually neutral.
                 AuthTextField(
                     value = uiState.email,
                     onValueChange = viewModel::onEmailChanged,
@@ -100,7 +111,7 @@ fun LoginScreen(
                     )
                 )
 
-                // Password visibility and login submission are handled through shared auth components.
+                // Password visibility and submit handling are delegated to the shared auth components.
                 AuthPasswordField(
                     value = uiState.password,
                     onValueChange = viewModel::onPasswordChanged,
@@ -122,6 +133,13 @@ fun LoginScreen(
                     loading = uiState.isLoading,
                     enabled = uiState.canSubmit
                 )
+
+                TextButton(
+                    onClick = onCreateAccount,
+                    enabled = !uiState.isLoading
+                ) {
+                    Text(text = UserMessages.Register.TITLE)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -162,7 +180,7 @@ class LoginViewModel(
     var uiState by mutableStateOf(LoginUiState())
     private set
 
-    // Keeps the form state in sync with typed input and clears old server errors.
+    // Keeps the form state in sync with typed input and clears stale server errors.
     fun onEmailChanged(value: String) {
         uiState = uiState.copy(
             email = value.trimStart(),
@@ -171,7 +189,7 @@ class LoginViewModel(
         )
     }
 
-    // Stores the password exactly as entered so Firebase-backed login can use it unchanged.
+    // Stores the password exactly as entered so the backend can forward it to Firebase Auth.
     fun onPasswordChanged(value: String) {
         uiState = uiState.copy(
             password = value,
