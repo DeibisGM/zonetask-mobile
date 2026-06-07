@@ -117,4 +117,33 @@ object UserMessages {
         const val EMAIL_INVALID = "Correo no válido."
         const val PASSWORD_REQUIRED = "Ingresa tu contraseña."
     }
+
+    object Register {
+        const val TITLE = "Crear cuenta"
+        const val SUBTITLE = "Regístrate para usar ZoneTask y recibir el correo de verificación."
+        const val USERNAME_LABEL = "Usuario"
+        const val USERNAME_PLACEHOLDER = "tu_usuario"
+        const val FIRST_NAME_LABEL = "Nombre"
+        const val FIRST_NAME_PLACEHOLDER = "Tu nombre"
+        const val LAST_NAME_LABEL = "Apellido"
+        const val LAST_NAME_PLACEHOLDER = "Tu apellido"
+        const val GENDER_LABEL = "Género"
+        const val GENDER_PLACEHOLDER = "male, female, non_binary, prefer_not_to_say"
+        const val EMAIL_LABEL = "Correo"
+        const val EMAIL_PLACEHOLDER = "correo@ejemplo.com"
+        const val PASSWORD_LABEL = "Contraseña"
+        const val PASSWORD_PLACEHOLDER = "Crea una contraseña"
+        const val CONFIRM_PASSWORD_LABEL = "Confirmar contraseña"
+        const val CONFIRM_PASSWORD_PLACEHOLDER = "Repite la contraseña"
+        const val SUBMIT = "Registrarme"
+        const val BACK_TO_LOGIN = "Ya tengo cuenta"
+        const val USERNAME_REQUIRED = "Ingresa un usuario."
+        const val FIRST_NAME_REQUIRED = "Ingresa tu nombre."
+        const val EMAIL_REQUIRED = "Ingresa tu correo."
+        const val EMAIL_INVALID = "Correo no válido."
+        const val PASSWORD_REQUIRED = "Ingresa una contraseña."
+        const val PASSWORD_MIN_LENGTH = "La contraseña debe tener al menos 8 caracteres."
+        const val PASSWORDS_DONT_MATCH = "Las contraseñas no coinciden."
+        const val REGISTRATION_PENDING = "Revisa tu correo para verificar tu cuenta."
+    }
 }
