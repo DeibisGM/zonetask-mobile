@@ -80,7 +80,7 @@ fun LoginScreen(
                     value = uiState.email,
                     onValueChange = viewModel::onEmailChanged,
                     label = "Correo",
-                    placeholder = "tu-correo@ejemplo.com",
+                    placeholder = "correo@ejemplo.com",
                     error = uiState.emailError,
                     leadingIcon = {
                         Icon(
@@ -119,24 +119,11 @@ fun LoginScreen(
                     enabled = uiState.canSubmit
                 )
 
-                AuthNote(
-                    text = "La validación se hace contra el backend, y el backend usa Firebase por debajo."
-                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            AuthNote(
-                text = "Si el inicio falla, revisa que el backend esté corriendo y que el usuario exista en Firebase y en tu base de datos."
-            )
-
             Spacer(modifier = Modifier.height(10.dp))
-
-            androidx.compose.material3.Text(
-                text = "Esta es la pantalla de entrada que verás al abrir la app.",
-                color = AppSecondaryText.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.labelSmall
-            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }
