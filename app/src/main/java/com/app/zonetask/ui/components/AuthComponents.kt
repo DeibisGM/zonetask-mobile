@@ -158,7 +158,7 @@ fun AuthHeader(
 
         Text(
             text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = AppSecondaryText
         )
     }
@@ -263,7 +263,7 @@ fun AuthPasswordField(
         trailingIcon = {
             IconButton(onClick = onVisibilityToggle) {
                 Icon(
-                    imageVector = if (isVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    imageVector = if (isVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
                     contentDescription = if (isVisible) "Ocultar contraseña" else "Mostrar contraseña"
                 )
             }

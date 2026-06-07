@@ -104,4 +104,17 @@ object UserMessages {
     object Navigation {
         const val LOGIN_SUCCESS_SNACKBAR = "Logged in successfully"
     }
+
+    object Login {
+        const val TITLE = "ZoneTask"
+        const val SUBTITLE = "Inicia sesión con tu correo y contraseña."
+        const val EMAIL_LABEL = "Correo"
+        const val EMAIL_PLACEHOLDER = "correo@ejemplo.com"
+        const val PASSWORD_LABEL = "Contraseña"
+        const val PASSWORD_PLACEHOLDER = "Escribe tu contraseña"
+        const val SUBMIT = "Ingresar"
+        const val EMAIL_REQUIRED = "Ingresa tu correo."
+        const val EMAIL_INVALID = "Correo no válido."
+        const val PASSWORD_REQUIRED = "Ingresa tu contraseña."
+    }
 }

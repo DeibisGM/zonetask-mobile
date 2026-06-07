@@ -29,12 +29,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.auth.BackendAuthRepository
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.components.AuthCard
 import com.app.zonetask.ui.components.AuthHeader
-import com.app.zonetask.ui.components.AuthNote
 import com.app.zonetask.ui.components.AuthPasswordField
 import com.app.zonetask.ui.components.AuthPrimaryButton
 import com.app.zonetask.ui.components.AuthScreenShell
@@ -69,8 +69,8 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             AuthHeader(
-                title = "ZoneTask",
-                subtitle = "Inicia sesión con tu correo y contraseña para continuar."
+                title = UserMessages.Login.TITLE,
+                subtitle = UserMessages.Login.SUBTITLE
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -79,8 +79,8 @@ fun LoginScreen(
                 AuthTextField(
                     value = uiState.email,
                     onValueChange = viewModel::onEmailChanged,
-                    label = "Correo",
-                    placeholder = "correo@ejemplo.com",
+                    label = UserMessages.Login.EMAIL_LABEL,
+                    placeholder = UserMessages.Login.EMAIL_PLACEHOLDER,
                     error = uiState.emailError,
                     leadingIcon = {
                         Icon(
@@ -100,8 +100,8 @@ fun LoginScreen(
                 AuthPasswordField(
                     value = uiState.password,
                     onValueChange = viewModel::onPasswordChanged,
-                    label = "Contraseña",
-                    placeholder = "Escribe tu contraseña",
+                    label = UserMessages.Login.PASSWORD_LABEL,
+                    placeholder = UserMessages.Login.PASSWORD_PLACEHOLDER,
                     error = uiState.passwordError,
                     isVisible = uiState.isPasswordVisible,
                     onVisibilityToggle = viewModel::togglePasswordVisibility,
@@ -113,17 +113,12 @@ fun LoginScreen(
                 AuthStatusMessage(message = uiState.errorMessage)
 
                 AuthPrimaryButton(
-                    text = "Ingresar",
+                    text = UserMessages.Login.SUBMIT,
                     onClick = viewModel::login,
                     loading = uiState.isLoading,
                     enabled = uiState.canSubmit
                 )
-
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Spacer(modifier = Modifier.height(10.dp))
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -138,19 +133,21 @@ data class LoginUiState(
     val errorMessage: String? = null,
     val resolvedUserId: Int? = null
 ) {
-    val emailError: String? = when {
-        email.isBlank() -> "Ingresa tu correo."
-        !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Correo no válido."
-        else -> null
-    }
+    val emailError: String?
+        get() = when {
+            email.isBlank() -> null
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> UserMessages.Login.EMAIL_INVALID
+            else -> null
+        }
 
-    val passwordError: String? = when {
-        password.isBlank() -> "Ingresa tu contraseña."
-        else -> null
-    }
+    val passwordError: String?
+        get() = when {
+            password.isBlank() -> null
+            else -> null
+        }
 
     val canSubmit: Boolean
-        get() = emailError == null && passwordError == null && !isLoading
+        get() = email.isNotBlank() && password.isNotBlank() && !isLoading
 }
 
 class LoginViewModel(
@@ -181,7 +178,7 @@ class LoginViewModel(
     }
 
     fun requestFocusPassword() {
-        // El siguiente campo ya recibe foco por el teclado.
+
     }
 
     fun login() {
@@ -189,7 +186,8 @@ class LoginViewModel(
         val passwordError = uiState.passwordError
         if (emailError != null || passwordError != null) {
             uiState = uiState.copy(
-                errorMessage = emailError ?: passwordError
+                errorMessage = emailError ?: passwordError,
+                isLoading = false
             )
             return
         }
