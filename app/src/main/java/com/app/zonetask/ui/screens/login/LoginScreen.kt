@@ -37,6 +37,7 @@ import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.components.AuthCard
 import com.app.zonetask.ui.components.AuthHeader
+import com.app.zonetask.ui.components.AuthNote
 import com.app.zonetask.ui.components.AuthPasswordField
 import com.app.zonetask.ui.components.AuthPrimaryButton
 import com.app.zonetask.ui.components.AuthScreenShell
@@ -49,6 +50,7 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     onLoginSuccess: (Int) -> Unit,
     onCreateAccount: () -> Unit,
+    registrationNotice: String? = null,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(
         factory = LoginViewModelFactory(AppContainer.authRepository)
@@ -77,6 +79,11 @@ fun LoginScreen(
                 title = UserMessages.Login.TITLE,
                 subtitle = UserMessages.Login.SUBTITLE
             )
+
+            if (!registrationNotice.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                AuthNote(text = registrationNotice)
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
