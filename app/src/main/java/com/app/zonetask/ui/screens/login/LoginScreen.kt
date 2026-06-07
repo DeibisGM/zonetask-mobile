@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +48,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginScreen(
     onLoginSuccess: (Int) -> Unit,
+    onCreateAccount: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(
         factory = LoginViewModelFactory(AppContainer.authRepository)
@@ -122,6 +125,13 @@ fun LoginScreen(
                     loading = uiState.isLoading,
                     enabled = uiState.canSubmit
                 )
+
+                TextButton(
+                    onClick = onCreateAccount,
+                    enabled = !uiState.isLoading
+                ) {
+                    Text(text = UserMessages.Register.TITLE)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

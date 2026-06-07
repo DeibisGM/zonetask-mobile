@@ -4,6 +4,7 @@ package com.app.zonetask.navigation
 // Feature routes (e.g. spaces) live in their own navigation package.
 object AppDestinations {
     const val LOGIN = "login"
+    const val REGISTER = "register"
 
     const val HOME                     = "home/{spaceId}"
     const val TASK_CREATE              = "task_create"

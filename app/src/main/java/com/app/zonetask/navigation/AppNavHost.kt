@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.navigation.plans.PlansDestinations
 import com.app.zonetask.navigation.plans.PlansNavActions
@@ -31,6 +32,7 @@ import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.home.HomeScreen
 import com.app.zonetask.ui.screens.login.LoginScreen
+import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
@@ -39,8 +41,15 @@ import com.app.zonetask.ui.screens.tasks.TasksScreen
 fun AppNavHost() {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
-    var currentUserId by rememberSaveable { mutableIntStateOf(0) }
+    var currentUserId by rememberSaveable {
+        mutableIntStateOf(AuthSessionStore.currentUser?.userId ?: 0)
+    }
     var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
+    val startDestination = if (currentUserId > 0) {
+        AppDestinations.homeRoute(0)
+    } else {
+        AppDestinations.LOGIN
+    }
 
     val onTabSelected: (NavDestination) -> Unit = { destination ->
         navigateToTab(navController, destination, currentUserId, currentSpaceId)
@@ -51,7 +60,7 @@ fun AppNavHost() {
 
     NavHost(
         navController = navController,
-        startDestination = AppDestinations.LOGIN,
+        startDestination = startDestination,
         modifier = Modifier.fillMaxSize()
     ) {
 
@@ -62,6 +71,17 @@ fun AppNavHost() {
                     navController.navigate(AppDestinations.homeRoute(0)) {
                         popUpTo(AppDestinations.LOGIN) { inclusive = true }
                     }
+                },
+                onCreateAccount = {
+                    navController.navigate(AppDestinations.REGISTER)
+                }
+            )
+        }
+
+        composable(route = AppDestinations.REGISTER) {
+            RegisterScreen(
+                onBackToLogin = {
+                    navController.popBackStack(AppDestinations.LOGIN, inclusive = false)
                 }
             )
         }
