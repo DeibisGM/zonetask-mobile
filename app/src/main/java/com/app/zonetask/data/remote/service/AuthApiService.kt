@@ -8,6 +8,7 @@ import retrofit2.http.POST
 
 interface AuthApiService {
 
+    // Backend auth endpoint used by the mobile login flow.
     @POST("api/auth/login")
     suspend fun login(
         @Body request: LoginRequest

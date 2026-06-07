@@ -53,6 +53,8 @@ fun LoginScreen(
 ) {
     val uiState = viewModel.uiState
 
+    // Once Firebase-backed login resolves a valid local user id, the screen
+    // delegates navigation back to the app shell.
     LaunchedEffect(uiState.resolvedUserId) {
         uiState.resolvedUserId?.let(onLoginSuccess)
     }
@@ -76,6 +78,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             AuthCard(modifier = Modifier.fillMaxWidth()) {
+                // Email is validated as the user types, while empty state stays neutral.
                 AuthTextField(
                     value = uiState.email,
                     onValueChange = viewModel::onEmailChanged,
@@ -97,6 +100,7 @@ fun LoginScreen(
                     )
                 )
 
+                // Password visibility and login submission are handled through shared auth components.
                 AuthPasswordField(
                     value = uiState.password,
                     onValueChange = viewModel::onPasswordChanged,
@@ -133,6 +137,7 @@ data class LoginUiState(
     val errorMessage: String? = null,
     val resolvedUserId: Int? = null
 ) {
+    // Live validation keeps the UI responsive without flagging empty fields as errors.
     val emailError: String?
         get() = when {
             email.isBlank() -> null
@@ -155,8 +160,9 @@ class LoginViewModel(
 ) : ViewModel() {
 
     var uiState by mutableStateOf(LoginUiState())
-        private set
+    private set
 
+    // Keeps the form state in sync with typed input and clears old server errors.
     fun onEmailChanged(value: String) {
         uiState = uiState.copy(
             email = value.trimStart(),
@@ -165,6 +171,7 @@ class LoginViewModel(
         )
     }
 
+    // Stores the password exactly as entered so Firebase-backed login can use it unchanged.
     fun onPasswordChanged(value: String) {
         uiState = uiState.copy(
             password = value,
@@ -182,6 +189,7 @@ class LoginViewModel(
     }
 
     fun login() {
+        // The submit action reuses the same validation rules before contacting the backend.
         val emailError = uiState.emailError
         val passwordError = uiState.passwordError
         if (emailError != null || passwordError != null) {

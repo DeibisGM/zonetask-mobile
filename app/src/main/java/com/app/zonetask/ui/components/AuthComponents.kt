@@ -57,6 +57,7 @@ fun AuthScreenShell(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    // Shared auth backdrop used by login-related screens to keep a consistent visual language.
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -101,6 +102,7 @@ fun AuthCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    // Reusable elevated container for auth forms and future sign-in screens.
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -123,6 +125,7 @@ fun AuthHeader(
     subtitle: String,
     modifier: Modifier = Modifier
 ) {
+    // Header block that can be reused across auth flows without reimplementing spacing or styling.
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -180,6 +183,7 @@ fun AuthTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     enabled: Boolean = true
 ) {
+    // Generic outlined field with shared label, placeholder, and inline error presentation.
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
@@ -243,6 +247,7 @@ fun AuthPasswordField(
     keyboardActions: androidx.compose.foundation.text.KeyboardActions = androidx.compose.foundation.text.KeyboardActions.Default,
     enabled: Boolean = true
 ) {
+    // Password field builds on the generic auth field and adds visibility toggling.
     AuthTextField(
         value = value,
         onValueChange = onValueChange,
@@ -279,6 +284,7 @@ fun AuthPrimaryButton(
     enabled: Boolean = true,
     loading: Boolean = false
 ) {
+    // Primary call-to-action button reused across auth flows to keep loading and disabled states consistent.
     Button(
         onClick = onClick,
         modifier = modifier
@@ -314,6 +320,7 @@ fun AuthStatusMessage(
     message: String?,
     modifier: Modifier = Modifier
 ) {
+    // Compact status line for backend or session errors shown below the form.
     if (message == null) return
 
     Text(

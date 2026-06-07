@@ -13,6 +13,7 @@ class BackendAuthRepository(
     private val authApiService: AuthApiService
 ) {
 
+    // Bridges the login screen with the backend and persists the returned session locally.
     suspend fun login(email: String, password: String): ApiResult<AuthResponse> {
         return try {
             val response = authApiService.login(
