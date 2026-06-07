@@ -95,6 +95,7 @@ fun AppNavHost() {
         composable(route = AppDestinations.REGISTER) {
             RegisterScreen(
                 onBackToLogin = { message ->
+                    // The registration flow stores a one-time message for the login screen before returning.
                     navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set(

@@ -17,7 +17,7 @@ class BackendAuthRepository(
     private val authApiService: AuthApiService
 ) {
 
-    // Bridges the login screen with the backend and persists the returned session locally.
+    // Sends the login request to the backend and stores the returned session only when it is valid.
     suspend fun login(email: String, password: String): ApiResult<AuthResponse> {
         return try {
             val tokenCfm = FirebaseMessagingTokenProvider.getToken()
@@ -54,7 +54,7 @@ class BackendAuthRepository(
         }
     }
 
-    // Creates a Firebase-backed account and returns the local profile for the new user.
+    // Sends the registration request to the backend and only stores the result when the server accepts it.
     suspend fun register(request: RegisterRequest): ApiResult<RegisterResponse> {
         return try {
             val tokenCfm = FirebaseMessagingTokenProvider.getToken()

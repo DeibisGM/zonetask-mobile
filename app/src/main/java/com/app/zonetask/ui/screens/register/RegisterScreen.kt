@@ -60,6 +60,8 @@ fun RegisterScreen(
 ) {
     val uiState = viewModel.uiState
 
+    // When sign-up succeeds, the screen hands control back to the login flow
+    // with the verification notice that should be shown exactly once.
     LaunchedEffect(uiState.registrationCompleted) {
         if (uiState.registrationCompleted) {
             onBackToLogin(uiState.infoMessage ?: UserMessages.Login.REGISTRATION_NOTICE)
@@ -72,7 +74,7 @@ fun RegisterScreen(
                 .fillMaxSize()
                 .padding(top = 24.dp)
         ) {
-            // Header stays fixed while only the form sections scroll.
+            // The header remains fixed so the form can scroll independently in sections.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -276,6 +278,7 @@ data class RegisterUiState(
     val infoMessage: String? = null,
     val registrationCompleted: Boolean = false
 ) {
+    // Username validation is kept live so the form can show the error without waiting for submit.
     val usernameError: String?
         get() = when {
             username.isBlank() -> null
@@ -283,12 +286,14 @@ data class RegisterUiState(
             else -> null
         }
 
+    // Optional fields stay neutral and do not block the flow.
     val firstNameError: String?
         get() = when {
             firstName.isBlank() -> null
             else -> null
         }
 
+    // Email validation mirrors the login screen so both flows behave consistently.
     val emailError: String?
         get() = when {
             email.isBlank() -> null
@@ -296,6 +301,7 @@ data class RegisterUiState(
             else -> null
         }
 
+    // Password rules are checked before calling the backend so Firebase receives only valid input.
     val passwordError: String?
         get() = when {
             password.isBlank() -> null
@@ -303,6 +309,7 @@ data class RegisterUiState(
             else -> null
         }
 
+    // Both password fields must match before the account creation request is sent.
     val confirmPasswordError: String?
         get() = when {
             confirmPassword.isBlank() || password.isBlank() -> null
@@ -327,6 +334,7 @@ class RegisterViewModel(
         private set
 
     fun onUsernameChanged(value: String) {
+        // Keeps the local form state fresh while clearing any stale backend notice.
         uiState = uiState.copy(username = value.trimStart(), errorMessage = null, infoMessage = null)
     }
 
@@ -339,6 +347,7 @@ class RegisterViewModel(
     }
 
     fun onGenderChanged(value: String) {
+        // The selected value is stored as the backend-friendly gender code.
         uiState = uiState.copy(gender = value.trimStart(), errorMessage = null, infoMessage = null)
     }
 
@@ -367,6 +376,7 @@ class RegisterViewModel(
     }
 
     fun register() {
+        // The submit action uses the same validation rules before calling the backend.
         val error = listOfNotNull(
             if (uiState.username.isBlank()) UserMessages.Register.USERNAME_REQUIRED else null,
             if (uiState.firstName.isBlank()) UserMessages.Register.FIRST_NAME_REQUIRED else null,
@@ -383,6 +393,7 @@ class RegisterViewModel(
         uiState = uiState.copy(isLoading = true, errorMessage = null, infoMessage = null)
 
         viewModelScope.launch {
+            // The backend creates the Firebase account, persists the local user, and returns verification status.
             when (val result = authRepository.register(
                 RegisterRequest(
                     username = uiState.username.trim(),
@@ -397,6 +408,7 @@ class RegisterViewModel(
             )) {
                 is ApiResult.Success -> {
                     val userId = result.data.user?.userId ?: 0
+                    // Successful sign-up keeps the success note available for the login screen.
                     uiState = uiState.copy(
                         isLoading = false,
                         registrationCompleted = userId > 0,
@@ -410,6 +422,7 @@ class RegisterViewModel(
                 }
 
                 is ApiResult.Error -> {
+                    // Server-side errors stay on the registration screen so the user can fix the form.
                     uiState = uiState.copy(
                         isLoading = false,
                         errorMessage = result.message,
