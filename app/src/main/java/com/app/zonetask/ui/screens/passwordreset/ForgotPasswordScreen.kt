@@ -65,6 +65,7 @@ fun ForgotPasswordScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             AuthCard(modifier = Modifier.fillMaxWidth()) {
+                // This screen only requests the email so Firebase can send the recovery link.
                 AuthTextField(
                     value = uiState.email,
                     onValueChange = viewModel::onEmailChanged,
@@ -86,6 +87,7 @@ fun ForgotPasswordScreen(
                     AuthNote(text = uiState.infoMessage)
                 }
 
+                // The backend only needs the email to trigger Firebase's recovery message.
                 AuthPrimaryButton(
                     text = UserMessages.PasswordReset.REQUEST_BUTTON,
                     onClick = viewModel::requestReset,
