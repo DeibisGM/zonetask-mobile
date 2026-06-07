@@ -28,6 +28,27 @@ class UserRepository(
         }
     }
 
+    suspend fun resolveUserIdByEmail(email: String): ApiResult<Int> {
+        return when (val result = getUsers()) {
+            is ApiResult.Success -> {
+                val normalizedEmail = email.trim().lowercase()
+                val matchedUser = result.data.firstOrNull { user ->
+                    user.email.trim().lowercase() == normalizedEmail
+                } ?: result.data.firstOrNull { user ->
+                    user.username.trim().lowercase() == normalizedEmail
+                }
+
+                if (matchedUser != null) {
+                    ApiResult.Success(matchedUser.userId)
+                } else {
+                    ApiResult.Error(message = "No se encontró un usuario asociado a ese correo.")
+                }
+            }
+
+            is ApiResult.Error -> result
+        }
+    }
+
     private fun httpErrorMessage(code: Int): String = when (code) {
         401 -> "Sesión expirada, vuelve a iniciar sesión"
         404 -> "Recurso no encontrado"
