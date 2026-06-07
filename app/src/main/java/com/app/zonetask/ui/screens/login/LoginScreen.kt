@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -43,14 +44,14 @@ import com.app.zonetask.ui.components.AuthPrimaryButton
 import com.app.zonetask.ui.components.AuthScreenShell
 import com.app.zonetask.ui.components.AuthStatusMessage
 import com.app.zonetask.ui.components.AuthTextField
-import com.app.zonetask.ui.theme.AppSecondaryText
 import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: (Int) -> Unit,
     onCreateAccount: () -> Unit,
-    registrationNotice: String? = null,
+    onForgotPassword: () -> Unit,
+    authNotice: String? = null,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(
         factory = LoginViewModelFactory(AppContainer.authRepository)
@@ -80,10 +81,10 @@ fun LoginScreen(
                 subtitle = UserMessages.Login.SUBTITLE
             )
 
-            // The registration notice is injected only after a successful sign-up.
-            if (!registrationNotice.isNullOrBlank()) {
+            // The auth notice is injected only after a successful sign-up or password reset.
+            if (!authNotice.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(12.dp))
-                AuthNote(text = registrationNotice)
+                AuthNote(text = authNotice)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -111,34 +112,62 @@ fun LoginScreen(
                     )
                 )
 
-                // Password visibility and submit handling are delegated to the shared auth components.
-                AuthPasswordField(
-                    value = uiState.password,
-                    onValueChange = viewModel::onPasswordChanged,
-                    label = UserMessages.Login.PASSWORD_LABEL,
-                    placeholder = UserMessages.Login.PASSWORD_PLACEHOLDER,
-                    error = uiState.passwordError,
-                    isVisible = uiState.isPasswordVisible,
-                    onVisibilityToggle = viewModel::togglePasswordVisibility,
-                    keyboardActions = KeyboardActions(
-                        onDone = { viewModel.login() }
-                    )
-                )
-
-                AuthStatusMessage(message = uiState.errorMessage)
-
-                AuthPrimaryButton(
-                    text = UserMessages.Login.SUBMIT,
-                    onClick = viewModel::login,
-                    loading = uiState.isLoading,
-                    enabled = uiState.canSubmit
-                )
-
-                TextButton(
-                    onClick = onCreateAccount,
-                    enabled = !uiState.isLoading
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(text = UserMessages.Register.TITLE)
+                    // Password visibility and submit handling are delegated to the shared auth components.
+                    AuthPasswordField(
+                        value = uiState.password,
+                        onValueChange = viewModel::onPasswordChanged,
+                        label = UserMessages.Login.PASSWORD_LABEL,
+                        placeholder = UserMessages.Login.PASSWORD_PLACEHOLDER,
+                        error = uiState.passwordError,
+                        isVisible = uiState.isPasswordVisible,
+                        onVisibilityToggle = viewModel::togglePasswordVisibility,
+                        keyboardActions = KeyboardActions(
+                            onDone = { viewModel.login() }
+                        )
+                    )
+
+                    androidx.compose.foundation.layout.Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = onForgotPassword,
+                            enabled = !uiState.isLoading,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                        ) {
+                            Text(
+                                text = UserMessages.Login.FORGOT_PASSWORD,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontStyle = FontStyle.Italic
+                                )
+                            )
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    AuthStatusMessage(message = uiState.errorMessage)
+
+                    AuthPrimaryButton(
+                        text = UserMessages.Login.SUBMIT,
+                        onClick = viewModel::login,
+                        loading = uiState.isLoading,
+                        enabled = uiState.canSubmit
+                    )
+
+                    TextButton(
+                        onClick = onCreateAccount,
+                        enabled = !uiState.isLoading
+                    ) {
+                        Text(text = UserMessages.Register.TITLE)
+                    }
                 }
             }
 

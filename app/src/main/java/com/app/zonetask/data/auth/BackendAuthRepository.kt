@@ -4,9 +4,13 @@ import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.core.FirebaseMessagingTokenProvider
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.AuthResponse
+import com.app.zonetask.data.remote.dto.ForgotPasswordRequest
+import com.app.zonetask.data.remote.dto.ForgotPasswordResponse
 import com.app.zonetask.data.remote.dto.LoginRequest
 import com.app.zonetask.data.remote.dto.RegisterRequest
 import com.app.zonetask.data.remote.dto.RegisterResponse
+import com.app.zonetask.data.remote.dto.ResetPasswordRequest
+import com.app.zonetask.data.remote.dto.ResetPasswordResponse
 import com.app.zonetask.data.remote.service.AuthApiService
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -66,6 +70,57 @@ class BackendAuthRepository(
                 val body = response.body()
                 if (body?.user == null || body.user.userId <= 0) {
                     ApiResult.Error(message = "El servidor no devolvió el usuario registrado.")
+                } else {
+                    ApiResult.Success(body)
+                }
+            } else {
+                ApiResult.Error(
+                    message = serverErrorMessage(response) ?: httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
+    // Asks the backend to send Firebase's password reset email for the given address.
+    suspend fun requestPasswordReset(email: String): ApiResult<ForgotPasswordResponse> {
+        return try {
+            val response = authApiService.forgotPassword(ForgotPasswordRequest(email = email))
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body == null) {
+                    ApiResult.Error(message = "El servidor no devolvió una respuesta válida.")
+                } else {
+                    ApiResult.Success(body)
+                }
+            } else {
+                ApiResult.Error(
+                    message = serverErrorMessage(response) ?: httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
+    // Sends the reset code and the new password to the backend so Firebase can update the account.
+    suspend fun resetPassword(token: String, newPassword: String): ApiResult<ResetPasswordResponse> {
+        return try {
+            val response = authApiService.resetPassword(
+                ResetPasswordRequest(
+                    token = token,
+                    newPassword = newPassword
+                )
+            )
+
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body == null) {
+                    ApiResult.Error(message = "El servidor no devolvió una respuesta válida.")
                 } else {
                     ApiResult.Success(body)
                 }
