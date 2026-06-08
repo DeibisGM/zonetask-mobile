@@ -5,6 +5,7 @@ package com.app.zonetask.navigation
 object AppDestinations {
     const val LOGIN = "login"
     const val REGISTER = "register"
+    const val FORGOT_PASSWORD = "forgot_password"
 
     const val HOME                     = "home/{spaceId}"
     const val TASK_CREATE              = "task_create"

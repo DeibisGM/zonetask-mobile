@@ -33,12 +33,13 @@ import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.home.HomeScreen
 import com.app.zonetask.ui.screens.login.LoginScreen
+import com.app.zonetask.ui.screens.passwordreset.ForgotPasswordScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 
-private const val REGISTRATION_NOTICE_KEY = "registrationNotice"
+private const val AUTH_NOTICE_KEY = "authNotice"
 
 @Composable
 fun AppNavHost() {
@@ -69,12 +70,12 @@ fun AppNavHost() {
 
         composable(route = AppDestinations.LOGIN) { backStackEntry ->
             val registrationNotice by backStackEntry.savedStateHandle
-                .getStateFlow<String?>(REGISTRATION_NOTICE_KEY, null)
+                .getStateFlow<String?>(AUTH_NOTICE_KEY, null)
                 .collectAsStateWithLifecycle()
 
             LaunchedEffect(registrationNotice) {
                 if (!registrationNotice.isNullOrBlank()) {
-                    backStackEntry.savedStateHandle[REGISTRATION_NOTICE_KEY] = null
+                    backStackEntry.savedStateHandle[AUTH_NOTICE_KEY] = null
                 }
             }
 
@@ -88,7 +89,10 @@ fun AppNavHost() {
                 onCreateAccount = {
                     navController.navigate(AppDestinations.REGISTER)
                 },
-                registrationNotice = registrationNotice
+                onForgotPassword = {
+                    navController.navigate(AppDestinations.FORGOT_PASSWORD)
+                },
+                authNotice = registrationNotice
             )
         }
 
@@ -99,9 +103,17 @@ fun AppNavHost() {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set(
-                            REGISTRATION_NOTICE_KEY,
+                            AUTH_NOTICE_KEY,
                             message ?: UserMessages.Login.REGISTRATION_NOTICE
                         )
+                    navController.popBackStack(AppDestinations.LOGIN, inclusive = false)
+                }
+            )
+        }
+
+        composable(route = AppDestinations.FORGOT_PASSWORD) {
+            ForgotPasswordScreen(
+                onBackToLogin = {
                     navController.popBackStack(AppDestinations.LOGIN, inclusive = false)
                 }
             )

@@ -1,6 +1,8 @@
 package com.app.zonetask.data.remote.service
 
 import com.app.zonetask.data.remote.dto.AuthResponse
+import com.app.zonetask.data.remote.dto.ForgotPasswordRequest
+import com.app.zonetask.data.remote.dto.ForgotPasswordResponse
 import com.app.zonetask.data.remote.dto.LoginRequest
 import com.app.zonetask.data.remote.dto.RegisterRequest
 import com.app.zonetask.data.remote.dto.RegisterResponse
@@ -20,4 +22,10 @@ interface AuthApiService {
     suspend fun register(
         @Body request: RegisterRequest
     ): Response<RegisterResponse>
+
+    // Requests the Firebase password recovery email for the provided address.
+    @POST("api/auth/forgot-password")
+    suspend fun forgotPassword(
+        @Body request: ForgotPasswordRequest
+    ): Response<ForgotPasswordResponse>
 }

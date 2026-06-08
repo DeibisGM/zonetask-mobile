@@ -57,3 +57,15 @@ data class RegisterResponse(
     @SerializedName("email_verification_sent")
     val emailVerificationSent: Boolean = false
 )
+
+data class ForgotPasswordRequest(
+    @SerializedName("email")
+    val email: String
+)
+
+data class ForgotPasswordResponse(
+    @SerializedName("email")
+    val email: String = "",
+    @SerializedName("reset_email_sent")
+    val resetEmailSent: Boolean = false
+)

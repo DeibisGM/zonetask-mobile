@@ -113,10 +113,12 @@ object UserMessages {
         const val PASSWORD_LABEL = "Contraseña"
         const val PASSWORD_PLACEHOLDER = "Escribe tu contraseña"
         const val SUBMIT = "Ingresar"
+        const val FORGOT_PASSWORD = "¿Olvidaste tu contraseña?"
         const val EMAIL_REQUIRED = "Ingresa tu correo."
         const val EMAIL_INVALID = "Correo no válido."
         const val PASSWORD_REQUIRED = "Ingresa tu contraseña."
         const val REGISTRATION_NOTICE = "Tu cuenta se registró. Verifica tu correo para activarla."
+        const val PASSWORD_RESET_NOTICE = "Tu contraseña se actualizó. Ya puedes iniciar sesión."
     }
 
     object Register {
@@ -160,5 +162,13 @@ object UserMessages {
         const val REGISTRATION_PENDING = "Revisa tu correo para verificar tu cuenta."
         const val REGISTRATION_FAILED_VERIFICATION = "Se creó la cuenta, pero no se pudo enviar el correo de verificación."
         const val USERNAME_TOO_SHORT = "El usuario debe tener al menos 3 caracteres."
+    }
+
+    object PasswordReset {
+        const val REQUEST_TITLE = "Recuperar contraseña"
+        const val REQUEST_SUBTITLE = "Te enviaremos un correo de recuperación."
+        const val REQUEST_BUTTON = "Enviar correo"
+        const val REQUEST_SUCCESS = "Revisa tu correo y sigue el enlace para cambiar tu contraseña."
+        const val REQUEST_BACK_TO_LOGIN = "Volver al inicio de sesión"
     }
 }
