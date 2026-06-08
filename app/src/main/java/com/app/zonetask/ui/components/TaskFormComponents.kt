@@ -198,7 +198,7 @@ fun TaskDropdown(
 
 @Composable
 fun TaskSectionCard(
-    title: String,
+    title: String? = null,
     subtitle: String? = null,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
@@ -215,18 +215,22 @@ fun TaskSectionCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = AppOnSurface
-                )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AppSecondaryText
-                    )
+            if (!title.isNullOrBlank() || !subtitle.isNullOrBlank()) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (!title.isNullOrBlank()) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = AppOnSurface
+                        )
+                    }
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AppSecondaryText
+                        )
+                    }
                 }
             }
             content()
@@ -423,6 +427,31 @@ fun TaskFilledButton(
         )
     ) {
         Text(text = text, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
+fun TaskDangerButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        enabled = enabled,
+        shape = RoundedCornerShape(18.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFD32F2F),
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFFD32F2F).copy(alpha = 0.45f),
+            disabledContentColor = Color.White.copy(alpha = 0.70f)
+        )
+    ) {
+        Text(text = text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
     }
 }
 

@@ -34,6 +34,8 @@ import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.home.HomeScreen
 import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.passwordreset.ForgotPasswordScreen
+import com.app.zonetask.ui.screens.profile.ProfileEditScreen
+import com.app.zonetask.ui.screens.profile.ProfileScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
@@ -53,6 +55,19 @@ fun AppNavHost() {
         AppDestinations.homeRoute(0)
     } else {
         AppDestinations.LOGIN
+    }
+
+    // Central logout handler that clears the cached session and returns to the login screen.
+    val performLogout = {
+        AuthSessionStore.clear()
+        currentUserId = 0
+        currentSpaceId = 0
+        navController.navigate(AppDestinations.LOGIN) {
+            popUpTo(navController.graph.startDestinationId) {
+                inclusive = true
+            }
+            launchSingleTop = true
+        }
     }
 
     val onTabSelected: (NavDestination) -> Unit = { destination ->
@@ -93,6 +108,41 @@ fun AppNavHost() {
                     navController.navigate(AppDestinations.FORGOT_PASSWORD)
                 },
                 authNotice = registrationNotice
+            )
+        }
+
+        composable(route = AppDestinations.PROFILE) { backStackEntry ->
+            val profileChanged by backStackEntry.savedStateHandle
+                .getStateFlow("profileChanged", false)
+                .collectAsStateWithLifecycle()
+
+            // Reload the profile after edits so the screen always reflects the latest saved data.
+            LaunchedEffect(profileChanged) {
+                if (profileChanged) {
+                    backStackEntry.savedStateHandle["profileChanged"] = false
+                }
+            }
+
+            ProfileScreen(
+                userId = currentUserId,
+                onTabSelected = onTabSelected,
+                onEditProfile = {
+                    navController.navigate(AppDestinations.PROFILE_EDIT)
+                },
+                onLogout = performLogout,
+                refreshTrigger = profileChanged
+            )
+        }
+
+        composable(route = AppDestinations.PROFILE_EDIT) {
+            ProfileEditScreen(
+                userId = currentUserId,
+                onBack = { navController.popBackStack() },
+                onSaved = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("profileChanged", true)
+                }
             )
         }
 
@@ -206,7 +256,8 @@ fun AppNavHost() {
             navController = navController,
             currentUserId = currentUserId,
             snackbarHostState = snackbarHostState,
-            onTabSelected = onTabSelected
+            onTabSelected = onTabSelected,
+            onLogout = performLogout
         )
     }
 }
@@ -224,6 +275,7 @@ private fun navigateToTab(
             AppDestinations.homeRoute(sid)
         }
         NavDestination.TASKS   -> AppDestinations.tasksRoute(userId)
+        NavDestination.PROFILE -> AppDestinations.PROFILE
         NavDestination.SETTINGS -> SpacesDestinations.list(userId)
         else -> return
     }
@@ -294,29 +346,32 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
     navController: NavHostController,
     currentUserId: Int,
     snackbarHostState: SnackbarHostState,
-    onTabSelected: (NavDestination) -> Unit
+    onTabSelected: (NavDestination) -> Unit,
+    onLogout: () -> Unit
 ) {
     composable(route = AppDestinations.TASK_CREATE) {
-        TaskCreateScreen(
-            initialSpaceId = 1,
-            initialCreatedBy = currentUserId,
-            onNavigate = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
-            onClose = { navController.popBackStack() }
-        )
-    }
+            TaskCreateScreen(
+                initialSpaceId = 1,
+                initialCreatedBy = currentUserId,
+                onNavigate = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
+                onLogout = onLogout,
+                onClose = { navController.popBackStack() }
+            )
+        }
 
     composable(
         route = AppDestinations.TASK_CREATE_WITH_SPACE,
         arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
     ) { backStackEntry ->
         val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 1
-        TaskCreateScreen(
-            initialSpaceId = spaceId,
-            initialCreatedBy = currentUserId,
-            onNavigate = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
-            onClose = { navController.popBackStack() }
-        )
-    }
+            TaskCreateScreen(
+                initialSpaceId = spaceId,
+                initialCreatedBy = currentUserId,
+                onNavigate = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
+                onLogout = onLogout,
+                onClose = { navController.popBackStack() }
+            )
+        }
 
     composable(
         route = AppDestinations.TASK_EDIT_WITH_SPACE,
@@ -332,6 +387,7 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
             initialCreatedBy = currentUserId,
             taskId = taskId,
             onNavigate = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
+            onLogout = onLogout,
             onClose = { navController.popBackStack() }
         )
     }
@@ -380,9 +436,18 @@ private fun navigateToSpacesFromTasks(
     route: String,
     currentUserId: Int
 ) {
+    // Routes emitted from task screens are normalized here so profile and spaces open consistently.
     if ((route == "spaces" || route.startsWith("spaces/")) && currentUserId > 0) {
         navController.navigate(SpacesDestinations.list(currentUserId)) {
             launchSingleTop = true
         }
+        return
+    }
+
+    if (route == "profile" && currentUserId > 0) {
+        navController.navigate(AppDestinations.PROFILE) {
+            launchSingleTop = true
+        }
+        return
     }
 }

@@ -81,6 +81,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
     implementation(libs.org.jetbrains.kotlinx.coroutines.play.services)
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
 
