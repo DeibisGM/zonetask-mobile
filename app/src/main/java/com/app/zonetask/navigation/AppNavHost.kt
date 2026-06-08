@@ -57,6 +57,7 @@ fun AppNavHost() {
         AppDestinations.LOGIN
     }
 
+    // Central logout handler that clears the cached session and returns to the login screen.
     val performLogout = {
         AuthSessionStore.clear()
         currentUserId = 0
@@ -115,6 +116,7 @@ fun AppNavHost() {
                 .getStateFlow("profileChanged", false)
                 .collectAsStateWithLifecycle()
 
+            // Reload the profile after edits so the screen always reflects the latest saved data.
             LaunchedEffect(profileChanged) {
                 if (profileChanged) {
                     backStackEntry.savedStateHandle["profileChanged"] = false
@@ -434,6 +436,7 @@ private fun navigateToSpacesFromTasks(
     route: String,
     currentUserId: Int
 ) {
+    // Routes emitted from task screens are normalized here so profile and spaces open consistently.
     if ((route == "spaces" || route.startsWith("spaces/")) && currentUserId > 0) {
         navController.navigate(SpacesDestinations.list(currentUserId)) {
             launchSingleTop = true

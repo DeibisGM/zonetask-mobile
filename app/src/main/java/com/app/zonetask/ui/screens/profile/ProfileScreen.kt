@@ -67,6 +67,7 @@ fun ProfileScreen(
     val displayName = currentUser?.displayName.orEmpty().ifBlank {
         listOfNotNull(currentUser?.firstName, currentUser?.lastName).joinToString(" ").trim()
     }
+    // The incomplete-profile check intentionally ignores the photo so onboarding stays focused on required fields.
     val missingFields = remember(currentUser) { buildMissingProfileFields(currentUser) }
 
     LaunchedEffect(userId, refreshTrigger) {
@@ -220,6 +221,7 @@ fun ProfileScreen(
     }
 }
 
+// Returns only the required profile fields that still need to be completed.
 private fun buildMissingProfileFields(user: UserResponse?): List<String> {
     if (user == null) return emptyList()
     return buildList {
@@ -230,6 +232,7 @@ private fun buildMissingProfileFields(user: UserResponse?): List<String> {
     }
 }
 
+// Maps the stored gender key to the Spanish label used in the UI.
 private fun genderLabel(key: String?): String = when (key) {
     "male" -> "Masculino"
     "female" -> "Femenino"
@@ -238,6 +241,7 @@ private fun genderLabel(key: String?): String = when (key) {
     else -> ""
 }
 
+// Formats the backend birth date into the locale-friendly dd/MM/yyyy display format.
 private fun formatBirthDate(rawValue: String?): String {
     val value = rawValue?.trim().orEmpty()
     if (value.isBlank()) return ""
@@ -250,6 +254,7 @@ private fun formatBirthDate(rawValue: String?): String {
     return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(parsed)
 }
 
+// Resolves relative backend image paths into a fully qualified URL for Coil.
 private fun resolveBackendImageUrl(path: String?): String? {
     val normalized = path?.trim().orEmpty()
     if (normalized.isBlank()) return null
@@ -297,6 +302,7 @@ class ProfileViewModel(
     var uiState by mutableStateOf(ProfileUiState())
         private set
 
+    // Loads the latest profile snapshot and keeps the shared session cache in sync.
     fun load() {
         if (userId <= 0) {
             uiState = ProfileUiState(

@@ -69,6 +69,7 @@ fun ProfileEditScreen(
     val uiState = viewModel.uiState
     val context = LocalContext.current
 
+    // Uses the system file picker so the user can choose a new profile image without a custom permission flow.
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -287,6 +288,7 @@ class ProfileEditViewModel(
     var uiState by mutableStateOf(ProfileEditUiState())
         private set
 
+    // Loads the editable profile state and resets the screen into a clean loading state first.
     fun load() {
         if (userId <= 0) {
             uiState = ProfileEditUiState(
@@ -326,6 +328,7 @@ class ProfileEditViewModel(
         }
     }
 
+    // Keeps the selected local image visible while the upload is still running.
     fun onPhotoPreviewSelected(url: String?) {
         uiState = uiState.copy(selectedPhotoPreviewUrl = url)
     }
@@ -354,6 +357,7 @@ class ProfileEditViewModel(
         uiState = uiState.copy(bio = value)
     }
 
+    // Copies the selected image to a temporary file and sends it to the backend upload endpoint.
     fun uploadProfilePicture(context: Context, uri: Uri) {
         viewModelScope.launch {
             uiState = uiState.copy(isUploadingPhoto = true, errorMessage = null)
@@ -404,6 +408,7 @@ class ProfileEditViewModel(
         }
     }
 
+    // Persists the editable fields and recalculates onboarding completion from the required profile data.
     fun save(onSuccess: () -> Unit) {
         if (uiState.firstName.isBlank()) {
             uiState = uiState.copy(errorMessage = "El nombre es obligatorio.")
@@ -455,6 +460,7 @@ class ProfileEditViewModel(
         }
     }
 
+    // Determines whether the required profile fields are complete, excluding the optional photo.
     private fun isProfileComplete(
         phone: String?,
         birthDateInput: String,
@@ -519,6 +525,7 @@ private fun uriToTempFile(context: Context, uri: Uri): File? {
     }
 }
 
+// Prefers the local preview while editing and falls back to the stored backend image URL.
 private fun displayProfileImageUrl(previewUrl: String?, storedUrl: String?): String? {
     val localPreview = previewUrl?.trim().orEmpty()
     if (localPreview.isNotBlank()) return localPreview

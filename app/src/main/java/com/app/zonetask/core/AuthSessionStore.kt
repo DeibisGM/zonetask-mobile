@@ -37,6 +37,7 @@ object AuthSessionStore {
     var currentUser: UserResponse? = null
         private set
 
+    // Initializes the session cache once and restores the last stored auth state.
     fun initialize(context: Context) {
         if (appContext == null) {
             appContext = context.applicationContext
@@ -44,6 +45,7 @@ object AuthSessionStore {
         }
     }
 
+    // Persists the current auth tokens and the latest user snapshot.
     fun save(
         sessionToken: String?,
         refreshToken: String?,
@@ -55,6 +57,7 @@ object AuthSessionStore {
         persist()
     }
 
+    // Clears the in-memory state and wipes the persisted session data.
     fun clear() {
         sessionToken = null
         refreshToken = null
@@ -66,6 +69,7 @@ object AuthSessionStore {
             ?.apply()
     }
 
+    // Rehydrates the last known session from shared preferences.
     private fun restoreFromStorage() {
         val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             ?: return
@@ -96,6 +100,7 @@ object AuthSessionStore {
         currentUser = user
     }
 
+    // Writes the current session snapshot to shared preferences.
     private fun persist() {
         val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             ?: return
@@ -137,6 +142,7 @@ object AuthSessionStore {
             .apply()
     }
 
+    // Reads nullable booleans without losing the distinction between false and missing values.
     private fun readNullableBoolean(key: String): Boolean? {
         val prefs = appContext?.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             ?: return null
