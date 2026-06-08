@@ -25,7 +25,7 @@ enum class NavDestination(
     HOME(iconRes = R.drawable.ic_house, enabled = true),
     TASKS(iconRes = R.drawable.ic_check_square, enabled = true),
     CHAT(iconRes = R.drawable.ic_chat_circle, enabled = false),
-    PROFILE(iconRes = R.drawable.ic_user, enabled = false),
+    PROFILE(iconRes = R.drawable.ic_user, enabled = true),
     SETTINGS(iconRes = R.drawable.ic_gear_six, enabled = false)
 }
 
