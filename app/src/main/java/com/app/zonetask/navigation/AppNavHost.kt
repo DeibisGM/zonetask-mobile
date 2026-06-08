@@ -34,6 +34,7 @@ import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.home.HomeScreen
 import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.passwordreset.ForgotPasswordScreen
+import com.app.zonetask.ui.screens.profile.ProfileEditScreen
 import com.app.zonetask.ui.screens.profile.ProfileScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
@@ -109,10 +110,37 @@ fun AppNavHost() {
             )
         }
 
-        composable(route = AppDestinations.PROFILE) {
+        composable(route = AppDestinations.PROFILE) { backStackEntry ->
+            val profileChanged by backStackEntry.savedStateHandle
+                .getStateFlow("profileChanged", false)
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(profileChanged) {
+                if (profileChanged) {
+                    backStackEntry.savedStateHandle["profileChanged"] = false
+                }
+            }
+
             ProfileScreen(
+                userId = currentUserId,
                 onTabSelected = onTabSelected,
-                onLogout = performLogout
+                onEditProfile = {
+                    navController.navigate(AppDestinations.PROFILE_EDIT)
+                },
+                onLogout = performLogout,
+                refreshTrigger = profileChanged
+            )
+        }
+
+        composable(route = AppDestinations.PROFILE_EDIT) {
+            ProfileEditScreen(
+                userId = currentUserId,
+                onBack = { navController.popBackStack() },
+                onSaved = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("profileChanged", true)
+                }
             )
         }
 
