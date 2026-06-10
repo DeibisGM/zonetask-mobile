@@ -20,8 +20,10 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -51,6 +53,7 @@ import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.SpaceMember
 import com.app.zonetask.ui.theme.AppBorder
+import com.app.zonetask.ui.theme.AppOnPrimary
 import com.app.zonetask.ui.theme.AppIconTint
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
@@ -58,12 +61,16 @@ import kotlinx.coroutines.flow.collectLatest
 
 private val ASSIGNABLE_ROLES = listOf("admin", "member")
 
+// Permission action key from the OpenAPI contract (SpacePermissions.role_actions).
+private const val ACTION_INVITE_MEMBERS = "invite_members"
+
 @Composable
 fun SpacePermissionsScreen(
     spaceId: Int,
     userId: Int,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
+    onInviteClick: () -> Unit = {},
     viewModel: SpacePermissionsViewModel = viewModel(
         factory = SpacePermissionsViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
@@ -124,6 +131,7 @@ fun SpacePermissionsScreen(
             SpacePermissionsContent(
                 uiState          = uiState,
                 onRequestChange  = { member -> viewModel.requestRoleChange(member) },
+                onInviteClick    = onInviteClick,
                 modifier         = modifier
             )
 
@@ -143,8 +151,14 @@ fun SpacePermissionsScreen(
 private fun SpacePermissionsContent(
     uiState: SpacePermissionsUiState,
     onRequestChange: (SpaceMember) -> Unit,
+    onInviteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Server-driven gating: rely on the permission matrix instead of duplicating
+    // the role rule client-side. Fails closed if role_actions is absent.
+    val canInvite = uiState.roleActions[uiState.requestingUserRole]
+        ?.contains(ACTION_INVITE_MEMBERS) == true
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -166,18 +180,46 @@ private fun SpacePermissionsContent(
             RoleActionsCard(roleActions = uiState.roleActions)
         }
 
-        if (uiState.members.isNotEmpty()) {
+        // Members section shows when the user can invite OR there are members to list,
+        // so the invite action stays reachable even before any member loads.
+        if (canInvite || uiState.members.isNotEmpty()) {
             SectionHeader(
                 icon  = Icons.Outlined.Group,
                 title = UserMessages.SpacePermissions.MEMBERS_SECTION
             )
-            MembersCard(
-                members          = uiState.members,
-                requestingRole   = uiState.requestingUserRole,
-                updatingMemberId = uiState.updatingMemberId,
-                onRequestChange  = onRequestChange
-            )
+
+            if (canInvite) {
+                InviteMemberButton(onClick = onInviteClick)
+            }
+
+            if (uiState.members.isNotEmpty()) {
+                MembersCard(
+                    members          = uiState.members,
+                    requestingRole   = uiState.requestingUserRole,
+                    updatingMemberId = uiState.updatingMemberId,
+                    onRequestChange  = onRequestChange
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun InviteMemberButton(onClick: () -> Unit) {
+    Button(
+        onClick  = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            imageVector        = Icons.Outlined.PersonAdd,
+            contentDescription = null,
+            modifier           = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text  = UserMessages.SpacePermissions.ACTION_INVITE_MEMBERS,
+            color = AppOnPrimary
+        )
     }
 }
 

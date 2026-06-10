@@ -31,8 +31,8 @@ object RetrofitClient {
         Retrofit.Builder()
             .baseUrl(AppConstants.Api.BASE_URL)
             .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
     }
 
     // Shared services use the same Retrofit instance.
@@ -58,6 +58,8 @@ object RetrofitClient {
 
     val completionApiService: CompletionApiService by lazy {
         retrofit.create(CompletionApiService::class.java)
+    }
+
     val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
     }
@@ -65,7 +67,6 @@ object RetrofitClient {
     private fun authHeaderInterceptor(): Interceptor = Interceptor { chain ->
         val originalRequest = chain.request()
         val token = AuthSessionStore.sessionToken
-
         val request = if (token.isNullOrBlank()) {
             originalRequest
         } else {
@@ -73,7 +74,6 @@ object RetrofitClient {
                 .header("Authorization", "Bearer $token")
                 .build()
         }
-
         chain.proceed(request)
     }
 }

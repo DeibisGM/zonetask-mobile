@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (Int) -> Unit,
+    onLoginSuccess: (Int, String) -> Unit,
     onCreateAccount: () -> Unit,
     onForgotPassword: () -> Unit,
     authNotice: String? = null,
@@ -59,10 +59,12 @@ fun LoginScreen(
 ) {
     val uiState = viewModel.uiState
 
-    // Once Firebase-backed login resolves a valid local user id, the screen
+    // Once backend login resolves a valid local user id, the screen
     // delegates navigation back to the app shell.
     LaunchedEffect(uiState.resolvedUserId) {
-        uiState.resolvedUserId?.let(onLoginSuccess)
+        uiState.resolvedUserId?.let { userId ->
+            onLoginSuccess(userId, uiState.email.trim())
+        }
     }
 
     AuthScreenShell(modifier = modifier) {
@@ -207,7 +209,7 @@ class LoginViewModel(
 ) : ViewModel() {
 
     var uiState by mutableStateOf(LoginUiState())
-    private set
+        private set
 
     // Keeps the form state in sync with typed input and clears stale server errors.
     fun onEmailChanged(value: String) {

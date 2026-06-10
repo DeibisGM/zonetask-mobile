@@ -34,6 +34,8 @@ object AppContainer {
 
     val completionRepository: CompletionRepository by lazy {
         CompletionRepository(RetrofitClient.completionApiService)
+    }
+
     val authRepository: BackendAuthRepository by lazy {
         BackendAuthRepository(RetrofitClient.authApiService)
     }

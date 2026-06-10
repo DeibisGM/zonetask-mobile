@@ -32,6 +32,7 @@ import com.app.zonetask.navigation.spaces.spacesNavGraph
 import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.home.HomeScreen
+import com.app.zonetask.ui.screens.invitations.MyInvitationsScreen
 import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.passwordreset.ForgotPasswordScreen
 import com.app.zonetask.ui.screens.profile.ProfileEditScreen
@@ -50,6 +51,7 @@ fun AppNavHost() {
     var currentUserId by rememberSaveable {
         mutableIntStateOf(AuthSessionStore.currentUser?.userId ?: 0)
     }
+    var currentUserEmail by rememberSaveable { mutableStateOf("") }
     var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
     val startDestination = if (currentUserId > 0) {
         AppDestinations.homeRoute(0)
@@ -95,8 +97,9 @@ fun AppNavHost() {
             }
 
             LoginScreen(
-                onLoginSuccess = { userId ->
-                    currentUserId = userId
+                onLoginSuccess = { userId, email ->
+                    currentUserId    = userId
+                    currentUserEmail = email
                     navController.navigate(AppDestinations.homeRoute(0)) {
                         popUpTo(AppDestinations.LOGIN) { inclusive = true }
                     }
@@ -167,6 +170,26 @@ fun AppNavHost() {
                     navController.popBackStack(AppDestinations.LOGIN, inclusive = false)
                 }
             )
+        }
+
+        composable(
+            route = AppDestinations.MY_INVITATIONS,
+            arguments = listOf(navArgument("userId") { type = NavType.IntType })
+        ) {
+            val invitationsSnackbarHostState = remember { SnackbarHostState() }
+            ZoneTaskScaffold(
+                title = UserMessages.Invitations.MY_TITLE,
+                showBack = true,
+                onBackClick = { navController.popBackStack() },
+                snackbarHostState = invitationsSnackbarHostState
+            ) { padding ->
+                MyInvitationsScreen(
+                    userId            = currentUserId,
+                    email             = currentUserEmail,
+                    snackbarHostState = invitationsSnackbarHostState,
+                    modifier          = Modifier.padding(padding)
+                )
+            }
         }
 
         composable(
@@ -274,8 +297,8 @@ private fun navigateToTab(
             val sid = if (currentSpaceId > 0) currentSpaceId else 0
             AppDestinations.homeRoute(sid)
         }
-        NavDestination.TASKS   -> AppDestinations.tasksRoute(userId)
-        NavDestination.PROFILE -> AppDestinations.PROFILE
+        NavDestination.TASKS    -> AppDestinations.tasksRoute(userId)
+        NavDestination.PROFILE  -> AppDestinations.PROFILE
         NavDestination.SETTINGS -> SpacesDestinations.list(userId)
         else -> return
     }
@@ -292,6 +315,7 @@ private fun rememberSpacesNavActions(
         onOpenCreate         = { navController.navigate(SpacesDestinations.CREATE) },
         onOpenEdit           = { id -> navController.navigate(SpacesDestinations.edit(id)) },
         onOpenPermissions    = { id -> navController.navigate(SpacesDestinations.permissions(id)) },
+        onOpenInvite         = { id -> navController.navigate(SpacesDestinations.invite(id)) },
         onCreateTaskForSpace = { spaceId ->
             navController.navigate(AppDestinations.taskCreateRoute(spaceId))
         },
@@ -302,7 +326,7 @@ private fun rememberSpacesNavActions(
             navController.navigate(SpacesDestinations.completedTasks(spaceId))
         },
         onBack = { navController.popBackStack() },
-
+        onOpenInvitations = { navController.navigate(AppDestinations.myInvitationsRoute(currentUserId)) },
         onSpaceCreated = { message ->
             navController.previousBackStackEntry
                 ?.savedStateHandle
@@ -353,45 +377,45 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
     onLogout: () -> Unit
 ) {
     composable(route = AppDestinations.TASK_CREATE) {
-            TaskCreateScreen(
-                initialSpaceId = 1,
-                initialCreatedBy = currentUserId,
-                onNavigate = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
-                onLogout = onLogout,
-                onClose = { navController.popBackStack() }
-            )
-        }
+        TaskCreateScreen(
+            initialSpaceId   = 1,
+            initialCreatedBy = currentUserId,
+            onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
+            onLogout         = onLogout,
+            onClose          = { navController.popBackStack() }
+        )
+    }
 
     composable(
         route = AppDestinations.TASK_CREATE_WITH_SPACE,
         arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
     ) { backStackEntry ->
         val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 1
-            TaskCreateScreen(
-                initialSpaceId = spaceId,
-                initialCreatedBy = currentUserId,
-                onNavigate = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
-                onLogout = onLogout,
-                onClose = { navController.popBackStack() }
-            )
-        }
+        TaskCreateScreen(
+            initialSpaceId   = spaceId,
+            initialCreatedBy = currentUserId,
+            onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
+            onLogout         = onLogout,
+            onClose          = { navController.popBackStack() }
+        )
+    }
 
     composable(
         route = AppDestinations.TASK_EDIT_WITH_SPACE,
         arguments = listOf(
             navArgument("spaceId") { type = NavType.IntType },
-            navArgument("taskId") { type = NavType.IntType }
+            navArgument("taskId")  { type = NavType.IntType }
         )
     ) { backStackEntry ->
         val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 1
         val taskId  = backStackEntry.arguments?.getInt("taskId") ?: return@composable
         TaskCreateScreen(
-            initialSpaceId = spaceId,
+            initialSpaceId   = spaceId,
             initialCreatedBy = currentUserId,
-            taskId = taskId,
-            onNavigate = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
-            onLogout = onLogout,
-            onClose = { navController.popBackStack() }
+            taskId           = taskId,
+            onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
+            onLogout         = onLogout,
+            onClose          = { navController.popBackStack() }
         )
     }
 
@@ -405,17 +429,17 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
             .collectAsStateWithLifecycle()
 
         ZoneTaskScaffold(
-            title = UserMessages.Screens.TASKS_TITLE,
-            showBack = false,
-            onBackClick = {},
-            showTopBar = false,
-            currentDestination = NavDestination.TASKS,
+            title                 = UserMessages.Screens.TASKS_TITLE,
+            showBack              = false,
+            onBackClick           = {},
+            showTopBar            = false,
+            currentDestination    = NavDestination.TASKS,
             onDestinationSelected = onTabSelected,
-            snackbarHostState = snackbarHostState
+            snackbarHostState     = snackbarHostState
         ) { padding ->
             TasksScreen(
-                userId = userId,
-                modifier = Modifier.padding(padding),
+                userId        = userId,
+                modifier      = Modifier.padding(padding),
                 reloadTrigger = taskChanged,
                 onRefreshHandled = {
                     backStackEntry.savedStateHandle["taskChanged"] = false
