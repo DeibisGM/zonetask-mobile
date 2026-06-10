@@ -5,6 +5,23 @@ object UserMessages {
     const val TAP_TO_RETRY_SUFFIX = " Toca para reintentar."
 
     object Spaces {
+        const val LOADING               = "Cargando espacios..."
+        const val EMPTY                 = "No tenés espacios aún"
+        const val REFRESH               = "Refrescar"
+        const val TYPE_PREFIX           = "Tipo: "
+        const val OWNER_PREFIX          = "Propietario ID: "
+        const val DELETE_SUCCESS        = "Espacio eliminado correctamente"
+        const val DELETE_ERROR          = "No se pudo eliminar el espacio"
+        const val DELETE_CONFIRM        = "¿Eliminar este espacio?"
+        const val DELETE_CONFIRM_BODY   = "será eliminado permanentemente."
+        const val DELETE_CONFIRM_ACTION = "Eliminar"
+        const val DELETE_CANCEL_ACTION  = "Cancelar"
+        const val DELETE_FORBIDDEN      = "No tienes permiso para eliminar este espacio"
+        const val DELETE_NOT_OWNER      = "Solo el propietario puede eliminar este espacio"
+        const val ROLE_OWNER            = "Propietario"
+        const val ROLE_ADMIN            = "Administrador"
+        const val ROLE_MEMBER           = "Miembro"
+        
         const val LOADING               = "Loading spaces..."
         const val EMPTY                 = "No spaces yet"
         const val TYPE_PREFIX           = "Type: "
@@ -170,5 +187,41 @@ object UserMessages {
         const val REQUEST_BUTTON = "Enviar correo"
         const val REQUEST_SUCCESS = "Revisa tu correo y sigue el enlace para cambiar tu contraseña."
         const val REQUEST_BACK_TO_LOGIN = "Volver al inicio de sesión"
+    }
+
+    object Invitations {
+        const val TITLE         = "Invitar miembro"
+        const val INTRO         = "Ingresa el correo de la persona que quieres invitar a este espacio."
+        const val EMAIL_LABEL   = "Correo electrónico"
+        const val MESSAGE_LABEL  = "Mensaje (opcional)"
+        const val SEND_BUTTON    = "Enviar invitación"
+        const val SEND_SUCCESS   = "Invitación enviada correctamente"
+        const val INVALID_EMAIL  = "Ingresa un correo electrónico válido"
+        const val NOT_REGISTERED = "Este correo no está registrado en ZoneTask"
+        const val FORBIDDEN      = "No tienes permiso para invitar miembros a este espacio"
+        const val CONFLICT       = "Esa persona ya fue invitada o ya es miembro del espacio"
+
+        const val MY_TITLE        = "Mis invitaciones"
+        const val MY_LOADING      = "Cargando invitaciones..."
+        const val MY_EMPTY        = "No tienes invitaciones"
+        const val ENTRY_LABEL     = "Mis invitaciones"
+        const val CARD_TITLE      = "Invitación a un espacio"
+        const val SPACE_REF_PREFIX   = "Espacio: "
+        const val MESSAGE_PREFIX     = "Mensaje: "
+        const val MISSING_IDENTITY = "No se pudo determinar tu identidad. Vuelve a iniciar sesión."
+
+        const val STATUS_PENDING   = "Pendiente"
+        const val STATUS_ACCEPTED  = "Aceptada"
+        const val STATUS_REJECTED  = "Rechazada"
+        const val STATUS_EXPIRED   = "Expirada"
+        const val STATUS_CANCELLED = "Cancelada"
+
+         const val ACCEPT_BUTTON       = "Aceptar"
+        const val REJECT_BUTTON       = "Rechazar"
+        const val ACCEPT_SUCCESS      = "Invitación aceptada. Ya eres miembro del espacio."
+        const val REJECT_SUCCESS      = "Invitación rechazada"
+        const val RESPOND_UNAVAILABLE = "La invitación ya no está disponible. Puede haber expirado o ya fue respondida."
+        const val RESPOND_FORBIDDEN   = "No puedes responder esta invitación"
+        const val RESPOND_NOT_FOUND   = "La invitación ya no existe"
     }
 }

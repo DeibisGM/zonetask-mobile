@@ -1,6 +1,7 @@
 package com.app.zonetask.data.remote
 
 import com.app.zonetask.core.AppConstants
+import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.data.remote.service.AuthApiService
 import com.app.zonetask.data.remote.service.TaskLookupApiService
@@ -30,8 +31,8 @@ object RetrofitClient {
         Retrofit.Builder()
             .baseUrl(AppConstants.Api.BASE_URL)
             .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
     }
 
     // Shared services use the same Retrofit instance.
@@ -55,6 +56,10 @@ object RetrofitClient {
         retrofit.create(UserApiService::class.java)
     }
 
+    val completionApiService: CompletionApiService by lazy {
+        retrofit.create(CompletionApiService::class.java)
+    }
+
     val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
     }
@@ -62,7 +67,6 @@ object RetrofitClient {
     private fun authHeaderInterceptor(): Interceptor = Interceptor { chain ->
         val originalRequest = chain.request()
         val token = AuthSessionStore.sessionToken
-
         val request = if (token.isNullOrBlank()) {
             originalRequest
         } else {
@@ -70,7 +74,6 @@ object RetrofitClient {
                 .header("Authorization", "Bearer $token")
                 .build()
         }
-
         chain.proceed(request)
     }
 }
