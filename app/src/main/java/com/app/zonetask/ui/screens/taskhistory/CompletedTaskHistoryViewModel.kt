@@ -44,6 +44,11 @@ class CompletedTaskHistoryViewModel(
         loadPage(1)
     }
 
+    fun clearFilters() {
+        _uiState.value = _uiState.value.copy(dateFrom = "", dateTo = "")
+        loadPage(1)
+    }
+
     private fun loadPage(page: Int) {
         val state = _uiState.value
         viewModelScope.launch {

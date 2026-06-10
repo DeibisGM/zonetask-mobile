@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs ls -la)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(bash gradlew :app:compileDebugKotlin)",
+      "Read(//usr/lib/**)",
+      "Bash(java -version)",
+      "Bash(xargs cat -n)"
+    ]
+  }
+}

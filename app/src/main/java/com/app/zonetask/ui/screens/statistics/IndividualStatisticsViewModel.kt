@@ -55,7 +55,7 @@ class IndividualStatisticsViewModel(
             val result = AppContainer.statisticsRepository.getUserStatistics(
                 spaceId  = spaceId,
                 userId   = userId,
-                period   = if (!isCustom) state.selectedPeriod.apiValue else null,
+                period   = state.selectedPeriod.apiValue,
                 dateFrom = if (isCustom) state.dateFrom.takeIf { it.isNotBlank() } else null,
                 dateTo   = if (isCustom) state.dateTo.takeIf { it.isNotBlank() } else null
             )

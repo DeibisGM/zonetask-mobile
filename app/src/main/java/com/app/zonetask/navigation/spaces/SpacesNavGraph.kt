@@ -18,6 +18,7 @@ import com.app.zonetask.ui.screens.spaces.CreateSpaceScreen
 import com.app.zonetask.ui.screens.spaces.EditSpaceScreen
 import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
 import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
+import com.app.zonetask.ui.screens.invitations.InviteMemberScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.statistics.IndividualStatisticsScreen
 import com.app.zonetask.ui.screens.statistics.SpaceStatisticsScreen
@@ -69,7 +70,8 @@ fun NavGraphBuilder.spacesNavGraph(
                 onSuccessMessageShown = {
                     backStackEntry.savedStateHandle[SpacesNavKeys.SUCCESS_MESSAGE] = null
                 },
-                onSpaceClick = { space -> actions.onOpenDetail(space.spaceId) }
+                onSpaceClick = { space -> actions.onOpenDetail(space.spaceId) },
+                onOpenInvitations = actions.onOpenInvitations
             )
         }
     }
@@ -187,6 +189,35 @@ fun NavGraphBuilder.spacesNavGraph(
                 spaceId = spaceId,
                 userId = currentUserId,
                 snackbarHostState = permissionsSnackbarHostState,
+                onInviteClick = { actions.onOpenInvite(spaceId) },
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Invite member
+    composable(
+        route = SpacesDestinations.INVITE,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_SPACE_ID) {
+            type = NavType.IntType
+        })
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+
+        val inviteSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = UserMessages.Invitations.TITLE,
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = inviteSnackbarHostState
+        ) { padding ->
+            InviteMemberScreen(
+                spaceId = spaceId,
+                invitedBy = currentUserId,
+                snackbarHostState = inviteSnackbarHostState,
                 modifier = Modifier.padding(padding)
             )
         }

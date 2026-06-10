@@ -3,10 +3,10 @@ package com.app.zonetask.ui.screens.statistics
 import com.app.zonetask.data.remote.dto.UserStatisticsResponse
 
 enum class StatsPeriod(val apiValue: String, val label: String) {
-    WEEK("week", "Week"),
-    MONTH("month", "Month"),
-    YEAR("year", "Year"),
-    CUSTOM("custom", "Custom")
+    WEEK("week", "Semana"),
+    MONTH("month", "Mes"),
+    YEAR("year", "Año"),
+    CUSTOM("custom", "Personalizado")
 }
 
 data class IndividualStatisticsUiState(

@@ -17,11 +17,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.Button
@@ -29,23 +28,29 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,9 +60,12 @@ import com.app.zonetask.ui.theme.AppError
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
+import java.util.Calendar
+import java.util.TimeZone
 
 private val OnTimeColor = Color(0xFF66BB6A)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompletedTaskHistoryScreen(
     spaceId: Int,
@@ -69,7 +77,6 @@ fun CompletedTaskHistoryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
 
-    // Trigger next-page load when the user scrolls near the bottom.
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo }
             .collect { info ->
@@ -82,7 +89,6 @@ fun CompletedTaskHistoryScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
 
-        // Filter bar
         Surface(
             color = AppSurface,
             border = BorderStroke(0.dp, AppBorder),
@@ -90,7 +96,7 @@ fun CompletedTaskHistoryScreen(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Text(
-                    "Filters",
+                    "Filtros",
                     style = MaterialTheme.typography.labelMedium,
                     color = AppSecondaryText
                 )
@@ -99,38 +105,17 @@ fun CompletedTaskHistoryScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedTextField(
-                        value = uiState.dateFrom,
-                        onValueChange = viewModel::onDateFromChanged,
-                        placeholder = { Text("From (YYYY-MM-DD)", style = MaterialTheme.typography.bodySmall) },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AppPrimary,
-                            unfocusedBorderColor = AppBorder,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            cursorColor = AppPrimary
-                        ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        textStyle = MaterialTheme.typography.bodySmall
+                    DatePickerChip(
+                        label = "Desde",
+                        selectedDate = uiState.dateFrom,
+                        onDateSelected = viewModel::onDateFromChanged,
+                        modifier = Modifier.weight(1f)
                     )
-                    OutlinedTextField(
-                        value = uiState.dateTo,
-                        onValueChange = viewModel::onDateToChanged,
-                        placeholder = { Text("To (YYYY-MM-DD)", style = MaterialTheme.typography.bodySmall) },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AppPrimary,
-                            unfocusedBorderColor = AppBorder,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            cursorColor = AppPrimary
-                        ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { viewModel.applyFilters() }),
-                        textStyle = MaterialTheme.typography.bodySmall
+                    DatePickerChip(
+                        label = "Hasta",
+                        selectedDate = uiState.dateTo,
+                        onDateSelected = viewModel::onDateToChanged,
+                        modifier = Modifier.weight(1f)
                     )
                     Button(
                         onClick = viewModel::applyFilters,
@@ -138,7 +123,33 @@ fun CompletedTaskHistoryScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
                     ) {
-                        Text("Apply", color = Color.Black, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Aplicar",
+                            color = Color.Black,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+                if (uiState.dateFrom.isNotBlank() || uiState.dateTo.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    TextButton(
+                        onClick = viewModel::clearFilters,
+                        modifier = Modifier.align(Alignment.End),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = AppSecondaryText
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "Limpiar filtros",
+                            color = AppSecondaryText,
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                 }
             }
@@ -148,26 +159,35 @@ fun CompletedTaskHistoryScreen(
 
         when {
             uiState.isLoading -> {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator(color = AppPrimary)
                 }
             }
 
             uiState.errorMessage != null && uiState.items.isEmpty() -> {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(uiState.errorMessage!!, color = AppSecondaryText)
                         Spacer(Modifier.height(12.dp))
                         TextButton(onClick = viewModel::retry) {
-                            Text("Retry", color = AppPrimary)
+                            Text("Reintentar", color = AppPrimary)
                         }
                     }
                 }
             }
 
             uiState.items.isEmpty() -> {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("No completed tasks found.", color = AppSecondaryText)
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No se encontraron tareas completadas.", color = AppSecondaryText)
                 }
             }
 
@@ -180,7 +200,7 @@ fun CompletedTaskHistoryScreen(
                 ) {
                     item {
                         Text(
-                            "${uiState.totalCount} completion${if (uiState.totalCount != 1) "s" else ""}",
+                            "${uiState.totalCount} ${if (uiState.totalCount != 1) "tareas completas" else "tarea completa"}",
                             style = MaterialTheme.typography.labelSmall,
                             color = AppSecondaryText
                         )
@@ -196,16 +216,23 @@ fun CompletedTaskHistoryScreen(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = AppPrimary, strokeWidth = 2.dp)
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = AppPrimary,
+                                    strokeWidth = 2.dp
+                                )
                             }
                         }
                     }
 
                     if (!uiState.isLoadingMore && uiState.currentPage < uiState.totalPages) {
                         item {
-                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 TextButton(onClick = viewModel::loadNextPage) {
-                                    Text("Load more", color = AppPrimary)
+                                    Text("Cargar más", color = AppPrimary)
                                 }
                             }
                         }
@@ -218,11 +245,67 @@ fun CompletedTaskHistoryScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DatePickerChip(
+    label: String,
+    selectedDate: String,
+    onDateSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    val hasDate = selectedDate.isNotBlank()
+
+    OutlinedButton(
+        onClick = { showDialog = true },
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, if (hasDate) AppPrimary else AppBorder),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = if (hasDate) AppPrimary else AppSecondaryText
+        ),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
+        modifier = modifier
+    ) {
+        Icon(Icons.Outlined.CalendarMonth, null, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = if (hasDate) selectedDate else label,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1
+        )
+    }
+
+    if (showDialog) {
+        DatePickerDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        onDateSelected(millisToDateString(millis))
+                    }
+                    showDialog = false
+                }) {
+                    Text("Aceptar", color = AppPrimary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cancelar", color = AppSecondaryText)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
 @Composable
 private fun CompletionHistoryCard(item: CompletedTaskHistoryResponse) {
-    val isOnTime = item.completionType.equals("on_time", ignoreCase = true)
+    val isOnTime = item.completionType?.equals("on_time", ignoreCase = true) == true
     val typeColor = if (isOnTime) OnTimeColor else AppError
-    val typeLabel = if (isOnTime) "On time" else "Late"
+    val typeLabel = if (isOnTime) "A tiempo" else "Tardía"
 
     Card(
         shape = RoundedCornerShape(14.dp),
@@ -240,7 +323,7 @@ private fun CompletionHistoryCard(item: CompletedTaskHistoryResponse) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = item.taskTitle,
+                    text = item.taskTitle ?: "—",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -256,8 +339,18 @@ private fun CompletionHistoryCard(item: CompletedTaskHistoryResponse) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(Icons.Outlined.CheckCircle, null, tint = typeColor, modifier = Modifier.size(12.dp))
-                        Text(typeLabel, style = MaterialTheme.typography.labelSmall, color = typeColor, fontWeight = FontWeight.Medium)
+                        Icon(
+                            Icons.Outlined.CheckCircle,
+                            null,
+                            tint = typeColor,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            typeLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = typeColor,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
@@ -277,7 +370,7 @@ private fun CompletionHistoryCard(item: CompletedTaskHistoryResponse) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(Icons.Outlined.Person, null, tint = AppSecondaryText, modifier = Modifier.size(14.dp))
-                Text(item.completedBy, style = MaterialTheme.typography.bodySmall, color = AppSecondaryText)
+                Text(item.completedBy ?: "—", style = MaterialTheme.typography.bodySmall, color = AppSecondaryText)
             }
 
             Row(
@@ -286,7 +379,7 @@ private fun CompletionHistoryCard(item: CompletedTaskHistoryResponse) {
             ) {
                 Icon(Icons.Outlined.CalendarMonth, null, tint = AppSecondaryText, modifier = Modifier.size(14.dp))
                 Text(
-                    formatCompletedAt(item.completedAt),
+                    if (item.completedAt != null) formatCompletedAt(item.completedAt) else "—",
                     style = MaterialTheme.typography.bodySmall,
                     color = AppSecondaryText
                 )
@@ -295,9 +388,18 @@ private fun CompletionHistoryCard(item: CompletedTaskHistoryResponse) {
     }
 }
 
+private fun millisToDateString(millis: Long): String {
+    val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+    cal.timeInMillis = millis
+    return "%04d-%02d-%02d".format(
+        cal.get(Calendar.YEAR),
+        cal.get(Calendar.MONTH) + 1,
+        cal.get(Calendar.DAY_OF_MONTH)
+    )
+}
+
 private fun formatCompletedAt(raw: String): String {
     return try {
-        // Raw format from backend: ISO-8601 e.g. "2026-05-15T14:30:00"
         val datePart = raw.substringBefore('T')
         val timePart = raw.substringAfter('T', "").substringBefore('.')
         if (timePart.isNotBlank()) "$datePart  $timePart" else datePart
