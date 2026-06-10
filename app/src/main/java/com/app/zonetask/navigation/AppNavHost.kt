@@ -51,7 +51,9 @@ fun AppNavHost() {
     var currentUserId by rememberSaveable {
         mutableIntStateOf(AuthSessionStore.currentUser?.userId ?: 0)
     }
-    var currentUserEmail by rememberSaveable { mutableStateOf("") }
+    var currentUserEmail by rememberSaveable {
+        mutableStateOf(AuthSessionStore.currentUser?.email ?: "")
+    }
     var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
     val startDestination = if (currentUserId > 0) {
         AppDestinations.homeRoute(0)
@@ -321,6 +323,12 @@ private fun rememberSpacesNavActions(
         },
         onOpenPlans = { spaceId ->
             navController.navigate(PlansDestinations.list(spaceId))
+        },
+        onOpenCompletedTasks = { spaceId ->
+            navController.navigate(SpacesDestinations.completedTasks(spaceId))
+        },
+        onOpenStatistics = { spaceId, userId ->
+            navController.navigate(SpacesDestinations.statistics(spaceId, userId))
         },
         onBack = { navController.popBackStack() },
         onOpenInvitations = { navController.navigate(AppDestinations.myInvitationsRoute(currentUserId)) },
