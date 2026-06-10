@@ -2,13 +2,17 @@ package com.app.zonetask.data.remote
 
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.service.CompletionApiService
-import com.app.zonetask.data.remote.service.StatisticsApiService
+import com.app.zonetask.core.AuthSessionStore
+import com.app.zonetask.data.remote.service.AuthApiService
 import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.TaskApiService
 import com.app.zonetask.data.remote.service.SpaceApiService
 import com.app.zonetask.data.remote.service.FloorPlanApiService
+import com.app.zonetask.data.remote.service.InvitationApiService
+import com.app.zonetask.data.remote.service.StatisticsApiService
 import com.app.zonetask.data.remote.service.UserApiService
 import okhttp3.OkHttpClient
+import okhttp3.Interceptor
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -22,14 +26,15 @@ object RetrofitClient {
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .addInterceptor(authHeaderInterceptor())
         .build()
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(AppConstants.Api.BASE_URL)
             .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
     }
 
     // Shared services use the same Retrofit instance.
@@ -59,5 +64,26 @@ object RetrofitClient {
 
     val statisticsApiService: StatisticsApiService by lazy {
         retrofit.create(StatisticsApiService::class.java)
+    }
+
+    val authApiService: AuthApiService by lazy {
+        retrofit.create(AuthApiService::class.java)
+    }
+
+    val invitationApiService: InvitationApiService by lazy {
+        retrofit.create(InvitationApiService::class.java)
+    }
+
+    private fun authHeaderInterceptor(): Interceptor = Interceptor { chain ->
+        val originalRequest = chain.request()
+        val token = AuthSessionStore.sessionToken
+        val request = if (token.isNullOrBlank()) {
+            originalRequest
+        } else {
+            originalRequest.newBuilder()
+                .header("Authorization", "Bearer $token")
+                .build()
+        }
+        chain.proceed(request)
     }
 }

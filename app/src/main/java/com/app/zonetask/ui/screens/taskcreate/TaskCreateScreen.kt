@@ -37,6 +37,7 @@ fun TaskCreateScreen(
     taskId: Int? = null,
     modifier: Modifier = Modifier,
     onNavigate: (String) -> Unit = {},
+    onLogout: () -> Unit = {},
     onClose: () -> Unit = {},
     viewModel: TaskCreateViewModel = viewModel(
         factory = TaskCreateViewModelFactory(
@@ -176,6 +177,7 @@ fun TaskCreateScreen(
         showBack = true,
         onBackClick = onClose,
         onNavigate = onNavigate,
+        onLogout = onLogout,
         topBarColor = AppTopBar,
         bottomBar = {
             Column(modifier = Modifier.background(AppBackground)) {
