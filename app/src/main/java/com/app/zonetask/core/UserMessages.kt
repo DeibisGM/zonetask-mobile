@@ -119,7 +119,74 @@ object UserMessages {
     }
 
     object Navigation {
-        const val LOGIN_SUCCESS_SNACKBAR = "Logged in successfully"
+        const val LOGIN_SUCCESS_SNACKBAR = "Inicio de sesión exitoso"
+    }
+
+    object Login {
+        const val TITLE = "ZoneTask"
+        const val SUBTITLE = "Inicia sesión con tu correo y contraseña."
+        const val EMAIL_LABEL = "Correo"
+        const val EMAIL_PLACEHOLDER = "correo@ejemplo.com"
+        const val PASSWORD_LABEL = "Contraseña"
+        const val PASSWORD_PLACEHOLDER = "Escribe tu contraseña"
+        const val SUBMIT = "Ingresar"
+        const val FORGOT_PASSWORD = "¿Olvidaste tu contraseña?"
+        const val EMAIL_REQUIRED = "Ingresa tu correo."
+        const val EMAIL_INVALID = "Correo no válido."
+        const val PASSWORD_REQUIRED = "Ingresa tu contraseña."
+        const val REGISTRATION_NOTICE = "Tu cuenta se registró. Verifica tu correo para activarla."
+        const val PASSWORD_RESET_NOTICE = "Tu contraseña se actualizó. Ya puedes iniciar sesión."
+    }
+
+    object Register {
+        const val TITLE = "Crear cuenta"
+        const val SUBTITLE = "Regístrate para usar ZoneTask."
+        const val ACCOUNT_SECTION = "Datos de la cuenta"
+        const val ACCOUNT_SUBTITLE = "Información básica para identificar tu perfil."
+        const val CREDENTIALS_SECTION = "Credenciales"
+        const val CREDENTIALS_SUBTITLE = "Datos para iniciar sesión."
+        const val OPTIONAL_SECTION = "Información opcional"
+        const val OPTIONAL_SUBTITLE = "Puedes completar estos datos después en tu perfil."
+        const val FINISH_SECTION = "Finalizar"
+        const val FINISH_SUBTITLE = "Crea tu cuenta y verifica el correo para activarla."
+        const val USERNAME_LABEL = "Usuario"
+        const val USERNAME_PLACEHOLDER = "Escribe tu usuario"
+        const val FIRST_NAME_LABEL = "Nombre"
+        const val FIRST_NAME_PLACEHOLDER = "Tu nombre"
+        const val LAST_NAME_LABEL = "Apellido"
+        const val LAST_NAME_PLACEHOLDER = "Tu apellido"
+        const val GENDER_LABEL = "Género"
+        const val GENDER_SELECT = "Selecciona tu género"
+        const val GENDER_MALE = "Masculino"
+        const val GENDER_FEMALE = "Femenino"
+        const val GENDER_NON_BINARY = "No binario"
+        const val GENDER_NOT_SAY = "Prefiero no decirlo"
+        const val PHONE_LABEL = "Teléfono"
+        const val PHONE_PLACEHOLDER = "Opcional"
+        const val BIO_LABEL = "Biografía"
+        const val BIO_PLACEHOLDER = "Cuéntanos un poco sobre ti"
+        const val CONFIRM_PASSWORD_LABEL = "Confirmar contraseña"
+        const val CONFIRM_PASSWORD_PLACEHOLDER = "Repite la contraseña"
+        const val SUBMIT = "Registrarme"
+        const val BACK_TO_LOGIN = "Ya tengo cuenta"
+        const val USERNAME_REQUIRED = "Ingresa un usuario."
+        const val FIRST_NAME_REQUIRED = "Ingresa tu nombre."
+        const val EMAIL_REQUIRED = "Ingresa tu correo."
+        const val EMAIL_INVALID = "Correo no válido."
+        const val PASSWORD_REQUIRED = "Ingresa una contraseña."
+        const val PASSWORD_MIN_LENGTH = "La contraseña debe tener al menos 8 caracteres."
+        const val PASSWORDS_DONT_MATCH = "Las contraseñas no coinciden."
+        const val REGISTRATION_PENDING = "Revisa tu correo para verificar tu cuenta."
+        const val REGISTRATION_FAILED_VERIFICATION = "Se creó la cuenta, pero no se pudo enviar el correo de verificación."
+        const val USERNAME_TOO_SHORT = "El usuario debe tener al menos 3 caracteres."
+    }
+
+    object PasswordReset {
+        const val REQUEST_TITLE = "Recuperar contraseña"
+        const val REQUEST_SUBTITLE = "Te enviaremos un correo de recuperación."
+        const val REQUEST_BUTTON = "Enviar correo"
+        const val REQUEST_SUCCESS = "Revisa tu correo y sigue el enlace para cambiar tu contraseña."
+        const val REQUEST_BACK_TO_LOGIN = "Volver al inicio de sesión"
     }
 
     object Invitations {

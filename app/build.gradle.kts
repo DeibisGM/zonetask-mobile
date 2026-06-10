@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 val localProperties = Properties().apply {
@@ -77,6 +78,10 @@ dependencies {
     implementation(libs.squareup.okhttp.logging)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.phosphor.icon)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.org.jetbrains.kotlinx.coroutines.play.services)
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
 
