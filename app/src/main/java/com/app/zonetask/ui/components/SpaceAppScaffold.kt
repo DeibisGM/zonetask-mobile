@@ -16,6 +16,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ fun ZoneTaskScaffold(
     onAddClick: (() -> Unit)? = null,
     showTopBar: Boolean = true,
     showBottomBar: Boolean = true,
+    centerTitle: Boolean = true,
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -47,41 +49,79 @@ fun ZoneTaskScaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             if (showTopBar) {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                if (centerTitle) {
+                    CenterAlignedTopAppBar(
+                        title = {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                            )
+                        },
+                        navigationIcon = {
+                            if (showBack) {
+                                IconButton(onClick = onBackClick) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = UserMessages.Accessibility.BACK,
+                                        tint = MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
+                            }
+                        },
+                        actions = {
+                            if (onAddClick != null) {
+                                IconButton(onClick = onAddClick) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Agregar",
+                                        tint = MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                            containerColor = AppTopBar
                         )
-                    },
-                    navigationIcon = {
-                        if (showBack) {
-                            IconButton(onClick = onBackClick) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = UserMessages.Accessibility.BACK,
-                                    tint = MaterialTheme.colorScheme.onBackground
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        if (onAddClick != null) {
-                            IconButton(onClick = onAddClick) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Agregar",
-                                    tint = MaterialTheme.colorScheme.onBackground
-                                )
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = AppTopBar
                     )
-                )
+                } else {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                            )
+                        },
+                        navigationIcon = {
+                            if (showBack) {
+                                IconButton(onClick = onBackClick) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = UserMessages.Accessibility.BACK,
+                                        tint = MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
+                            }
+                        },
+                        actions = {
+                            if (onAddClick != null) {
+                                IconButton(onClick = onAddClick) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Agregar",
+                                        tint = MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = AppTopBar
+                        )
+                    )
+                }
             }
         },
         bottomBar = {

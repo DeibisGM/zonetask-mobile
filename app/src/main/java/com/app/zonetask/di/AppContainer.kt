@@ -1,5 +1,6 @@
 package com.app.zonetask.di
 
+import com.app.zonetask.data.auth.BackendAuthRepository
 import com.app.zonetask.data.remote.RetrofitClient
 import com.app.zonetask.data.remote.repository.CompletionRepository
 import com.app.zonetask.data.remote.repository.TaskLookupRepository
@@ -33,5 +34,7 @@ object AppContainer {
 
     val completionRepository: CompletionRepository by lazy {
         CompletionRepository(RetrofitClient.completionApiService)
+    val authRepository: BackendAuthRepository by lazy {
+        BackendAuthRepository(RetrofitClient.authApiService)
     }
 }
