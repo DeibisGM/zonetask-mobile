@@ -76,7 +76,7 @@ fun IndividualStatisticsScreen(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Text(
-                    "Period",
+                    "Período",
                     style = MaterialTheme.typography.labelMedium,
                     color = AppSecondaryText
                 )
@@ -112,7 +112,7 @@ fun IndividualStatisticsScreen(
                         OutlinedTextField(
                             value       = uiState.dateFrom,
                             onValueChange = viewModel::onDateFromChanged,
-                            placeholder = { Text("From (YYYY-MM-DD)", style = MaterialTheme.typography.bodySmall) },
+                            placeholder = { Text("Desde (YYYY-MM-DD)", style = MaterialTheme.typography.bodySmall) },
                             singleLine  = true,
                             modifier    = Modifier.weight(1f),
                             colors      = OutlinedTextFieldDefaults.colors(
@@ -128,7 +128,7 @@ fun IndividualStatisticsScreen(
                         OutlinedTextField(
                             value       = uiState.dateTo,
                             onValueChange = viewModel::onDateToChanged,
-                            placeholder = { Text("To (YYYY-MM-DD)", style = MaterialTheme.typography.bodySmall) },
+                            placeholder = { Text("Hasta (YYYY-MM-DD)", style = MaterialTheme.typography.bodySmall) },
                             singleLine  = true,
                             modifier    = Modifier.weight(1f),
                             colors      = OutlinedTextFieldDefaults.colors(
@@ -148,7 +148,7 @@ fun IndividualStatisticsScreen(
                             colors   = ButtonDefaults.buttonColors(containerColor = AppPrimary),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
                         ) {
-                            Text("Apply", color = Color.Black, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                            Text("Aplicar", color = Color.Black, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -168,7 +168,7 @@ fun IndividualStatisticsScreen(
                         Text(uiState.errorMessage!!, color = AppSecondaryText)
                         Spacer(Modifier.height(12.dp))
                         TextButton(onClick = viewModel::retry) {
-                            Text("Retry", color = AppPrimary)
+                            Text("Reintentar", color = AppPrimary)
                         }
                     }
                 }
@@ -214,14 +214,14 @@ private fun StatisticsContent(
                 MetricCard(
                     icon      = Icons.Outlined.AssignmentTurnedIn,
                     iconTint  = AppPrimary,
-                    label     = "Total Assigned",
+                    label     = "Total Asignadas",
                     value     = stats.totalAssigned.toString(),
                     modifier  = Modifier.weight(1f)
                 )
                 MetricCard(
                     icon      = Icons.Outlined.CheckCircle,
                     iconTint  = OnTimeColor,
-                    label     = "Completed",
+                    label     = "Completadas",
                     value     = stats.completedTasks.toString(),
                     modifier  = Modifier.weight(1f)
                 )
@@ -233,14 +233,14 @@ private fun StatisticsContent(
                 MetricCard(
                     icon      = Icons.Outlined.Error,
                     iconTint  = AppError,
-                    label     = "Overdue",
+                    label     = "Vencidas",
                     value     = stats.overdueTasks.toString(),
                     modifier  = Modifier.weight(1f)
                 )
                 MetricCard(
                     icon      = Icons.Outlined.HourglassEmpty,
                     iconTint  = AppSecondaryText,
-                    label     = "Pending",
+                    label     = "Pendientes",
                     value     = stats.pendingTasks.toString(),
                     modifier  = Modifier.weight(1f)
                 )
@@ -276,7 +276,7 @@ private fun CompletionRateCard(rate: Double) {
             ) {
                 Icon(Icons.Outlined.Percent, null, tint = rateColor, modifier = Modifier.size(18.dp))
                 Text(
-                    "Completion Rate",
+                    "Tasa de Finalización",
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold
