@@ -1,5 +1,6 @@
 package com.app.zonetask.di
 
+import com.app.zonetask.data.auth.BackendAuthRepository
 import com.app.zonetask.data.remote.RetrofitClient
 import com.app.zonetask.data.remote.repository.CompletionRepository
 import com.app.zonetask.data.remote.repository.StatisticsRepository
@@ -38,5 +39,9 @@ object AppContainer {
 
     val statisticsRepository: StatisticsRepository by lazy {
         StatisticsRepository(RetrofitClient.statisticsApiService)
+    }
+
+    val authRepository: BackendAuthRepository by lazy {
+        BackendAuthRepository(RetrofitClient.authApiService)
     }
 }

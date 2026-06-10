@@ -1,63 +1,29 @@
-package com.app.zonetask.data.remote
+package com.app.zonetask.navigation.spaces
 
-import com.app.zonetask.core.AppConstants
-import com.app.zonetask.data.remote.service.CompletionApiService
-import com.app.zonetask.data.remote.service.StatisticsApiService
-import com.app.zonetask.data.remote.service.TaskLookupApiService
-import com.app.zonetask.data.remote.service.TaskApiService
-import com.app.zonetask.data.remote.service.SpaceApiService
-import com.app.zonetask.data.remote.service.FloorPlanApiService
-import com.app.zonetask.data.remote.service.UserApiService
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+// Routes and argument keys owned by the spaces feature.
+object SpacesDestinations {
+    const val ARG_USER_ID  = "userId"
+    const val ARG_SPACE_ID = "spaceId"
 
-object RetrofitClient {
+    const val LIST            = "spaces/{$ARG_USER_ID}"
+    const val CREATE          = "create_space"
+    const val DETAIL          = "space_detail/{$ARG_SPACE_ID}"
+    const val EDIT            = "edit_space/{$ARG_SPACE_ID}"
+    const val PERMISSIONS     = "space_permissions/{$ARG_SPACE_ID}"
+    const val INVITE          = "space_invite/{$ARG_SPACE_ID}"
+    const val COMPLETED_TASKS = "completed_tasks/{$ARG_SPACE_ID}"
 
-    // Logs requests and responses while we build the task flow.
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-    }
+    // Type-safe builders — prefer over string concatenation at call sites.
+    fun list(userId: Int): String            = "spaces/$userId"
+    fun detail(spaceId: Int): String         = "space_detail/$spaceId"
+    fun edit(spaceId: Int): String           = "edit_space/$spaceId"
+    fun permissions(spaceId: Int): String    = "space_permissions/$spaceId"
+    fun invite(spaceId: Int): String         = "space_invite/$spaceId"
+    fun completedTasks(spaceId: Int): String = "completed_tasks/$spaceId"
+}
 
-    private val client = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .build()
-
-    private val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(AppConstants.Api.BASE_URL)
-            .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-    }
-
-    // Shared services use the same Retrofit instance.
-    val spaceApiService: SpaceApiService by lazy {
-        retrofit.create(SpaceApiService::class.java)
-    }
-
-    val floorPlanApiService: FloorPlanApiService by lazy {
-        retrofit.create(FloorPlanApiService::class.java)
-    }
-
-    val taskLookupApiService: TaskLookupApiService by lazy {
-        retrofit.create(TaskLookupApiService::class.java)
-    }
-
-    val taskApiService: TaskApiService by lazy {
-        retrofit.create(TaskApiService::class.java)
-    }
-
-    val userApiService: UserApiService by lazy {
-        retrofit.create(UserApiService::class.java)
-    }
-
-    val completionApiService: CompletionApiService by lazy {
-        retrofit.create(CompletionApiService::class.java)
-    }
-
-    val statisticsApiService: StatisticsApiService by lazy {
-        retrofit.create(StatisticsApiService::class.java)
-    }
+// Keys for results passed between spaces screens via savedStateHandle.
+object SpacesNavKeys {
+    const val SUCCESS_MESSAGE = "spaces_success_message"
+    const val REFRESH_DETAIL  = "spaces_refresh_detail"
 }
