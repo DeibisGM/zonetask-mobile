@@ -3,8 +3,8 @@ package com.app.zonetask.ui.screens.statistics
 import com.app.zonetask.data.remote.dto.SpaceUserReportsResponse
 
 enum class ReportSortBy(val apiValue: String, val label: String) {
-    COMPLETION_RATE("completion_rate", "Completion Rate"),
-    TOTAL_ASSIGNED("total_assigned", "Total Assigned")
+    COMPLETION_RATE("completion_rate", "Tasa de Finalización"),
+    TOTAL_ASSIGNED("total_assigned", "Total Asignadas")
 }
 
 data class UserReportsUiState(
