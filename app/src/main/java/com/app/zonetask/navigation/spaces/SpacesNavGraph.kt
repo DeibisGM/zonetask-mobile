@@ -20,6 +20,7 @@ import com.app.zonetask.ui.screens.spaces.SpaceDetailScreen
 import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.invitations.InviteMemberScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
+import com.app.zonetask.ui.screens.taskhistory.CompletedTaskHistoryScreen
 
 fun NavGraphBuilder.spacesNavGraph(
     currentUserId: Int,
@@ -127,6 +128,7 @@ fun NavGraphBuilder.spacesNavGraph(
                 onNavigateToPermissions = actions.onOpenPermissions,
                 onCreateTaskClick = { actions.onCreateTaskForSpace(spaceId) },
                 onOpenPlansClick = { actions.onOpenPlans(spaceId) },
+                onOpenCompletedTasksClick = { actions.onOpenCompletedTasks(spaceId) },
                 onEditClick = actions.onOpenEdit,
                 onDeleteSuccess = { actions.onSpaceDeleted("Space deleted") }
             )
@@ -212,6 +214,32 @@ fun NavGraphBuilder.spacesNavGraph(
                 spaceId = spaceId,
                 invitedBy = currentUserId,
                 snackbarHostState = inviteSnackbarHostState,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Completed task history
+    composable(
+        route = SpacesDestinations.COMPLETED_TASKS,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_SPACE_ID) {
+            type = NavType.IntType
+        })
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+
+        val historySnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Task History",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = historySnackbarHostState
+        ) { padding ->
+            CompletedTaskHistoryScreen(
+                spaceId = spaceId,
                 modifier = Modifier.padding(padding)
             )
         }

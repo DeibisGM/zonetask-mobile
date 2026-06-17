@@ -78,6 +78,7 @@ fun SpaceDetailScreen(
     onNavigateToPermissions: (Int) -> Unit = {},
     onCreateTaskClick: () -> Unit = {},
     onOpenPlansClick : () -> Unit = {},
+    onOpenCompletedTasksClick: () -> Unit = {},
     viewModel: SpaceDetailViewModel = viewModel(
         factory = SpaceDetailViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
@@ -184,6 +185,33 @@ fun SpaceDetailScreen(
                                     label = "Description",
                                     value = space.description ?: "No description"
                                 )
+                            }
+                        }
+                    }
+
+                    // Task history row
+                    item {
+                        Surface(
+                            onClick = onOpenCompletedTasksClick,
+                            shape = RoundedCornerShape(14.dp),
+                            color = AppSurface,
+                            border = BorderStroke(1.dp, AppBorder)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Outlined.CheckCircle, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    "Task History",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
                             }
                         }
                     }

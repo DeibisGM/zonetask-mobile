@@ -7,6 +7,7 @@ import com.app.zonetask.data.remote.repository.TaskLookupRepository
 import com.app.zonetask.data.remote.repository.TaskRepository
 import com.app.zonetask.data.remote.repository.UserRepository
 import com.app.zonetask.data.repository.FloorPlanRepository
+import com.app.zonetask.data.repository.InvitationRepository
 import com.app.zonetask.data.repository.SpaceRepository
 
 object AppContainer {
@@ -38,5 +39,9 @@ object AppContainer {
 
     val authRepository: BackendAuthRepository by lazy {
         BackendAuthRepository(RetrofitClient.authApiService)
+    }
+
+    val invitationRepository: InvitationRepository by lazy {
+        InvitationRepository(RetrofitClient.invitationApiService)
     }
 }
