@@ -21,6 +21,7 @@ import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.invitations.InviteMemberScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.statistics.IndividualStatisticsScreen
+import com.app.zonetask.ui.screens.statistics.SpaceStatisticsScreen
 import com.app.zonetask.ui.screens.taskhistory.CompletedTaskHistoryScreen
 
 fun NavGraphBuilder.spacesNavGraph(
@@ -131,6 +132,7 @@ fun NavGraphBuilder.spacesNavGraph(
                 onOpenPlansClick = { actions.onOpenPlans(spaceId) },
                 onOpenCompletedTasksClick = { actions.onOpenCompletedTasks(spaceId) },
                 onOpenStatisticsClick = { actions.onOpenStatistics(spaceId, currentUserId) },
+                onOpenSpaceStatisticsClick = { actions.onOpenSpaceStatistics(spaceId) },
                 onEditClick = actions.onOpenEdit,
                 onDeleteSuccess = { actions.onSpaceDeleted("Space deleted") }
             )
@@ -242,6 +244,30 @@ fun NavGraphBuilder.spacesNavGraph(
         ) { padding ->
             CompletedTaskHistoryScreen(
                 spaceId = spaceId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Space-level statistics
+    composable(
+        route = SpacesDestinations.SPACE_STATISTICS,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_SPACE_ID) { type = NavType.IntType })
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+
+        val spaceStatsSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Space Statistics",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = spaceStatsSnackbarHostState
+        ) { padding ->
+            SpaceStatisticsScreen(
+                spaceId  = spaceId,
                 modifier = Modifier.padding(padding)
             )
         }
