@@ -2,6 +2,7 @@ package com.app.zonetask.data.remote.service
 
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.SpaceStatisticsResponse
+import com.app.zonetask.data.remote.dto.SpaceUserReportsResponse
 import com.app.zonetask.data.remote.dto.UserStatisticsResponse
 import retrofit2.Response
 import retrofit2.http.GET
@@ -26,4 +27,13 @@ interface StatisticsApiService {
         @Query("date_from") dateFrom: String?,
         @Query("date_to") dateTo: String?
     ): Response<SpaceStatisticsResponse>
+
+    @GET(AppConstants.Api.Paths.USER_REPORTS)
+    suspend fun getUserReports(
+        @Path("spaceId") spaceId: Int,
+        @Query("period") period: String?,
+        @Query("date_from") dateFrom: String?,
+        @Query("date_to") dateTo: String?,
+        @Query("sort_by") sortBy: String?
+    ): Response<SpaceUserReportsResponse>
 }

@@ -2,6 +2,7 @@ package com.app.zonetask.data.remote.repository
 
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.SpaceStatisticsResponse
+import com.app.zonetask.data.remote.dto.SpaceUserReportsResponse
 import com.app.zonetask.data.remote.dto.UserStatisticsResponse
 import com.app.zonetask.data.remote.service.StatisticsApiService
 import java.io.IOException
@@ -54,6 +55,36 @@ class StatisticsRepository(
                 period   = period,
                 dateFrom = dateFrom,
                 dateTo   = dateTo
+            )
+            if (response.isSuccessful) {
+                val body = response.body()
+                    ?: return ApiResult.Error("Empty response from server")
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message    = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
+    suspend fun getUserReports(
+        spaceId: Int,
+        period: String? = null,
+        dateFrom: String? = null,
+        dateTo: String? = null,
+        sortBy: String? = null
+    ): ApiResult<SpaceUserReportsResponse> {
+        return try {
+            val response = apiService.getUserReports(
+                spaceId  = spaceId,
+                period   = period,
+                dateFrom = dateFrom,
+                dateTo   = dateTo,
+                sortBy   = sortBy
             )
             if (response.isSuccessful) {
                 val body = response.body()

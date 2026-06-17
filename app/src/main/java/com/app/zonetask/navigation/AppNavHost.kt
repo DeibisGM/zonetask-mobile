@@ -333,6 +333,9 @@ private fun rememberSpacesNavActions(
         onOpenSpaceStatistics = { spaceId ->
             navController.navigate(SpacesDestinations.spaceStatistics(spaceId))
         },
+        onOpenUserReports = { spaceId ->
+            navController.navigate(SpacesDestinations.userReports(spaceId))
+        },
         onBack = { navController.popBackStack() },
         onOpenInvitations = { navController.navigate(AppDestinations.myInvitationsRoute(currentUserId)) },
         onSpaceCreated = { message ->
