@@ -43,6 +43,14 @@ object AppConstants {
             const val PLAN_BY_ID  = "api/plans/{planId}"
             const val CREATE_PLAN = "api/plans"
             const val UPDATE_PLAN = "api/plans/{planId}"
+
+            // Completion history endpoint
+            const val COMPLETED_TASKS = "api/spaces/{spaceId}/completed-tasks"
+
+            // Statistics endpoints
+            const val USER_STATISTICS   = "api/spaces/{spaceId}/members/{userId}/statistics"
+            const val SPACE_STATISTICS  = "api/spaces/{spaceId}/statistics"
+            const val USER_REPORTS      = "api/spaces/{spaceId}/reports/users"
         }
     }
 }

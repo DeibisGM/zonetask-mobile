@@ -60,8 +60,16 @@ object RetrofitClient {
         retrofit.create(InvitationApiService::class.java)
     }
 
+    val statisticsApiService: StatisticsApiService by lazy {
+        retrofit.create(StatisticsApiService::class.java)
+    }
+
     val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
+    }
+
+    val invitationApiService: InvitationApiService by lazy {
+        retrofit.create(InvitationApiService::class.java)
     }
 
     private fun authHeaderInterceptor(): Interceptor = Interceptor { chain ->
