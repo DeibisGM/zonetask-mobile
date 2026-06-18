@@ -1,6 +1,5 @@
 package com.app.zonetask.ui.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,10 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -32,17 +27,19 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.app.zonetask.R
 import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppCardElevated
@@ -52,47 +49,19 @@ import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
 
+private val FieldBackground = Color(0xFF262626)
+private val FieldBorderUnfocused = Color(0xFF3A3A3A)
+
 @Composable
 fun AuthScreenShell(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    // Shared auth backdrop used by login-related screens to keep a consistent visual language.
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(AppBackground)
     ) {
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 32.dp, end = 12.dp)
-                .size(220.dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            AppPrimary.copy(alpha = 0.18f),
-                            Color.Transparent
-                        )
-                    ),
-                    shape = RoundedCornerShape(220.dp)
-                )
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 18.dp, bottom = 44.dp)
-                .size(180.dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            AppPrimary.copy(alpha = 0.10f),
-                            Color.Transparent
-                        )
-                    ),
-                    shape = RoundedCornerShape(180.dp)
-                )
-        )
         content()
     }
 }
@@ -102,17 +71,16 @@ fun AuthCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    // Reusable elevated container for auth forms and future sign-in screens.
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, AppBorder),
         colors = CardDefaults.cardColors(containerColor = AppCardElevated),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             content()
         }
@@ -125,28 +93,16 @@ fun AuthHeader(
     subtitle: String,
     modifier: Modifier = Modifier
 ) {
-    // Header block that can be reused across auth flows without reimplementing spacing or styling.
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = AppPrimary.copy(alpha = 0.14f),
-            border = BorderStroke(1.dp, AppPrimary.copy(alpha = 0.28f))
-        ) {
-            Box(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "ZT",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = AppPrimary
-                )
-            }
-        }
+        Image(
+            painter = painterResource(id = R.drawable.ic_logo),
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            colorFilter = ColorFilter.tint(AppPrimary)
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -183,23 +139,31 @@ fun AuthTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
     enabled: Boolean = true
 ) {
-    // Generic outlined field with shared label, placeholder, and inline error presentation.
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = AppOnSurface,
-            modifier = Modifier.padding(bottom = 8.dp)
+            color = AppOnSurface.copy(alpha = 0.85f),
+            modifier = Modifier.padding(bottom = 10.dp)
         )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
             enabled = enabled,
             singleLine = singleLine,
             isError = error != null,
-            shape = RoundedCornerShape(16.dp),
-            placeholder = placeholder?.let { { Text(text = it) } },
+            shape = RoundedCornerShape(12.dp),
+            placeholder = placeholder?.let {
+                {
+                    Text(
+                        text = it,
+                        color = AppSecondaryText.copy(alpha = 0.55f)
+                    )
+                }
+            },
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
             visualTransformation = visualTransformation,
@@ -207,19 +171,21 @@ fun AuthTextField(
             keyboardActions = keyboardActions,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = AppPrimary,
-                unfocusedBorderColor = AppBorder,
+                unfocusedBorderColor = FieldBorderUnfocused,
+                focusedContainerColor = FieldBackground,
+                unfocusedContainerColor = FieldBackground,
                 focusedTextColor = AppOnSurface,
                 unfocusedTextColor = AppOnSurface,
                 cursorColor = AppPrimary,
-                focusedLabelColor = AppPrimary,
-                unfocusedLabelColor = AppSecondaryText,
                 focusedLeadingIconColor = AppPrimary,
                 unfocusedLeadingIconColor = AppSecondaryText,
                 focusedTrailingIconColor = AppSecondaryText,
                 unfocusedTrailingIconColor = AppSecondaryText,
                 errorBorderColor = MaterialTheme.colorScheme.error,
                 errorCursorColor = MaterialTheme.colorScheme.error,
-                errorLabelColor = MaterialTheme.colorScheme.error
+                errorLabelColor = MaterialTheme.colorScheme.error,
+                errorLeadingIconColor = MaterialTheme.colorScheme.error,
+                errorTrailingIconColor = MaterialTheme.colorScheme.error
             )
         )
 
@@ -247,7 +213,6 @@ fun AuthPasswordField(
     keyboardActions: androidx.compose.foundation.text.KeyboardActions = androidx.compose.foundation.text.KeyboardActions.Default,
     enabled: Boolean = true
 ) {
-    // Password field builds on the generic auth field and adds visibility toggling.
     AuthTextField(
         value = value,
         onValueChange = onValueChange,
@@ -261,15 +226,19 @@ fun AuthPasswordField(
         visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
         leadingIcon = {
             Icon(
-                imageVector = Icons.Outlined.Lock,
-                contentDescription = null
+                painter = painterResource(id = R.drawable.ic_password),
+                contentDescription = null,
+                tint = AppSecondaryText,
+                modifier = Modifier.size(20.dp)
             )
         },
         trailingIcon = {
             IconButton(onClick = onVisibilityToggle) {
                 Icon(
-                    imageVector = if (isVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                    contentDescription = if (isVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                    painter = painterResource(id = if (isVisible) R.drawable.ic_eye else R.drawable.ic_eye_slash),
+                    contentDescription = if (isVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                    tint = AppSecondaryText,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -284,7 +253,6 @@ fun AuthPrimaryButton(
     enabled: Boolean = true,
     loading: Boolean = false
 ) {
-    // Primary call-to-action button reused across auth flows to keep loading and disabled states consistent.
     Button(
         onClick = onClick,
         modifier = modifier
@@ -320,7 +288,6 @@ fun AuthStatusMessage(
     message: String?,
     modifier: Modifier = Modifier
 ) {
-    // Compact status line for backend or session errors shown below the form.
     if (message == null) return
 
     Text(

@@ -2,7 +2,9 @@ package com.app.zonetask.ui.screens.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,8 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,7 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -44,6 +44,8 @@ import com.app.zonetask.ui.components.AuthPrimaryButton
 import com.app.zonetask.ui.components.AuthScreenShell
 import com.app.zonetask.ui.components.AuthStatusMessage
 import com.app.zonetask.ui.components.AuthTextField
+import com.app.zonetask.R
+import com.app.zonetask.ui.theme.AppSecondaryText
 import kotlinx.coroutines.launch
 
 @Composable
@@ -80,7 +82,7 @@ fun LoginScreen(
 
             AuthHeader(
                 title = UserMessages.Login.TITLE,
-                subtitle = UserMessages.Login.SUBTITLE
+                subtitle = ""
             )
 
             // The auth notice is injected only after a successful sign-up or password reset.
@@ -101,8 +103,10 @@ fun LoginScreen(
                     error = uiState.emailError,
                     leadingIcon = {
                         Icon(
-                            imageVector = Icons.Outlined.Email,
-                            contentDescription = null
+                            painter = painterResource(id = R.drawable.ic_email),
+                            contentDescription = null,
+                            tint = AppSecondaryText,
+                            modifier = Modifier.size(20.dp)
                         )
                     },
                     keyboardOptions = KeyboardOptions(
@@ -116,7 +120,7 @@ fun LoginScreen(
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Password visibility and submit handling are delegated to the shared auth components.
                     AuthPasswordField(
@@ -143,9 +147,7 @@ fun LoginScreen(
                         ) {
                             Text(
                                 text = UserMessages.Login.FORGOT_PASSWORD,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontStyle = FontStyle.Italic
-                                )
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
@@ -153,9 +155,11 @@ fun LoginScreen(
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     AuthStatusMessage(message = uiState.errorMessage)
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     AuthPrimaryButton(
                         text = UserMessages.Login.SUBMIT,
@@ -163,14 +167,16 @@ fun LoginScreen(
                         loading = uiState.isLoading,
                         enabled = uiState.canSubmit
                     )
-
-                    TextButton(
-                        onClick = onCreateAccount,
-                        enabled = !uiState.isLoading
-                    ) {
-                        Text(text = UserMessages.Register.TITLE)
-                    }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            TextButton(
+                onClick = onCreateAccount,
+                enabled = !uiState.isLoading
+            ) {
+                Text(text = UserMessages.Register.TITLE)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
