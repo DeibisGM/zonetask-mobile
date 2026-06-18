@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.SpaceDashboard
 import androidx.compose.material3.*
@@ -28,6 +29,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.di.AppContainer
@@ -44,6 +46,7 @@ import kotlinx.coroutines.launch
 
 data class TaskDetailUiState(
     val task: TaskResponse? = null,
+    val assigneeName: String? = null,
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -65,8 +68,11 @@ class TaskDetailViewModel(
             _uiState.value = TaskDetailUiState(isLoading = true)
             when (val result = AppContainer.taskRepository.getTaskById(taskId)) {
                 is ApiResult.Success -> {
+                    val task = result.data
+                    val assigneeName = resolveAssigneeName(task.taskId, task.assignedUserId)
                     _uiState.value = TaskDetailUiState(
-                        task = result.data,
+                        task = task,
+                        assigneeName = assigneeName,
                         isLoading = false
                     )
                 }
@@ -77,6 +83,29 @@ class TaskDetailViewModel(
                     )
                 }
             }
+        }
+    }
+
+    private suspend fun resolveAssigneeName(taskId: Int, assignedUserId: Int?): String? {
+        val userId = assignedUserId ?: run {
+            when (val assignmentsResult = AppContainer.taskRepository.getTaskAssignments(taskId)) {
+                is ApiResult.Success -> assignmentsResult.data.firstOrNull()?.assignedUserId
+                is ApiResult.Error -> null
+            }
+        } ?: return null
+
+        return when (val usersResult = AppContainer.userRepository.getUsers()) {
+            is ApiResult.Success -> {
+                usersResult.data.firstOrNull { user -> user.userId == userId }?.displayName
+                    ?.takeIf { it.isNotBlank() }
+                    ?: usersResult.data.firstOrNull { user -> user.userId == userId }?.let { user ->
+                        listOfNotNull(user.firstName, user.lastName)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" ")
+                            .ifBlank { user.username.ifBlank { "User $userId" } }
+                    }
+            }
+            is ApiResult.Error -> null
         }
     }
 
@@ -135,7 +164,7 @@ fun TaskDetailScreen(
                 )
             }
             Text(
-                text = "Task Details",
+                text = UserMessages.TaskDetail.TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -148,7 +177,15 @@ fun TaskDetailScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = AppPrimary)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = AppPrimary)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = UserMessages.TaskDetail.LOADING,
+                            color = AppSecondaryText,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
 
@@ -164,7 +201,7 @@ fun TaskDetailScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        TextButton(onClick = { viewModel.loadTask() }) {
+                            TextButton(onClick = { viewModel.loadTask() }) {
                             Text("Retry", color = AppPrimary)
                         }
                     }
@@ -213,6 +250,16 @@ fun TaskDetailScreen(
                         border = BorderStroke(1.dp, AppBorder)
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
+                            DetailRow(
+                                icon = Icons.Outlined.Person,
+                                label = UserMessages.TaskDetail.ASSIGNEE_LABEL,
+                                value = uiState.assigneeName ?: UserMessages.TaskDetail.NO_ASSIGNEE
+                            )
+                            HorizontalDivider(
+                                color = AppBorder,
+                                modifier = Modifier.padding(vertical = 14.dp)
+                            )
+
                             DetailRow(
                                 icon = Icons.Outlined.SpaceDashboard,
                                 label = "Assigned zone",
