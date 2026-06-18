@@ -14,6 +14,7 @@ data class SpacesNavActions(
     val onOpenUserReports: (spaceId: Int) -> Unit,
     val onBack: () -> Unit,
     val onSpaceCreated: (message: String) -> Unit,
+    val onSpaceCreatedAndOpenPlans: (spaceId: Int) -> Unit,
     val onSpaceEdited: (message: String) -> Unit,
     val onSpaceDeleted: (message: String) -> Unit,
     val onOpenInvitations: () -> Unit,

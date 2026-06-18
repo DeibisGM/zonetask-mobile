@@ -44,6 +44,10 @@ object AppConstants {
             const val CREATE_PLAN = "api/plans"
             const val UPDATE_PLAN = "api/plans/{planId}"
 
+            // Zone endpoints
+            const val PLAN_ZONES = "api/plans/{planId}/zones"
+            const val ZONE_BY_ID = "api/zones/{zoneId}"
+
             // Completion history endpoint
             const val COMPLETED_TASKS = "api/spaces/{spaceId}/completed-tasks"
 

@@ -4,6 +4,7 @@ import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.data.remote.service.AuthApiService
+import com.app.zonetask.data.remote.service.ZoneApiService
 import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.TaskApiService
 import com.app.zonetask.data.remote.service.SpaceApiService
@@ -44,6 +45,10 @@ object RetrofitClient {
 
     val floorPlanApiService: FloorPlanApiService by lazy {
         retrofit.create(FloorPlanApiService::class.java)
+    }
+
+    val zoneApiService: ZoneApiService by lazy {
+        retrofit.create(ZoneApiService::class.java)
     }
 
     val taskLookupApiService: TaskLookupApiService by lazy {

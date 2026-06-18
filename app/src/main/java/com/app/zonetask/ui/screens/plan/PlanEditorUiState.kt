@@ -7,6 +7,8 @@ data class PlanEditorUiState(
     val name:         String  = "",
     val canvasWidth:  String  = "1000",
     val canvasHeight: String  = "800",
+    val zones:        List<PlanZoneDraft> = emptyList(),
+    val selectedZoneId: String? = null,
     val isLoading:    Boolean = false,
     val isSaving:     Boolean = false,
     val isDirty:      Boolean = false,

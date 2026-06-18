@@ -76,7 +76,8 @@ class CreateSpaceViewModel(
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        isSuccess = true
+                        isSuccess = true,
+                        createdSpaceId = result.data.spaceId
                     )
                 }
                 is ApiResult.Error -> {
