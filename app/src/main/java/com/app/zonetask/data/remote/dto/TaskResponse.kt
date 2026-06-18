@@ -41,6 +41,8 @@ data class TaskResponse(
     val spaceId: Int,
     @SerializedName("zoneId")
     val zoneId: Int? = null,
+    @SerializedName("assignedUserId")
+    val assignedUserId: Int? = null,
     @SerializedName("objectId")
     val objectId: Int? = null,
     @SerializedName("objectIds")

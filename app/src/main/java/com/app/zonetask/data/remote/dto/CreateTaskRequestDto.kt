@@ -40,6 +40,8 @@ data class CreateTaskRequestDto(
     val spaceId: Int,
     @SerializedName("zoneId")
     val zoneId: Int?,
+    @SerializedName("assignedUserId")
+    val assignedUserId: Int? = null,
     // Main selected object, kept for compatibility with the API payload.
     @SerializedName("objectId")
     val objectId: Int? = null,

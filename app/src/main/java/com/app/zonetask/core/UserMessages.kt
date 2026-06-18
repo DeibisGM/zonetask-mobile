@@ -69,6 +69,15 @@ object UserMessages {
 
     object TaskCreate {
         const val INTRO                      = "Completá el formulario para definir la tarea."
+        const val ASSIGNEE_SECTION           = "Assignee"
+        const val ASSIGNEE_SUBTITLE          = "Choose a member of this space to assign the task manually."
+        const val ASSIGNEE_LABEL             = "Assigned to"
+        const val ASSIGNEE_PLACEHOLDER       = "Select an assignee"
+        const val ASSIGNEE_NONE              = "No assignee"
+        const val ASSIGNEE_LOADING           = "Loading members..."
+        const val ASSIGNEE_EMPTY             = "No assignable members found"
+        const val ASSIGNEE_HELP              = "Only members of this space can be selected."
+        const val LOADING_FORM               = "Loading form..."
         const val GENERAL_SECTION            = "General"
         const val SCHEDULE_SECTION           = "Horario"
         const val RULES_SECTION              = "Reglas"
@@ -90,12 +99,19 @@ object UserMessages {
         const val OBJECT_ID_LABEL            = "ID de objeto"
         const val REMINDER_MINUTES_LABEL     = "Recordatorio"
         const val SAVE_BUTTON                = "Guardar"
-        const val SAVE_SNACKBAR              = "Formulario listo para guardar."
+        const val SAVE_SNACKBAR              = "Task saved successfully."
         const val ACTIVE_LABEL               = "Tarea activa"
         const val REMINDER_LABEL             = "Recordatorio"
         const val REQUIRE_DESCRIPTION_LABEL  = "Requiere descripción"
         const val REQUIRE_PROOF_LABEL        = "Requiere comprobante"
         const val ROTATING_LABEL             = "Rotativa"
+    }
+
+    object TaskDetail {
+        const val TITLE          = "Task Details"
+        const val ASSIGNEE_LABEL = "Assigned user"
+        const val NO_ASSIGNEE    = "No assignee"
+        const val LOADING        = "Loading task..."
     }
 
     object Accessibility {
