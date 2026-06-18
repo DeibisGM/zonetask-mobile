@@ -12,6 +12,7 @@ data class SpacesNavActions(
     val onOpenStatistics: (spaceId: Int, userId: Int) -> Unit,
     val onOpenSpaceStatistics: (spaceId: Int) -> Unit,
     val onOpenUserReports: (spaceId: Int) -> Unit,
+    val onOpenSpaceReports: () -> Unit,
     val onBack: () -> Unit,
     val onSpaceCreated: (message: String) -> Unit,
     val onSpaceEdited: (message: String) -> Unit,
