@@ -23,6 +23,7 @@ class ChatEditViewModel(
 
     init {
         loadChat()
+        loadMembers()
     }
 
     fun onNameChange(value: String)        { _uiState.value = _uiState.value.copy(name = value, errorBanner = null) }
@@ -47,6 +48,19 @@ class ChatEditViewModel(
                         errorBanner   = result.message
                     )
                 }
+            }
+        }
+    }
+
+    fun loadMembers() {
+        _uiState.value = _uiState.value.copy(isMembersLoading = true)
+        viewModelScope.launch {
+            when (val result = chatGroupRepository.getChatMembers(spaceId)) {
+                is ApiResult.Success -> _uiState.value = _uiState.value.copy(
+                    isMembersLoading = false,
+                    members          = result.data
+                )
+                is ApiResult.Error   -> _uiState.value = _uiState.value.copy(isMembersLoading = false)
             }
         }
     }

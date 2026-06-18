@@ -2,6 +2,7 @@ package com.app.zonetask.data.remote.service
 
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.ChatGroupResponse
+import com.app.zonetask.data.remote.dto.ChatMemberDto
 import com.app.zonetask.data.remote.dto.UpdateChatGroupRequest
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -19,6 +20,11 @@ interface ChatApiService {
     suspend fun getChat(
         @Path("spaceId") spaceId: Int
     ): Response<ChatGroupResponse>
+
+    @GET(AppConstants.Api.Paths.CHAT_MEMBERS)
+    suspend fun getChatMembers(
+        @Path("spaceId") spaceId: Int
+    ): Response<List<ChatMemberDto>>
 
     @PATCH(AppConstants.Api.Paths.CHAT_BY_SPACE)
     suspend fun updateChat(

@@ -6,6 +6,7 @@ import android.webkit.MimeTypeMap
 import com.app.zonetask.data.remote.ApiErrorHandler
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.ChatGroupResponse
+import com.app.zonetask.data.remote.dto.ChatMemberDto
 import com.app.zonetask.data.remote.dto.UpdateChatGroupRequest
 import com.app.zonetask.data.remote.service.ChatApiService
 import okhttp3.MediaType.Companion.toMediaType
@@ -42,6 +43,23 @@ class ChatGroupRepository(private val apiService: ChatApiService) {
             } else {
                 ApiResult.Error(
                     message    = ApiErrorHandler.bodyMessage(response.errorBody()) ?: ApiErrorHandler.fromHttpCode(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(ApiErrorHandler.fromException(e))
+        }
+    }
+
+    suspend fun getChatMembers(spaceId: Int): ApiResult<List<ChatMemberDto>> {
+        return try {
+            val response = apiService.getChatMembers(spaceId)
+            if (response.isSuccessful) {
+                val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message    = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }

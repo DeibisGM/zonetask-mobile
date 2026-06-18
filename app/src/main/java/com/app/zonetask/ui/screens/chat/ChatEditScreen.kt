@@ -50,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.app.zonetask.BuildConfig
+import com.app.zonetask.data.remote.dto.ChatMemberDto
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.AppBorder
@@ -187,6 +188,13 @@ fun ChatEditScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            ParticipantsSection(
+                members   = uiState.members,
+                isLoading = uiState.isMembersLoading
+            )
         }
     }
 }
@@ -301,3 +309,120 @@ private fun chatEditTextFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedTextColor      = MaterialTheme.colorScheme.onBackground,
     cursorColor             = AppPrimary
 )
+
+@Composable
+private fun ParticipantsSection(
+    members: List<ChatMemberDto>,
+    isLoading: Boolean
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier          = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text       = "Lista de participantes",
+                style      = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color      = MaterialTheme.colorScheme.onBackground,
+                modifier   = Modifier.weight(1f)
+            )
+            if (!isLoading) {
+                Box(
+                    modifier          = Modifier
+                        .background(AppPrimary.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 10.dp, vertical = 3.dp),
+                    contentAlignment  = Alignment.Center
+                ) {
+                    Text(
+                        text       = "${members.size}",
+                        style      = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color      = AppPrimary
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp), color = AppPrimary, strokeWidth = 2.dp)
+            }
+            return@Column
+        }
+
+        members.forEach { member ->
+            MemberCard(member = member)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun MemberCard(member: ChatMemberDto) {
+    val alpha = if (member.isActive) 1f else 0.45f
+
+    Row(
+        modifier          = Modifier
+            .fillMaxWidth()
+            .background(AppCardElevated, RoundedCornerShape(12.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        MemberAvatar(initials = member.initials, isActive = member.isActive)
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text       = member.fullName,
+                style      = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color      = MaterialTheme.colorScheme.onBackground.copy(alpha = alpha)
+            )
+            Text(
+                text  = member.role.replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.bodySmall,
+                color = AppSecondaryText.copy(alpha = alpha)
+            )
+        }
+
+        if (!member.isActive) {
+            Box(
+                modifier         = Modifier
+                    .background(AppBorder, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text  = "Inactivo",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppSecondaryText
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MemberAvatar(initials: String, isActive: Boolean) {
+    val bgColor     = if (isActive) AppPrimary else AppBorder
+    val textColor   = if (isActive) Color.White else AppSecondaryText
+
+    Box(
+        modifier         = Modifier
+            .size(42.dp)
+            .clip(CircleShape)
+            .background(bgColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text       = initials.ifBlank { "?" },
+            color      = textColor,
+            fontWeight = FontWeight.Bold,
+            fontSize   = 15.sp
+        )
+    }
+}
