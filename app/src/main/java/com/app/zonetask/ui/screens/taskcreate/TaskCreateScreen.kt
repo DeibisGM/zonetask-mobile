@@ -38,6 +38,7 @@ fun TaskCreateScreen(
     modifier: Modifier = Modifier,
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
+    onSaved: () -> Unit = {},
     onClose: () -> Unit = {},
     viewModel: TaskCreateViewModel = viewModel(
         factory = TaskCreateViewModelFactory(
@@ -174,7 +175,7 @@ fun TaskCreateScreen(
     }
 
     TaskCreateScaffold(
-        title = if (viewModel.isEditMode) "Editar tarea" else UserMessages.Screens.CREATE_TASK_TITLE,
+        title = if (viewModel.isEditMode) "Edit task" else UserMessages.Screens.CREATE_TASK_TITLE,
         showBack = true,
         onBackClick = onClose,
         onNavigate = onNavigate,
@@ -187,32 +188,27 @@ fun TaskCreateScreen(
                         cancelText = "Cancel",
                         saveText = "Save",
                         onCancelClick = {
-                            if (viewModel.isEditMode) {
-                                onClose()
-                            } else {
-                                viewModel.updateState { TaskCreateUiState() }
-                            }
+                            onClose()
                         },
                         onSaveClick = {
                             // Only clear the form after a successful save.
                             if (viewModel.validate()) {
                                 viewModel.saveTask { success, message ->
                                     if (success) {
+                                        onSaved()
                                         saveErrorMessage = null
                                         Toast.makeText(
                                             context,
                                             message.ifBlank { UserMessages.TaskCreate.SAVE_SNACKBAR },
                                             Toast.LENGTH_SHORT
                                         ).show()
-                                        if (viewModel.isEditMode) {
-                                            onClose()
-                                        } else {
-                                            viewModel.resetForm()
-                                        }
+                                        onClose()
                                     } else {
                                         saveErrorMessage = message
                                     }
                                 }
+                            } else {
+                                saveErrorMessage = UserMessages.TaskCreate.VALIDATION_REQUIRED
                             }
                         }
                     )
@@ -323,7 +319,7 @@ private fun TaskCreateContent(
                     if (value.length <= 150) onUpdate { copy(title = value) }
                 },
                                placeholder = "E.g. Clean the kitchen",
-                error = if (uiState.showErrors && !uiState.isTitleValid) "Campo obligatorio" else null
+                error = if (uiState.showErrors && !uiState.isTitleValid) "Required field" else null
             )
 
             TaskTextField(

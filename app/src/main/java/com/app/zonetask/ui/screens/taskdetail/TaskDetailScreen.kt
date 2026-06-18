@@ -135,6 +135,8 @@ fun TaskDetailScreen(
     spaceId: Int,
     taskId: Int,
     modifier: Modifier = Modifier,
+    refreshTrigger: Boolean = false,
+    onRefreshHandled: () -> Unit = {},
     onBack: () -> Unit = {},
     onEdit: (taskId: Int) -> Unit = {},
     onDeleted: () -> Unit = {},
@@ -145,6 +147,13 @@ fun TaskDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger) {
+            viewModel.loadTask()
+            onRefreshHandled()
+        }
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
 

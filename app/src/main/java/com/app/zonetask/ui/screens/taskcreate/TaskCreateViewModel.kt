@@ -164,7 +164,6 @@ class TaskCreateViewModel(
             when (val result = AppContainer.taskRepository.getTaskById(taskId)) {
                 is ApiResult.Success -> {
                     applyTaskToForm(result.data)
-                    loadSelectedAssignee(taskId)
                     loadAssignableMembers(result.data.spaceId, requestingUserId)
                 }
                 is ApiResult.Error -> {
@@ -282,20 +281,6 @@ class TaskCreateViewModel(
         loadFormOptions(task.spaceId)
     }
 
-    private fun loadSelectedAssignee(taskId: Int) {
-        viewModelScope.launch {
-            when (val result = AppContainer.taskRepository.getTaskAssignments(taskId)) {
-                is ApiResult.Success -> {
-                    val selectedAssigneeId = result.data.firstOrNull()?.assignedUserId
-                    if (selectedAssigneeId != null) {
-                        uiState = uiState.copy(assignedUserId = selectedAssigneeId)
-                    }
-                }
-
-                is ApiResult.Error -> Unit
-            }
-        }
-    }
 }
 
 class TaskCreateViewModelFactory(

@@ -247,11 +247,18 @@ fun AppNavHost() {
         ) { backStackEntry ->
             val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 1
             val taskId  = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+            val taskChanged by backStackEntry.savedStateHandle
+                .getStateFlow("taskChanged", false)
+                .collectAsStateWithLifecycle()
 
             TaskDetailScreen(
                 spaceId = spaceId,
                 taskId = taskId,
                 modifier = Modifier.fillMaxSize(),
+                refreshTrigger = taskChanged,
+                onRefreshHandled = {
+                    backStackEntry.savedStateHandle["taskChanged"] = false
+                },
                 onBack = { navController.popBackStack() },
                 onEdit = { id ->
                     navController.navigate(AppDestinations.taskEditRoute(spaceId, id))
@@ -387,12 +394,21 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
     onTabSelected: (NavDestination) -> Unit,
     onLogout: () -> Unit
 ) {
+    fun markTaskRefresh(backStackEntry: androidx.navigation.NavBackStackEntry?) {
+        backStackEntry?.savedStateHandle?.set("taskChanged", true)
+        runCatching {
+            navController.getBackStackEntry(AppDestinations.tasksRoute(currentUserId))
+                .savedStateHandle["taskChanged"] = true
+        }
+    }
+
     composable(route = AppDestinations.TASK_CREATE) {
         TaskCreateScreen(
             initialSpaceId   = 1,
             initialCreatedBy = currentUserId,
             onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
             onLogout         = onLogout,
+            onSaved          = { markTaskRefresh(navController.previousBackStackEntry) },
             onClose          = { navController.popBackStack() }
         )
     }
@@ -407,6 +423,7 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
             initialCreatedBy = currentUserId,
             onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
             onLogout         = onLogout,
+            onSaved          = { markTaskRefresh(navController.previousBackStackEntry) },
             onClose          = { navController.popBackStack() }
         )
     }
@@ -426,6 +443,7 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
             taskId           = taskId,
             onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
             onLogout         = onLogout,
+            onSaved          = { markTaskRefresh(navController.previousBackStackEntry) },
             onClose          = { navController.popBackStack() }
         )
     }
