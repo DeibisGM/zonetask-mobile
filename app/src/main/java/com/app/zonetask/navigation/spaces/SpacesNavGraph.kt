@@ -21,6 +21,7 @@ import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.invitations.InviteMemberScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.statistics.IndividualStatisticsScreen
+import com.app.zonetask.ui.screens.statistics.SpaceReportsScreen
 import com.app.zonetask.ui.screens.statistics.SpaceStatisticsScreen
 import com.app.zonetask.ui.screens.statistics.UserReportsScreen
 import com.app.zonetask.ui.screens.taskhistory.CompletedTaskHistoryScreen
@@ -72,7 +73,8 @@ fun NavGraphBuilder.spacesNavGraph(
                     backStackEntry.savedStateHandle[SpacesNavKeys.SUCCESS_MESSAGE] = null
                 },
                 onSpaceClick = { space -> actions.onOpenDetail(space.spaceId) },
-                onOpenInvitations = actions.onOpenInvitations
+                onOpenInvitations = actions.onOpenInvitations,
+                onOpenSpaceReports = actions.onOpenSpaceReports
             )
         }
     }
@@ -325,6 +327,30 @@ fun NavGraphBuilder.spacesNavGraph(
         ) { padding ->
             UserReportsScreen(
                 spaceId  = spaceId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Reports by space (cross-space comparison for the current user)
+    composable(
+        route = SpacesDestinations.SPACE_REPORTS,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_USER_ID) { type = NavType.IntType })
+    ) { backStackEntry ->
+        val userId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_USER_ID)
+            ?: currentUserId
+
+        val spaceReportsSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Reports by Space",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = spaceReportsSnackbarHostState
+        ) { padding ->
+            SpaceReportsScreen(
+                userId   = userId,
                 modifier = Modifier.padding(padding)
             )
         }

@@ -133,7 +133,8 @@ fun TaskDropdown(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_caret_down),
                         contentDescription = null,
-                        tint = if (error != null) MaterialTheme.colorScheme.error else AppSecondaryText
+                        tint = if (error != null) MaterialTheme.colorScheme.error else AppSecondaryText,
+                        modifier = Modifier.size(18.dp)
                     )
                 },
                 colors = OutlinedTextFieldDefaults.colors(
