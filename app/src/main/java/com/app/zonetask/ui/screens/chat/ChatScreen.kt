@@ -1,6 +1,7 @@
 package com.app.zonetask.ui.screens.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +15,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,11 +32,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.app.zonetask.BuildConfig
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.AppBorder
@@ -48,16 +52,22 @@ import com.app.zonetask.ui.theme.AppTopBar
 fun ChatScreen(
     spaceId: Int,
     onBack: () -> Unit,
+    onNavigateToEdit: () -> Unit = {},
+    reloadTrigger: Boolean = false,
     modifier: Modifier = Modifier,
     viewModel: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(
-            spaceRepository = AppContainer.spaceRepository,
-            spaceId         = spaceId
+            chatGroupRepository = AppContainer.chatGroupRepository,
+            spaceId             = spaceId
         )
     )
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var messageText by remember { mutableStateOf("") }
+
+    LaunchedEffect(reloadTrigger) {
+        if (reloadTrigger) viewModel.reload()
+    }
 
     Column(
         modifier = modifier
@@ -65,9 +75,11 @@ fun ChatScreen(
             .background(AppBackground)
     ) {
         ChatToolbar(
-            spaceName = uiState.spaceName.ifBlank { "..." },
-            isLoading = uiState.isLoading,
-            onBack    = onBack
+            spaceName        = uiState.spaceName.ifBlank { "..." },
+            imageUrl         = uiState.imageUrl,
+            isLoading        = uiState.isLoading,
+            onBack           = onBack,
+            onNavigateToEdit = onNavigateToEdit
         )
 
         HorizontalDivider(color = AppBorder, thickness = 0.5.dp)
@@ -88,16 +100,16 @@ fun ChatScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = messageText,
+                value         = messageText,
                 onValueChange = { messageText = it },
-                placeholder = {
+                placeholder   = {
                     Text(
-                        text = "Message...",
+                        text  = "Message...",
                         color = AppSecondaryText,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 },
-                shape = RoundedCornerShape(24.dp),
+                shape  = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor   = AppCardElevated,
                     unfocusedContainerColor = AppCardElevated,
@@ -108,8 +120,8 @@ fun ChatScreen(
                     unfocusedTextColor      = MaterialTheme.colorScheme.onSurface
                 ),
                 textStyle = MaterialTheme.typography.bodyMedium,
-                maxLines = 4,
-                modifier = Modifier.weight(1f)
+                maxLines  = 4,
+                modifier  = Modifier.weight(1f)
             )
         }
     }
@@ -118,67 +130,77 @@ fun ChatScreen(
 @Composable
 private fun ChatToolbar(
     spaceName: String,
+    imageUrl: String?,
     isLoading: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToEdit: () -> Unit
 ) {
+    val absoluteImageUrl = imageUrl?.trim()?.let { url ->
+        if (url.isBlank()) null
+        else BuildConfig.API_BASE_URL.trimEnd('/') + "/" + url.trimStart('/')
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(AppTopBar)
-            .padding(start = 4.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+            .padding(start = 4.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack) {
             Icon(
-                imageVector = Icons.Outlined.ArrowBack,
+                imageVector        = Icons.Outlined.ArrowBack,
                 contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(22.dp)
+                tint               = MaterialTheme.colorScheme.onSurface,
+                modifier           = Modifier.size(22.dp)
             )
         }
 
-        Box(
+        Row(
             modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(AppPrimary.copy(alpha = 0.2f)),
-            contentAlignment = Alignment.Center
+                .weight(1f)
+                .clickable(onClick = onNavigateToEdit),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = AppPrimary,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(20.dp)
-                )
-            } else {
-                Text(
-                    text = spaceName.take(2).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = AppPrimary,
-                    fontSize = 13.sp
-                )
+            Box(
+                modifier         = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(AppPrimary.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isLoading -> CircularProgressIndicator(
+                        color       = AppPrimary,
+                        strokeWidth = 2.dp,
+                        modifier    = Modifier.size(20.dp)
+                    )
+                    absoluteImageUrl != null -> AsyncImage(
+                        model              = absoluteImageUrl,
+                        contentDescription = "Chat image",
+                        contentScale       = ContentScale.Crop,
+                        modifier           = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                    )
+                    else -> Text(
+                        text       = spaceName.take(2).uppercase(),
+                        style      = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color      = AppPrimary,
+                        fontSize   = 13.sp
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = spaceName,
-                style = MaterialTheme.typography.titleMedium,
+                text       = spaceName,
+                style      = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
-            )
-        }
-
-        IconButton(onClick = {}) {
-            Icon(
-                imageVector = Icons.Outlined.MoreVert,
-                contentDescription = "Options",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(22.dp)
+                color      = MaterialTheme.colorScheme.onSurface,
+                maxLines   = 1
             )
         }
     }

@@ -3,6 +3,7 @@ package com.app.zonetask.data.remote
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.data.remote.service.AuthApiService
+import com.app.zonetask.data.remote.service.ChatApiService
 import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.TaskApiService
@@ -60,6 +61,10 @@ object RetrofitClient {
 
     val invitationApiService: InvitationApiService by lazy {
         retrofit.create(InvitationApiService::class.java)
+    }
+
+    val chatApiService: ChatApiService by lazy {
+        retrofit.create(ChatApiService::class.java)
     }
 
     val completionApiService: CompletionApiService by lazy {

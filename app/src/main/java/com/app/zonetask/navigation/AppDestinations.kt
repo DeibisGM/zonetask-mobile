@@ -17,9 +17,11 @@ object AppDestinations {
     const val TASKS                   = "tasks/{userId}"
     const val MY_INVITATIONS          = "my_invitations/{userId}"
     const val CHAT                    = "chat/{spaceId}"
+    const val CHAT_EDIT               = "edit_chat/{spaceId}"
 
-    fun homeRoute(spaceId: Int): String = "home/$spaceId"
-    fun chatRoute(spaceId: Int): String = "chat/$spaceId"
+    fun homeRoute(spaceId: Int): String    = "home/$spaceId"
+    fun chatRoute(spaceId: Int): String    = "chat/$spaceId"
+    fun editChatRoute(spaceId: Int): String = "edit_chat/$spaceId"
     fun tasksRoute(userId: Int): String = "tasks/$userId"
     fun myInvitationsRoute(userId: Int): String = "my_invitations/$userId"
     fun taskCreateRoute(spaceId: Int): String = "task_create/$spaceId"

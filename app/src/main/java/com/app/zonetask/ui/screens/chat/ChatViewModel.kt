@@ -4,14 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
-import com.app.zonetask.data.repository.SpaceRepository
+import com.app.zonetask.data.remote.repository.ChatGroupRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ChatViewModel(
-    private val spaceRepository: SpaceRepository,
+    private val chatGroupRepository: ChatGroupRepository,
     private val spaceId: Int
 ) : ViewModel() {
 
@@ -19,21 +19,24 @@ class ChatViewModel(
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     init {
-        loadSpace()
+        loadChat()
     }
 
-    fun retry() {
-        loadSpace()
+    fun reload() {
+        loadChat()
     }
 
-    private fun loadSpace() {
+    private fun loadChat() {
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
-            when (val result = spaceRepository.getSpaceById(spaceId)) {
+            when (val result = chatGroupRepository.getChat(spaceId)) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        spaceName = result.data.name
+                        isLoading   = false,
+                        chatId      = result.data.chatId,
+                        spaceName   = result.data.name,
+                        description = result.data.description,
+                        imageUrl    = result.data.imageUrl
                     )
                 }
                 is ApiResult.Error -> {
@@ -48,10 +51,10 @@ class ChatViewModel(
 }
 
 class ChatViewModelFactory(
-    private val spaceRepository: SpaceRepository,
+    private val chatGroupRepository: ChatGroupRepository,
     private val spaceId: Int
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        ChatViewModel(spaceRepository = spaceRepository, spaceId = spaceId) as T
+        ChatViewModel(chatGroupRepository = chatGroupRepository, spaceId = spaceId) as T
 }

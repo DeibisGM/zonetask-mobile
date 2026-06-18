@@ -2,6 +2,7 @@ package com.app.zonetask.di
 
 import com.app.zonetask.data.auth.BackendAuthRepository
 import com.app.zonetask.data.remote.RetrofitClient
+import com.app.zonetask.data.remote.repository.ChatGroupRepository
 import com.app.zonetask.data.remote.repository.CompletionRepository
 import com.app.zonetask.data.remote.repository.StatisticsRepository
 import com.app.zonetask.data.remote.repository.TaskLookupRepository
@@ -36,6 +37,10 @@ object AppContainer {
 
     val invitationRepository: InvitationRepository by lazy {
         InvitationRepository(RetrofitClient.invitationApiService)
+    }
+
+    val chatGroupRepository: ChatGroupRepository by lazy {
+        ChatGroupRepository(RetrofitClient.chatApiService)
     }
 
     val completionRepository: CompletionRepository by lazy {
