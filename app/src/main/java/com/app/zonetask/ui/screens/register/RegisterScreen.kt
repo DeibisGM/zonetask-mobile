@@ -1,32 +1,38 @@
 package com.app.zonetask.ui.screens.register
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AlternateEmail
-import androidx.compose.material.icons.outlined.Badge
-import androidx.compose.material.icons.outlined.Call
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -34,21 +40,31 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.zonetask.R
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.auth.BackendAuthRepository
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.RegisterRequest
 import com.app.zonetask.di.AppContainer
+import com.app.zonetask.ui.components.AuthCard
 import com.app.zonetask.ui.components.AuthHeader
-import com.app.zonetask.ui.components.AuthNote
 import com.app.zonetask.ui.components.AuthPasswordField
 import com.app.zonetask.ui.components.AuthPrimaryButton
 import com.app.zonetask.ui.components.AuthScreenShell
 import com.app.zonetask.ui.components.AuthStatusMessage
 import com.app.zonetask.ui.components.AuthTextField
-import com.app.zonetask.ui.components.TaskSectionCard
 import com.app.zonetask.ui.components.TaskDropdown
+import com.app.zonetask.ui.theme.AppBorder
+import com.app.zonetask.ui.theme.AppCardElevated
+import com.app.zonetask.ui.theme.AppOnSurface
+import com.app.zonetask.ui.theme.AppPrimary
+import com.app.zonetask.ui.theme.AppSecondaryText
 import kotlinx.coroutines.launch
+
+private const val STEP_ACCOUNT = 0
+private const val STEP_CREDENTIALS = 1
+private const val STEP_OPTIONAL = 2
+private const val TOTAL_STEPS = 3
 
 @Composable
 fun RegisterScreen(
@@ -59,6 +75,7 @@ fun RegisterScreen(
     )
 ) {
     val uiState = viewModel.uiState
+    var currentStep by remember { mutableStateOf(STEP_ACCOUNT) }
 
     // When sign-up succeeds, the screen hands control back to the login flow
     // with the verification notice that should be shown exactly once.
@@ -70,194 +87,374 @@ fun RegisterScreen(
 
     AuthScreenShell(modifier = modifier) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 24.dp)
+            modifier = Modifier.fillMaxSize()
         ) {
-            // The header remains fixed so the form can scroll independently in sections.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 72.dp, bottom = 4.dp)
             ) {
                 AuthHeader(
                     title = UserMessages.Register.TITLE,
-                    subtitle = UserMessages.Register.SUBTITLE
+                    subtitle = ""
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                LinearStepper(
+                    currentStep = currentStep,
+                    steps = listOf("Cuenta", "Credenciales", "Perfil")
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            LazyColumn(
+            // Scrollable content area (only the form scrolls, header + stepper stay fixed)
+            Column(
                 modifier = Modifier
-                    .fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
             ) {
-                item {
-                    TaskSectionCard(
-                        title = UserMessages.Register.ACCOUNT_SECTION,
-                        subtitle = UserMessages.Register.ACCOUNT_SUBTITLE
-                    ) {
-                        AuthTextField(
-                            value = uiState.username,
-                            onValueChange = viewModel::onUsernameChanged,
-                            label = UserMessages.Register.USERNAME_LABEL,
-                            placeholder = UserMessages.Register.USERNAME_PLACEHOLDER,
-                            error = uiState.usernameError,
-                            leadingIcon = {
-                                Icon(imageVector = Icons.Outlined.Badge, contentDescription = null)
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next
-                            )
-                        )
-
-                        AuthTextField(
-                            value = uiState.firstName,
-                            onValueChange = viewModel::onFirstNameChanged,
-                            label = UserMessages.Register.FIRST_NAME_LABEL,
-                            placeholder = UserMessages.Register.FIRST_NAME_PLACEHOLDER,
-                            error = uiState.firstNameError,
-                            leadingIcon = {
-                                Icon(imageVector = Icons.Outlined.Person, contentDescription = null)
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next
-                            )
-                        )
-
-                        AuthTextField(
-                            value = uiState.lastName,
-                            onValueChange = viewModel::onLastNameChanged,
-                            label = UserMessages.Register.LAST_NAME_LABEL,
-                            placeholder = UserMessages.Register.LAST_NAME_PLACEHOLDER,
-                            leadingIcon = {
-                                Icon(imageVector = Icons.Outlined.Person, contentDescription = null)
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next
-                            )
-                        )
-
-                        TaskDropdown(
-                            label = UserMessages.Register.GENDER_LABEL,
-                            value = genderOptions.find { it.second == uiState.gender }?.first
-                                ?: UserMessages.Register.GENDER_SELECT,
-                            options = genderOptions,
-                            onOptionSelected = viewModel::onGenderChanged
-                        )
-                    }
-                }
-
-                item {
-                    TaskSectionCard(
-                        title = UserMessages.Register.CREDENTIALS_SECTION,
-                        subtitle = UserMessages.Register.CREDENTIALS_SUBTITLE
-                    ) {
-                        AuthTextField(
-                            value = uiState.email,
-                            onValueChange = viewModel::onEmailChanged,
-                            label = UserMessages.Login.EMAIL_LABEL,
-                            placeholder = UserMessages.Login.EMAIL_PLACEHOLDER,
-                            error = uiState.emailError,
-                            leadingIcon = {
-                                Icon(imageVector = Icons.Outlined.AlternateEmail, contentDescription = null)
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = ImeAction.Next
-                            )
-                        )
-
-                        AuthPasswordField(
-                            value = uiState.password,
-                            onValueChange = viewModel::onPasswordChanged,
-                            label = UserMessages.Login.PASSWORD_LABEL,
-                            placeholder = UserMessages.Login.PASSWORD_PLACEHOLDER,
-                            error = uiState.passwordError,
-                            isVisible = uiState.isPasswordVisible,
-                            onVisibilityToggle = viewModel::togglePasswordVisibility,
-                            keyboardActions = KeyboardActions(
-                                onDone = { viewModel.register() }
-                            )
-                        )
-
-                        AuthPasswordField(
-                            value = uiState.confirmPassword,
-                            onValueChange = viewModel::onConfirmPasswordChanged,
-                            label = UserMessages.Register.CONFIRM_PASSWORD_LABEL,
-                            placeholder = UserMessages.Register.CONFIRM_PASSWORD_PLACEHOLDER,
-                            error = uiState.confirmPasswordError,
-                            isVisible = uiState.isPasswordVisible,
-                            onVisibilityToggle = viewModel::togglePasswordVisibility,
-                            keyboardActions = KeyboardActions(
-                                onDone = { viewModel.register() }
-                            )
-                        )
-                    }
-                }
-
-                item {
-                    TaskSectionCard(
-                        title = UserMessages.Register.OPTIONAL_SECTION,
-                        subtitle = UserMessages.Register.OPTIONAL_SUBTITLE
-                    ) {
-                        AuthTextField(
-                            value = uiState.phone,
-                            onValueChange = viewModel::onPhoneChanged,
-                            label = UserMessages.Register.PHONE_LABEL,
-                            placeholder = UserMessages.Register.PHONE_PLACEHOLDER,
-                            leadingIcon = {
-                                Icon(imageVector = Icons.Outlined.Call, contentDescription = null)
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Phone,
-                                imeAction = ImeAction.Next
-                            )
-                        )
-
-                        AuthTextField(
-                            value = uiState.bio,
-                            onValueChange = viewModel::onBioChanged,
-                            label = UserMessages.Register.BIO_LABEL,
-                            placeholder = UserMessages.Register.BIO_PLACEHOLDER,
-                            leadingIcon = {
-                                Icon(imageVector = Icons.Outlined.Description, contentDescription = null)
-                            },
-                            singleLine = false
-                        )
-                    }
-                }
-
-                item {
-                    TaskSectionCard(
-                        title = UserMessages.Register.FINISH_SECTION,
-                        subtitle = UserMessages.Register.FINISH_SUBTITLE
-                    ) {
-                        AuthStatusMessage(message = uiState.errorMessage)
-
-                        if (uiState.infoMessage != null) {
-                            AuthNote(text = uiState.infoMessage)
-                        }
-
-                        AuthPrimaryButton(
-                            text = UserMessages.Register.SUBMIT,
-                            onClick = viewModel::register,
-                            loading = uiState.isLoading,
-                            enabled = uiState.canSubmit
-                        )
-
-                        TextButton(onClick = { onBackToLogin(null) }, enabled = !uiState.isLoading) {
-                            Text(text = UserMessages.Register.BACK_TO_LOGIN)
-                        }
-                    }
+                when (currentStep) {
+                    STEP_ACCOUNT -> AccountStep(
+                        uiState = uiState,
+                        onUsernameChanged = viewModel::onUsernameChanged,
+                        onFirstNameChanged = viewModel::onFirstNameChanged,
+                        onLastNameChanged = viewModel::onLastNameChanged,
+                        onGenderChanged = viewModel::onGenderChanged
+                    )
+                    STEP_CREDENTIALS -> CredentialsStep(
+                        uiState = uiState,
+                        onEmailChanged = viewModel::onEmailChanged,
+                        onPasswordChanged = viewModel::onPasswordChanged,
+                        onConfirmPasswordChanged = viewModel::onConfirmPasswordChanged,
+                        onToggleVisibility = viewModel::togglePasswordVisibility
+                    )
+                    STEP_OPTIONAL -> OptionalStep(
+                        uiState = uiState,
+                        onPhoneChanged = viewModel::onPhoneChanged,
+                        onBioChanged = viewModel::onBioChanged
+                    )
                 }
             }
+
+            // Bottom button — fixed to the bottom, never gets cut off.
+            BottomBar(
+                currentStep = currentStep,
+                isLastStep = currentStep == TOTAL_STEPS - 1,
+                isLoading = uiState.isLoading,
+                canSubmit = uiState.canSubmit,
+                canAdvance = viewModel.canAdvanceFrom(currentStep),
+                errorMessage = uiState.errorMessage,
+                onBack = { if (currentStep > 0) currentStep-- },
+                onNext = {
+                    if (currentStep < TOTAL_STEPS - 1) {
+                        currentStep++
+                    } else {
+                        viewModel.register()
+                    }
+                },
+                onBackToLogin = { onBackToLogin(null) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun LinearStepper(
+    currentStep: Int,
+    steps: List<String>
+) {
+    // Linear stepper with a progress bar — every step label is visible from the start, and the bar fills as the user advances.
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Step labels stay aligned with the segments below so each label visually anchors to its bar slice.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            steps.forEachIndexed { index, step ->
+                Text(
+                    text = step,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (index <= currentStep) AppPrimary else AppSecondaryText,
+                    fontWeight = if (index == currentStep) FontWeight.SemiBold else FontWeight.Normal
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        // Linear progress bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+        ) {
+            steps.indices.forEach { index ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize()
+                        .background(
+                            if (index <= currentStep) AppPrimary
+                            else AppCardElevated
+                        )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountStep(
+    uiState: RegisterUiState,
+    onUsernameChanged: (String) -> Unit,
+    onFirstNameChanged: (String) -> Unit,
+    onLastNameChanged: (String) -> Unit,
+    onGenderChanged: (String) -> Unit
+) {
+    AuthCard {
+        AuthTextField(
+            value = uiState.username,
+            onValueChange = onUsernameChanged,
+            label = UserMessages.Register.USERNAME_LABEL,
+            placeholder = UserMessages.Register.USERNAME_PLACEHOLDER,
+            error = uiState.usernameError,
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_username),
+                    contentDescription = null,
+                    tint = AppSecondaryText,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            )
+        )
+
+        AuthTextField(
+            value = uiState.firstName,
+            onValueChange = onFirstNameChanged,
+            label = UserMessages.Register.FIRST_NAME_LABEL,
+            placeholder = UserMessages.Register.FIRST_NAME_PLACEHOLDER,
+            error = uiState.firstNameError,
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_names),
+                    contentDescription = null,
+                    tint = AppSecondaryText,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            )
+        )
+
+        AuthTextField(
+            value = uiState.lastName,
+            onValueChange = onLastNameChanged,
+            label = UserMessages.Register.LAST_NAME_LABEL,
+            placeholder = UserMessages.Register.LAST_NAME_PLACEHOLDER,
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_names),
+                    contentDescription = null,
+                    tint = AppSecondaryText,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            )
+        )
+
+        TaskDropdown(
+            label = UserMessages.Register.GENDER_LABEL,
+            value = genderOptions.find { it.second == uiState.gender }?.first
+                ?: UserMessages.Register.GENDER_SELECT,
+            options = genderOptions,
+            onOptionSelected = onGenderChanged
+        )
+    }
+}
+
+@Composable
+private fun CredentialsStep(
+    uiState: RegisterUiState,
+    onEmailChanged: (String) -> Unit,
+    onPasswordChanged: (String) -> Unit,
+    onConfirmPasswordChanged: (String) -> Unit,
+    onToggleVisibility: () -> Unit
+) {
+    AuthCard {
+        AuthTextField(
+            value = uiState.email,
+            onValueChange = onEmailChanged,
+            label = UserMessages.Login.EMAIL_LABEL,
+            placeholder = UserMessages.Login.EMAIL_PLACEHOLDER,
+            error = uiState.emailError,
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_email),
+                    contentDescription = null,
+                    tint = AppSecondaryText,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            )
+        )
+
+        AuthPasswordField(
+            value = uiState.password,
+            onValueChange = onPasswordChanged,
+            label = UserMessages.Login.PASSWORD_LABEL,
+            placeholder = UserMessages.Login.PASSWORD_PLACEHOLDER,
+            error = uiState.passwordError,
+            isVisible = uiState.isPasswordVisible,
+            onVisibilityToggle = onToggleVisibility,
+            keyboardActions = KeyboardActions(
+                onDone = { /* handled by next button */ }
+            )
+        )
+
+        AuthPasswordField(
+            value = uiState.confirmPassword,
+            onValueChange = onConfirmPasswordChanged,
+            label = UserMessages.Register.CONFIRM_PASSWORD_LABEL,
+            placeholder = UserMessages.Register.CONFIRM_PASSWORD_PLACEHOLDER,
+            error = uiState.confirmPasswordError,
+            isVisible = uiState.isPasswordVisible,
+            onVisibilityToggle = onToggleVisibility,
+            keyboardActions = KeyboardActions(
+                onDone = { /* handled by next button */ }
+            )
+        )
+    }
+}
+
+@Composable
+private fun OptionalStep(
+    uiState: RegisterUiState,
+    onPhoneChanged: (String) -> Unit,
+    onBioChanged: (String) -> Unit
+) {
+    AuthCard {
+        AuthTextField(
+            value = uiState.phone,
+            onValueChange = onPhoneChanged,
+            label = UserMessages.Register.PHONE_LABEL,
+            placeholder = UserMessages.Register.PHONE_PLACEHOLDER,
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_phone),
+                    contentDescription = null,
+                    tint = AppSecondaryText,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Phone,
+                imeAction = ImeAction.Next
+            )
+        )
+
+        AuthTextField(
+            value = uiState.bio,
+            onValueChange = onBioChanged,
+            label = UserMessages.Register.BIO_LABEL,
+            placeholder = UserMessages.Register.BIO_PLACEHOLDER,
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_about_you),
+                    contentDescription = null,
+                    tint = AppSecondaryText,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            singleLine = false
+        )
+    }
+}
+
+@Composable
+private fun BottomBar(
+    currentStep: Int,
+    isLastStep: Boolean,
+    isLoading: Boolean,
+    canSubmit: Boolean,
+    canAdvance: Boolean,
+    errorMessage: String?,
+    onBack: () -> Unit,
+    onNext: () -> Unit,
+    onBackToLogin: () -> Unit
+) {
+    // Fixed bottom bar with the back/next CTAs and the "I already have an account" link, so the primary actions never get cut off.
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+    ) {
+        AuthStatusMessage(message = errorMessage)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (currentStep > 0) {
+                OutlinedButton(
+                    onClick = onBack,
+                    enabled = !isLoading,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, AppBorder),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = AppOnSurface
+                    )
+                ) {
+                    Text(
+                        text = "Atrás",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            AuthPrimaryButton(
+                text = if (isLastStep) UserMessages.Register.SUBMIT else "Siguiente",
+                onClick = onNext,
+                modifier = Modifier.weight(if (currentStep > 0) 1f else 2f),
+                loading = isLoading,
+                enabled = if (isLastStep) canSubmit && !isLoading else canAdvance && !isLoading
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(
+            onClick = onBackToLogin,
+            enabled = !isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            Text(
+                text = UserMessages.Register.BACK_TO_LOGIN,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }
@@ -278,7 +475,6 @@ data class RegisterUiState(
     val infoMessage: String? = null,
     val registrationCompleted: Boolean = false
 ) {
-    // Username validation is kept live so the form can show the error without waiting for submit.
     val usernameError: String?
         get() = when {
             username.isBlank() -> null
@@ -286,14 +482,12 @@ data class RegisterUiState(
             else -> null
         }
 
-    // Optional fields stay neutral and do not block the flow.
     val firstNameError: String?
         get() = when {
             firstName.isBlank() -> null
             else -> null
         }
 
-    // Email validation mirrors the login screen so both flows behave consistently.
     val emailError: String?
         get() = when {
             email.isBlank() -> null
@@ -301,7 +495,6 @@ data class RegisterUiState(
             else -> null
         }
 
-    // Password rules are checked before calling the backend so Firebase receives only valid input.
     val passwordError: String?
         get() = when {
             password.isBlank() -> null
@@ -309,7 +502,6 @@ data class RegisterUiState(
             else -> null
         }
 
-    // Both password fields must match before the account creation request is sent.
     val confirmPasswordError: String?
         get() = when {
             confirmPassword.isBlank() || password.isBlank() -> null
@@ -333,8 +525,20 @@ class RegisterViewModel(
     var uiState by mutableStateOf(RegisterUiState())
         private set
 
+    fun canAdvanceFrom(step: Int): Boolean = when (step) {
+        STEP_ACCOUNT -> uiState.username.isNotBlank() &&
+            uiState.usernameError == null &&
+            uiState.firstName.isNotBlank()
+        STEP_CREDENTIALS -> uiState.email.isNotBlank() &&
+            uiState.emailError == null &&
+            uiState.password.isNotBlank() &&
+            uiState.passwordError == null &&
+            uiState.confirmPassword.isNotBlank() &&
+            uiState.confirmPasswordError == null
+        else -> true
+    }
+
     fun onUsernameChanged(value: String) {
-        // Keeps the local form state fresh while clearing any stale backend notice.
         uiState = uiState.copy(username = value.trimStart(), errorMessage = null, infoMessage = null)
     }
 
@@ -347,7 +551,6 @@ class RegisterViewModel(
     }
 
     fun onGenderChanged(value: String) {
-        // The selected value is stored as the backend-friendly gender code.
         uiState = uiState.copy(gender = value.trimStart(), errorMessage = null, infoMessage = null)
     }
 
@@ -376,7 +579,6 @@ class RegisterViewModel(
     }
 
     fun register() {
-        // The submit action uses the same validation rules before calling the backend.
         val error = listOfNotNull(
             if (uiState.username.isBlank()) UserMessages.Register.USERNAME_REQUIRED else null,
             if (uiState.firstName.isBlank()) UserMessages.Register.FIRST_NAME_REQUIRED else null,
@@ -393,7 +595,6 @@ class RegisterViewModel(
         uiState = uiState.copy(isLoading = true, errorMessage = null, infoMessage = null)
 
         viewModelScope.launch {
-            // The backend creates the Firebase account, persists the local user, and returns verification status.
             when (val result = authRepository.register(
                 RegisterRequest(
                     username = uiState.username.trim(),
@@ -408,7 +609,6 @@ class RegisterViewModel(
             )) {
                 is ApiResult.Success -> {
                     val userId = result.data.user?.userId ?: 0
-                    // Successful sign-up keeps the success note available for the login screen.
                     uiState = uiState.copy(
                         isLoading = false,
                         registrationCompleted = userId > 0,
@@ -422,7 +622,6 @@ class RegisterViewModel(
                 }
 
                 is ApiResult.Error -> {
-                    // Server-side errors stay on the registration screen so the user can fix the form.
                     uiState = uiState.copy(
                         isLoading = false,
                         errorMessage = result.message,

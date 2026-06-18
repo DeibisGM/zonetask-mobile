@@ -157,6 +157,7 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Inline error + submit button stay grouped so the action reads as a single unit.
                     AuthStatusMessage(message = uiState.errorMessage)
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -170,6 +171,7 @@ fun LoginScreen(
                 }
             }
 
+            // The "create account" affordance lives outside the card on purpose so the primary CTA inside the card stays unobstructed.
             Spacer(modifier = Modifier.height(32.dp))
 
             TextButton(
