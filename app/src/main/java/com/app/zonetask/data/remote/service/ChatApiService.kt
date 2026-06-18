@@ -13,22 +13,26 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ChatApiService {
 
     @GET(AppConstants.Api.Paths.CHAT_BY_SPACE)
     suspend fun getChat(
-        @Path("spaceId") spaceId: Int
+        @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int
     ): Response<ChatGroupResponse>
 
     @GET(AppConstants.Api.Paths.CHAT_MEMBERS)
     suspend fun getChatMembers(
-        @Path("spaceId") spaceId: Int
+        @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int
     ): Response<List<ChatMemberDto>>
 
     @PATCH(AppConstants.Api.Paths.CHAT_BY_SPACE)
     suspend fun updateChat(
         @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int,
         @Body request: UpdateChatGroupRequest
     ): Response<ChatGroupResponse>
 
@@ -36,6 +40,7 @@ interface ChatApiService {
     @POST(AppConstants.Api.Paths.CHAT_IMAGE)
     suspend fun uploadChatImage(
         @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int,
         @Part image: MultipartBody.Part
     ): Response<ChatGroupResponse>
 }

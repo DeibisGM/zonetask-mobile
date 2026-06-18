@@ -51,6 +51,7 @@ import com.app.zonetask.ui.theme.AppTopBar
 @Composable
 fun ChatScreen(
     spaceId: Int,
+    userId: Int,
     onBack: () -> Unit,
     onNavigateToEdit: () -> Unit = {},
     reloadTrigger: Boolean = false,
@@ -58,7 +59,8 @@ fun ChatScreen(
     viewModel: ChatViewModel = viewModel(
         factory = ChatViewModelFactory(
             chatGroupRepository = AppContainer.chatGroupRepository,
-            spaceId             = spaceId
+            spaceId             = spaceId,
+            userId              = userId
         )
     )
 ) {

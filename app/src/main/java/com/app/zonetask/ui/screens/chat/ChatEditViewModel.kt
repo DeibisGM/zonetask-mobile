@@ -15,7 +15,8 @@ import kotlinx.coroutines.launch
 
 class ChatEditViewModel(
     private val chatGroupRepository: ChatGroupRepository,
-    private val spaceId: Int
+    private val spaceId: Int,
+    private val userId: Int
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatEditUiState())
@@ -33,7 +34,7 @@ class ChatEditViewModel(
     fun loadChat() {
         _uiState.value = _uiState.value.copy(isLoadingData = true, errorBanner = null)
         viewModelScope.launch {
-            when (val result = chatGroupRepository.getChat(spaceId)) {
+            when (val result = chatGroupRepository.getChat(spaceId, userId)) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoadingData = false,
@@ -55,7 +56,7 @@ class ChatEditViewModel(
     fun loadMembers() {
         _uiState.value = _uiState.value.copy(isMembersLoading = true)
         viewModelScope.launch {
-            when (val result = chatGroupRepository.getChatMembers(spaceId)) {
+            when (val result = chatGroupRepository.getChatMembers(spaceId, userId)) {
                 is ApiResult.Success -> _uiState.value = _uiState.value.copy(
                     isMembersLoading = false,
                     members          = result.data
@@ -75,24 +76,29 @@ class ChatEditViewModel(
         _uiState.value = state.copy(isLoading = true, errorBanner = null)
 
         viewModelScope.launch {
-            // 1. Upload image if a new one was picked from gallery
-            if (state.selectedImageUri != null) {
-                when (val r = chatGroupRepository.uploadChatImage(spaceId, state.selectedImageUri, contentResolver)) {
+            // 1. Upload image only if a new one was picked AND hasn't been uploaded yet in a previous attempt.
+            if (_uiState.value.selectedImageUri != null) {
+                when (val r = chatGroupRepository.uploadChatImage(
+                    spaceId, userId, _uiState.value.selectedImageUri!!, contentResolver
+                )) {
                     is ApiResult.Error -> {
                         _uiState.value = _uiState.value.copy(isLoading = false, errorBanner = r.message)
                         return@launch
                     }
-                    is ApiResult.Success -> { /* imageUrl updated in backend, continue */ }
+                    is ApiResult.Success -> {
+                        // Clear the URI so a retry on PATCH failure won't re-upload the same image.
+                        _uiState.value = _uiState.value.copy(selectedImageUri = null)
+                    }
                 }
             }
 
-            // 2. Update name and description (imageUrl not sent so it stays unchanged)
+            // 2. Update name and description.
             val request = UpdateChatGroupRequest(
-                name        = state.name.trim(),
-                description = state.description.trim().ifBlank { null },
+                name        = _uiState.value.name.trim(),
+                description = _uiState.value.description.trim().ifBlank { null },
                 imageUrl    = null
             )
-            when (val r = chatGroupRepository.updateChat(spaceId, request)) {
+            when (val r = chatGroupRepository.updateChat(spaceId, userId, request)) {
                 is ApiResult.Success -> _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
                 is ApiResult.Error   -> _uiState.value = _uiState.value.copy(isLoading = false, errorBanner = r.message)
             }
@@ -102,9 +108,10 @@ class ChatEditViewModel(
 
 class ChatEditViewModelFactory(
     private val chatGroupRepository: ChatGroupRepository,
-    private val spaceId: Int
+    private val spaceId: Int,
+    private val userId: Int
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        ChatEditViewModel(chatGroupRepository = chatGroupRepository, spaceId = spaceId) as T
+        ChatEditViewModel(chatGroupRepository = chatGroupRepository, spaceId = spaceId, userId = userId) as T
 }

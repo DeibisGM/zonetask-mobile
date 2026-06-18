@@ -62,13 +62,15 @@ import com.app.zonetask.ui.theme.AppTopBar
 @Composable
 fun ChatEditScreen(
     spaceId: Int,
+    userId: Int,
     onBack: () -> Unit,
     onSaved: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ChatEditViewModel = viewModel(
         factory = ChatEditViewModelFactory(
             chatGroupRepository = AppContainer.chatGroupRepository,
-            spaceId             = spaceId
+            spaceId             = spaceId,
+            userId              = userId
         )
     )
 ) {

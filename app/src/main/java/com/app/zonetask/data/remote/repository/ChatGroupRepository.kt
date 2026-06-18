@@ -15,45 +15,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 class ChatGroupRepository(private val apiService: ChatApiService) {
 
-    suspend fun getChat(spaceId: Int): ApiResult<ChatGroupResponse> {
+    suspend fun getChat(spaceId: Int, userId: Int): ApiResult<ChatGroupResponse> {
         return try {
-            val response = apiService.getChat(spaceId)
-            if (response.isSuccessful) {
-                val body = response.body()
-                    ?: return ApiResult.Error("Respuesta vacía del servidor")
-                ApiResult.Success(body)
-            } else {
-                ApiResult.Error(
-                    message    = ApiErrorHandler.fromHttpCode(response.code()),
-                    statusCode = response.code()
-                )
-            }
-        } catch (e: Exception) {
-            ApiResult.Error(ApiErrorHandler.fromException(e))
-        }
-    }
-
-    suspend fun updateChat(spaceId: Int, request: UpdateChatGroupRequest): ApiResult<ChatGroupResponse> {
-        return try {
-            val response = apiService.updateChat(spaceId, request)
-            if (response.isSuccessful) {
-                val body = response.body()
-                    ?: return ApiResult.Error("Respuesta vacía del servidor")
-                ApiResult.Success(body)
-            } else {
-                ApiResult.Error(
-                    message    = ApiErrorHandler.bodyMessage(response.errorBody()) ?: ApiErrorHandler.fromHttpCode(response.code()),
-                    statusCode = response.code()
-                )
-            }
-        } catch (e: Exception) {
-            ApiResult.Error(ApiErrorHandler.fromException(e))
-        }
-    }
-
-    suspend fun getChatMembers(spaceId: Int): ApiResult<List<ChatMemberDto>> {
-        return try {
-            val response = apiService.getChatMembers(spaceId)
+            val response = apiService.getChat(spaceId, userId)
             if (response.isSuccessful) {
                 val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
                 ApiResult.Success(body)
@@ -68,8 +32,43 @@ class ChatGroupRepository(private val apiService: ChatApiService) {
         }
     }
 
+    suspend fun getChatMembers(spaceId: Int, userId: Int): ApiResult<List<ChatMemberDto>> {
+        return try {
+            val response = apiService.getChatMembers(spaceId, userId)
+            if (response.isSuccessful) {
+                val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message    = ApiErrorHandler.fromHttpCode(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(ApiErrorHandler.fromException(e))
+        }
+    }
+
+    suspend fun updateChat(spaceId: Int, userId: Int, request: UpdateChatGroupRequest): ApiResult<ChatGroupResponse> {
+        return try {
+            val response = apiService.updateChat(spaceId, userId, request)
+            if (response.isSuccessful) {
+                val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message    = ApiErrorHandler.bodyMessage(response.errorBody()) ?: ApiErrorHandler.fromHttpCode(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(ApiErrorHandler.fromException(e))
+        }
+    }
+
     suspend fun uploadChatImage(
         spaceId: Int,
+        userId: Int,
         imageUri: Uri,
         contentResolver: ContentResolver
     ): ApiResult<ChatGroupResponse> {
@@ -82,7 +81,7 @@ class ChatGroupRepository(private val apiService: ChatApiService) {
             val requestBody = bytes.toRequestBody(mimeType.toMediaType())
             val part        = MultipartBody.Part.createFormData("file", "chat_image.$ext", requestBody)
 
-            val response = apiService.uploadChatImage(spaceId, part)
+            val response = apiService.uploadChatImage(spaceId, userId, part)
             if (response.isSuccessful) {
                 val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
                 ApiResult.Success(body)

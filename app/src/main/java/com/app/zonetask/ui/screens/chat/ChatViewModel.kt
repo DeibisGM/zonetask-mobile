@@ -12,7 +12,8 @@ import kotlinx.coroutines.launch
 
 class ChatViewModel(
     private val chatGroupRepository: ChatGroupRepository,
-    private val spaceId: Int
+    private val spaceId: Int,
+    private val userId: Int
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -29,7 +30,7 @@ class ChatViewModel(
     private fun loadChat() {
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
-            when (val result = chatGroupRepository.getChat(spaceId)) {
+            when (val result = chatGroupRepository.getChat(spaceId, userId)) {
                 is ApiResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading   = false,
@@ -52,9 +53,10 @@ class ChatViewModel(
 
 class ChatViewModelFactory(
     private val chatGroupRepository: ChatGroupRepository,
-    private val spaceId: Int
+    private val spaceId: Int,
+    private val userId: Int
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        ChatViewModel(chatGroupRepository = chatGroupRepository, spaceId = spaceId) as T
+        ChatViewModel(chatGroupRepository = chatGroupRepository, spaceId = spaceId, userId = userId) as T
 }

@@ -279,8 +279,15 @@ fun AppNavHost() {
                 .getStateFlow("chatChanged", false)
                 .collectAsStateWithLifecycle()
 
+            LaunchedEffect(chatChanged) {
+                if (chatChanged) {
+                    backStackEntry.savedStateHandle["chatChanged"] = false
+                }
+            }
+
             ChatScreen(
                 spaceId          = spaceId,
+                userId           = currentUserId,
                 reloadTrigger    = chatChanged,
                 onBack           = { navController.popBackStack() },
                 onNavigateToEdit = { navController.navigate(AppDestinations.editChatRoute(spaceId)) }
@@ -294,6 +301,7 @@ fun AppNavHost() {
             val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 0
             ChatEditScreen(
                 spaceId = spaceId,
+                userId  = currentUserId,
                 onBack  = { navController.popBackStack() },
                 onSaved = {
                     navController.previousBackStackEntry
