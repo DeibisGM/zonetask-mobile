@@ -21,6 +21,7 @@ data class TaskCreateUiState(
     val categoryId: Int? = 1,
     val spaceId: Int = 1,
     val zoneId: Int? = 1,
+    val assignedUserId: Int? = null,
     val objectId: Int? = null,
     val objectSelectionEnabled: Boolean = false,
     val selectedObjectIds: List<Int> = emptyList(),

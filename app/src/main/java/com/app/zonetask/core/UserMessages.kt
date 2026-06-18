@@ -63,16 +63,26 @@ object UserMessages {
 
     object Screens {
         const val SPACES_TITLE      = "Mis espacios"
-        const val CREATE_TASK_TITLE = "Crear tarea"
+        const val CREATE_TASK_TITLE = "Create task"
         const val TASKS_TITLE       = "Tareas"
     }
 
     object TaskCreate {
         const val INTRO                      = "Completá el formulario para definir la tarea."
+        const val ASSIGNEE_SECTION           = "Assignee"
+        const val ASSIGNEE_SUBTITLE          = "Choose a member of this space to assign the task manually."
+        const val ASSIGNEE_LABEL             = "Assigned to"
+        const val ASSIGNEE_PLACEHOLDER       = "Select an assignee"
+        const val ASSIGNEE_NONE              = "No assignee"
+        const val ASSIGNEE_LOADING           = "Loading members..."
+        const val ASSIGNEE_EMPTY             = "No assignable members found"
+        const val ASSIGNEE_HELP              = "Only members of this space can be selected."
+        const val VALIDATION_REQUIRED        = "Please complete the required fields before saving."
+        const val LOADING_FORM               = "Loading form..."
         const val GENERAL_SECTION            = "General"
-        const val SCHEDULE_SECTION           = "Horario"
-        const val RULES_SECTION              = "Reglas"
-        const val RELATIONS_SECTION          = "Relaciones opcionales"
+        const val SCHEDULE_SECTION           = "Schedule"
+        const val RULES_SECTION              = "Rules"
+        const val RELATIONS_SECTION          = "Optional relations"
         const val TITLE_LABEL                = "Nombre de la tarea"
         const val DESCRIPTION_LABEL          = "Descripción"
         const val FREQUENCY_LABEL            = "Frecuencia"
@@ -89,13 +99,20 @@ object UserMessages {
         const val ZONE_LABEL                 = "Zona"
         const val OBJECT_ID_LABEL            = "ID de objeto"
         const val REMINDER_MINUTES_LABEL     = "Recordatorio"
-        const val SAVE_BUTTON                = "Guardar"
-        const val SAVE_SNACKBAR              = "Formulario listo para guardar."
-        const val ACTIVE_LABEL               = "Tarea activa"
-        const val REMINDER_LABEL             = "Recordatorio"
-        const val REQUIRE_DESCRIPTION_LABEL  = "Requiere descripción"
-        const val REQUIRE_PROOF_LABEL        = "Requiere comprobante"
-        const val ROTATING_LABEL             = "Rotativa"
+        const val SAVE_BUTTON                = "Save"
+        const val SAVE_SNACKBAR              = "Task saved successfully."
+        const val ACTIVE_LABEL               = "Active task"
+        const val REMINDER_LABEL             = "Reminder"
+        const val REQUIRE_DESCRIPTION_LABEL  = "Require description"
+        const val REQUIRE_PROOF_LABEL        = "Require proof"
+        const val ROTATING_LABEL             = "Rotating"
+    }
+
+    object TaskDetail {
+        const val TITLE          = "Task Details"
+        const val ASSIGNEE_LABEL = "Assigned user"
+        const val NO_ASSIGNEE    = "No assignee"
+        const val LOADING        = "Loading task..."
     }
 
     object Accessibility {

@@ -38,6 +38,7 @@ fun TaskCreateScreen(
     modifier: Modifier = Modifier,
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
+    onSaved: () -> Unit = {},
     onClose: () -> Unit = {},
     viewModel: TaskCreateViewModel = viewModel(
         factory = TaskCreateViewModelFactory(
@@ -164,6 +165,7 @@ fun TaskCreateScreen(
 
     val isWaitingForInitialData =
         formOptions.isLoading ||
+            formOptions.assigneesLoading ||
             (viewModel.isEditMode && uiState.objectSelectionEnabled && formOptions.objectsLoading && uiState.selectedObjectIds.isNotEmpty())
 
     LaunchedEffect(uiState.zoneId, uiState.objectSelectionEnabled) {
@@ -173,7 +175,7 @@ fun TaskCreateScreen(
     }
 
     TaskCreateScaffold(
-        title = if (viewModel.isEditMode) "Editar tarea" else UserMessages.Screens.CREATE_TASK_TITLE,
+        title = if (viewModel.isEditMode) "Edit task" else UserMessages.Screens.CREATE_TASK_TITLE,
         showBack = true,
         onBackClick = onClose,
         onNavigate = onNavigate,
@@ -186,28 +188,27 @@ fun TaskCreateScreen(
                         cancelText = "Cancel",
                         saveText = "Save",
                         onCancelClick = {
-                            if (viewModel.isEditMode) {
-                                onClose()
-                            } else {
-                                viewModel.updateState { TaskCreateUiState() }
-                            }
+                            onClose()
                         },
                         onSaveClick = {
                             // Only clear the form after a successful save.
                             if (viewModel.validate()) {
                                 viewModel.saveTask { success, message ->
                                     if (success) {
+                                        onSaved()
                                         saveErrorMessage = null
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                        if (viewModel.isEditMode) {
-                                            onClose()
-                                        } else {
-                                            viewModel.resetForm()
-                                        }
+                                        Toast.makeText(
+                                            context,
+                                            message.ifBlank { UserMessages.TaskCreate.SAVE_SNACKBAR },
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        onClose()
                                     } else {
                                         saveErrorMessage = message
                                     }
                                 }
+                            } else {
+                                saveErrorMessage = UserMessages.TaskCreate.VALIDATION_REQUIRED
                             }
                         }
                     )
@@ -226,7 +227,7 @@ fun TaskCreateScreen(
                     CircularProgressIndicator(color = AppPrimary)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Loading form...",
+                        text = UserMessages.TaskCreate.LOADING_FORM,
                         color = AppSecondaryText,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -318,7 +319,7 @@ private fun TaskCreateContent(
                     if (value.length <= 150) onUpdate { copy(title = value) }
                 },
                                placeholder = "E.g. Clean the kitchen",
-                error = if (uiState.showErrors && !uiState.isTitleValid) "Campo obligatorio" else null
+                error = if (uiState.showErrors && !uiState.isTitleValid) "Required field" else null
             )
 
             TaskTextField(
@@ -358,6 +359,46 @@ private fun TaskCreateContent(
                     onUpdate { copy(categoryId = selectedValue.toIntOrNull() ?: 1) }
                 }
             )
+        }
+
+        TaskSectionCard(
+            title = UserMessages.TaskCreate.ASSIGNEE_SECTION,
+            subtitle = UserMessages.TaskCreate.ASSIGNEE_SUBTITLE
+        ) {
+            val selectedAssigneeLabel = formOptions.assignees
+                .firstOrNull { it.second == uiState.assignedUserId?.toString() }
+                ?.first
+
+            val assigneeOptions = listOf(UserMessages.TaskCreate.ASSIGNEE_NONE to "") + formOptions.assignees
+
+            TaskDropdown(
+                label = UserMessages.TaskCreate.ASSIGNEE_LABEL,
+                value = selectedAssigneeLabel ?: UserMessages.TaskCreate.ASSIGNEE_PLACEHOLDER,
+                options = assigneeOptions,
+                onOptionSelected = { selectedValue ->
+                    onUpdate {
+                        copy(assignedUserId = selectedValue.toIntOrNull())
+                    }
+                }
+            )
+
+            Text(
+                text = if (formOptions.assignees.isEmpty()) {
+                    UserMessages.TaskCreate.ASSIGNEE_EMPTY
+                } else {
+                    UserMessages.TaskCreate.ASSIGNEE_HELP
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = AppSecondaryText
+            )
+
+            formOptions.assigneesError?.let { error ->
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
 
         // Schedule Section

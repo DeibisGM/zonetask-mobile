@@ -515,14 +515,14 @@ private fun TaskCard(
 
             task.assignees.firstOrNull()?.let { assignee ->
                 Text(
-                    text = "Asignado a ${assignee.displayName}",
+                    text = "Assigned to ${assignee.displayName}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppSecondaryText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             } ?: Text(
-                text = "Sin asignados visibles",
+                text = "No visible assignees",
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppSecondaryText
             )

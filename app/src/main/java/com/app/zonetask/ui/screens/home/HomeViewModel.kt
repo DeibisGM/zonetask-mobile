@@ -109,6 +109,7 @@ class HomeViewModel(
         val assigneeName = assignments
             .mapNotNull { userNamesById[it.assignedUserId] }
             .firstOrNull()
+            ?: task.assignedUserId?.let { userNamesById[it] }
 
         val dueTimeState = assignments.resolveDueTimeUiState(userId)
 

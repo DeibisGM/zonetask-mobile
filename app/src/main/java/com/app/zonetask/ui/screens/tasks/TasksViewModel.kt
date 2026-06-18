@@ -252,6 +252,18 @@ class TasksViewModel(
                 }
             }
             .distinctBy { it.userId }
+            .ifEmpty {
+                task.assignedUserId?.let { assignedUserId ->
+                    userNamesById[assignedUserId]?.let { displayName ->
+                        listOf(
+                            TaskAssigneeUiState(
+                                userId = assignedUserId,
+                                displayName = displayName
+                            )
+                        )
+                    }.orEmpty()
+                } ?: emptyList()
+            }
 
         // dueTimeState also tells the card whether this user can complete the active assignment.
         val dueTimeState = assignments.resolveDueTimeUiState(userId)

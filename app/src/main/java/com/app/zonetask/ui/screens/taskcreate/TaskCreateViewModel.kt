@@ -6,10 +6,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.di.AppContainer
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class TaskCreateViewModel(
@@ -17,6 +20,8 @@ class TaskCreateViewModel(
     initialCreatedBy: Int = 1,
     private val taskId: Int? = null
 ) : ViewModel() {
+
+    private val requestingUserId: Int = initialCreatedBy
 
     var uiState by mutableStateOf(TaskCreateUiState())
         private set
@@ -34,6 +39,7 @@ class TaskCreateViewModel(
             loadTaskForEdit(taskId)
         } else {
             loadFormOptions(initialSpaceId)
+            loadAssignableMembers(initialSpaceId, requestingUserId)
         }
     }
 
@@ -100,11 +106,66 @@ class TaskCreateViewModel(
         }
     }
 
+    fun loadAssignableMembers(spaceId: Int, requestingUserId: Int) {
+        viewModelScope.launch {
+            formOptionsUiState = formOptionsUiState.copy(assigneesLoading = true, assigneesError = null)
+
+            coroutineScope {
+                val membersDeferred = async { AppContainer.spaceRepository.getSpaceMembers(spaceId, requestingUserId) }
+                val usersDeferred = async { AppContainer.userRepository.getUsers() }
+
+                val membersResult = membersDeferred.await()
+                val usersResult = usersDeferred.await()
+
+                val userNamesById = if (usersResult is ApiResult.Success) {
+                    usersResult.data.associate { user ->
+                        user.userId to user.displayName.ifBlank {
+                            val fullName = listOfNotNull(user.firstName, user.lastName)
+                                .filter { it.isNotBlank() }
+                                .joinToString(" ")
+                            fullName.ifBlank { user.username.ifBlank { "User ${user.userId}" } }
+                        }
+                    }
+                } else {
+                    emptyMap()
+                }
+
+                val assignableMembers = if (membersResult is ApiResult.Success) {
+                    membersResult.data
+                        .filter { member ->
+                            member.status.equals("accepted", ignoreCase = true) ||
+                                member.status.equals("active", ignoreCase = true)
+                        }
+                        .mapNotNull { member ->
+                            val displayName = userNamesById[member.userId]
+                                ?: "User ${member.userId}"
+                            displayName to member.userId.toString()
+                        }
+                        .distinctBy { it.second }
+                } else {
+                    emptyList()
+                }
+
+                formOptionsUiState = formOptionsUiState.copy(
+                    assignees = assignableMembers,
+                    assigneesLoading = false,
+                    assigneesError = when (membersResult) {
+                        is ApiResult.Error -> membersResult.message
+                        else -> null
+                    }
+                )
+            }
+        }
+    }
+
     fun loadTaskForEdit(taskId: Int) {
         viewModelScope.launch {
             // Pull the saved task first so the form can reuse its values.
             when (val result = AppContainer.taskRepository.getTaskById(taskId)) {
-                is ApiResult.Success -> applyTaskToForm(result.data)
+                is ApiResult.Success -> {
+                    applyTaskToForm(result.data)
+                    loadAssignableMembers(result.data.spaceId, requestingUserId)
+                }
                 is ApiResult.Error -> {
                     formOptionsUiState = formOptionsUiState.copy(
                         errorMessage = result.message
@@ -146,6 +207,7 @@ class TaskCreateViewModel(
                 categoryId = uiState.categoryId,
                 spaceId = uiState.spaceId,
                 zoneId = uiState.zoneId,
+                assignedUserId = uiState.assignedUserId,
                 objectId = uiState.selectedObjectIds.firstOrNull(),
                 objectIds = if (uiState.objectSelectionEnabled) uiState.selectedObjectIds else emptyList()
             )
@@ -158,7 +220,7 @@ class TaskCreateViewModel(
             }
 
             when (result) {
-                is ApiResult.Success -> onResult(true, "Guardado")
+                is ApiResult.Success -> onResult(true, UserMessages.TaskCreate.SAVE_SNACKBAR)
                 is ApiResult.Error -> onResult(false, result.message)
             }
         }
@@ -211,12 +273,14 @@ class TaskCreateViewModel(
             objectId = task.objectId,
             objectSelectionEnabled = task.objectIds.isNotEmpty(),
             selectedObjectIds = task.objectIds,
+            assignedUserId = task.assignedUserId,
             showErrors = false
         )
 
         // Load the proper lookup set for the task's saved space.
         loadFormOptions(task.spaceId)
     }
+
 }
 
 class TaskCreateViewModelFactory(
