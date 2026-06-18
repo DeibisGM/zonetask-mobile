@@ -80,9 +80,7 @@ fun SpaceDetailScreen(
     onCreateTaskClick: () -> Unit = {},
     onOpenPlansClick : () -> Unit = {},
     onOpenCompletedTasksClick: () -> Unit = {},
-    onOpenStatisticsClick: () -> Unit = {},
-    onOpenSpaceStatisticsClick: () -> Unit = {},
-    onOpenUserReportsClick: () -> Unit = {},
+    onOpenStatisticsMenuClick: () -> Unit = {},
     viewModel: SpaceDetailViewModel = viewModel(
         factory = SpaceDetailViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
@@ -220,10 +218,10 @@ fun SpaceDetailScreen(
                         }
                     }
 
-                    // My Statistics row
+                    // Statistics row — opens the statistics hub with all report options
                     item {
                         Surface(
-                            onClick = onOpenStatisticsClick,
+                            onClick = onOpenStatisticsMenuClick,
                             shape = RoundedCornerShape(14.dp),
                             color = AppSurface,
                             border = BorderStroke(1.dp, AppBorder)
@@ -237,68 +235,12 @@ fun SpaceDetailScreen(
                                 Icon(Icons.Outlined.BarChart, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(12.dp))
                                 Text(
-                                    "My Statistics",
+                                    "Statistics",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
-
-                    // Space Statistics row
-                    item {
-                        Surface(
-                            onClick = onOpenSpaceStatisticsClick,
-                            shape = RoundedCornerShape(14.dp),
-                            color = AppSurface,
-                            border = BorderStroke(1.dp, AppBorder)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Outlined.BarChart, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    "Space Statistics",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
-
-                    // Reports by User row (owner/admin only)
-                    if (canViewPermissions) {
-                        item {
-                            Surface(
-                                onClick = onOpenUserReportsClick,
-                                shape = RoundedCornerShape(14.dp),
-                                color = AppSurface,
-                                border = BorderStroke(1.dp, AppBorder)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Outlined.BarChart, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        "Reports by User",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                                }
                             }
                         }
                     }

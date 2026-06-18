@@ -327,6 +327,9 @@ private fun rememberSpacesNavActions(
         onOpenCompletedTasks = { spaceId ->
             navController.navigate(SpacesDestinations.completedTasks(spaceId))
         },
+        onOpenStatisticsMenu = { spaceId, userId ->
+            navController.navigate(SpacesDestinations.statisticsMenu(spaceId, userId))
+        },
         onOpenStatistics = { spaceId, userId ->
             navController.navigate(SpacesDestinations.statistics(spaceId, userId))
         },
@@ -338,6 +341,9 @@ private fun rememberSpacesNavActions(
         },
         onOpenSpaceReports = {
             navController.navigate(SpacesDestinations.spaceReports(currentUserId))
+        },
+        onOpenOverdueTrends = { spaceId ->
+            navController.navigate(SpacesDestinations.overdueTrends(spaceId))
         },
         onBack = { navController.popBackStack() },
         onOpenInvitations = { navController.navigate(AppDestinations.myInvitationsRoute(currentUserId)) },
