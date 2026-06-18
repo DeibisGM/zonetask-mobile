@@ -3,11 +3,13 @@ package com.app.zonetask.data.remote
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.data.remote.service.AuthApiService
+import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.TaskApiService
 import com.app.zonetask.data.remote.service.SpaceApiService
 import com.app.zonetask.data.remote.service.FloorPlanApiService
 import com.app.zonetask.data.remote.service.InvitationApiService
+import com.app.zonetask.data.remote.service.StatisticsApiService
 import com.app.zonetask.data.remote.service.UserApiService
 import okhttp3.OkHttpClient
 import okhttp3.Interceptor
@@ -60,16 +62,16 @@ object RetrofitClient {
         retrofit.create(InvitationApiService::class.java)
     }
 
+    val completionApiService: CompletionApiService by lazy {
+        retrofit.create(CompletionApiService::class.java)
+    }
+
     val statisticsApiService: StatisticsApiService by lazy {
         retrofit.create(StatisticsApiService::class.java)
     }
 
     val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
-    }
-
-    val invitationApiService: InvitationApiService by lazy {
-        retrofit.create(InvitationApiService::class.java)
     }
 
     private fun authHeaderInterceptor(): Interceptor = Interceptor { chain ->

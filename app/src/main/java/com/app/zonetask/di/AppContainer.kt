@@ -2,12 +2,13 @@ package com.app.zonetask.di
 
 import com.app.zonetask.data.auth.BackendAuthRepository
 import com.app.zonetask.data.remote.RetrofitClient
+import com.app.zonetask.data.remote.repository.CompletionRepository
+import com.app.zonetask.data.remote.repository.StatisticsRepository
 import com.app.zonetask.data.remote.repository.TaskLookupRepository
 import com.app.zonetask.data.repository.InvitationRepository
 import com.app.zonetask.data.remote.repository.TaskRepository
 import com.app.zonetask.data.remote.repository.UserRepository
 import com.app.zonetask.data.repository.FloorPlanRepository
-import com.app.zonetask.data.repository.InvitationRepository
 import com.app.zonetask.data.repository.SpaceRepository
 
 object AppContainer {
@@ -37,15 +38,15 @@ object AppContainer {
         InvitationRepository(RetrofitClient.invitationApiService)
     }
 
+    val completionRepository: CompletionRepository by lazy {
+        CompletionRepository(RetrofitClient.completionApiService)
+    }
+
     val statisticsRepository: StatisticsRepository by lazy {
         StatisticsRepository(RetrofitClient.statisticsApiService)
     }
 
     val authRepository: BackendAuthRepository by lazy {
         BackendAuthRepository(RetrofitClient.authApiService)
-    }
-
-    val invitationRepository: InvitationRepository by lazy {
-        InvitationRepository(RetrofitClient.invitationApiService)
     }
 }
