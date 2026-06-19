@@ -29,6 +29,7 @@ import com.app.zonetask.navigation.spaces.SpacesDestinations
 import com.app.zonetask.navigation.spaces.SpacesNavActions
 import com.app.zonetask.navigation.spaces.SpacesNavKeys
 import com.app.zonetask.navigation.spaces.spacesNavGraph
+import com.app.zonetask.messaging.NotificationNavigationStore
 import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.home.HomeScreen
@@ -41,6 +42,7 @@ import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
+import kotlinx.coroutines.flow.collect
 
 private const val AUTH_NOTICE_KEY = "authNotice"
 
@@ -55,6 +57,9 @@ fun AppNavHost() {
         mutableStateOf(AuthSessionStore.currentUser?.email ?: "")
     }
     var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
+    var pendingNotificationRoute by remember {
+        mutableStateOf(NotificationNavigationStore.consumeLastRoute())
+    }
     val startDestination = if (currentUserId > 0) {
         AppDestinations.homeRoute(0)
     } else {
@@ -76,6 +81,22 @@ fun AppNavHost() {
 
     val onTabSelected: (NavDestination) -> Unit = { destination ->
         navigateToTab(navController, destination, currentUserId, currentSpaceId)
+    }
+
+    LaunchedEffect(Unit) {
+        NotificationNavigationStore.events.collect { route ->
+            pendingNotificationRoute = route
+        }
+    }
+
+    LaunchedEffect(currentUserId, pendingNotificationRoute) {
+        val route = pendingNotificationRoute
+        if (currentUserId > 0 && !route.isNullOrBlank()) {
+            navController.navigate(route) {
+                launchSingleTop = true
+            }
+            pendingNotificationRoute = null
+        }
     }
 
     val spacesNavActions = rememberSpacesNavActions(navController, currentUserId)
@@ -102,8 +123,17 @@ fun AppNavHost() {
                 onLoginSuccess = { userId, email ->
                     currentUserId    = userId
                     currentUserEmail = email
-                    navController.navigate(AppDestinations.homeRoute(0)) {
-                        popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                    val route = pendingNotificationRoute
+                    if (!route.isNullOrBlank()) {
+                        navController.navigate(route) {
+                            popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                        pendingNotificationRoute = null
+                    } else {
+                        navController.navigate(AppDestinations.homeRoute(0)) {
+                            popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                        }
                     }
                 },
                 onCreateAccount = {

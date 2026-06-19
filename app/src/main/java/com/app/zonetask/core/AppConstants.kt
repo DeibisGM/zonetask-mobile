@@ -13,6 +13,7 @@ object AppConstants {
 
             // Space endpoints .
             const val USER_SPACES = "api/spaces/users/{userId}"
+            const val USER_PUSH_TOKEN = "api/users/{userId}/push-token"
             const val SPACE_BY_ID = "api/spaces/{spaceId}"
             const val CREATE_SPACE = "api/spaces"
             const val UPDATE_SPACE = "api/spaces/{spaceId}"

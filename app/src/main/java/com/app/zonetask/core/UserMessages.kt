@@ -127,6 +127,20 @@ object UserMessages {
         const val LOADING        = "Loading task..."
     }
 
+    object Notifications {
+        // Centralized strings for the notification channel and task event messages.
+        const val CHANNEL_NAME = "Task updates"
+        const val CHANNEL_DESCRIPTION = "Push notifications for task updates"
+        const val DEFAULT_TITLE = "ZoneTask"
+        const val DEFAULT_BODY = "You have a new task update."
+        const val TASK_CREATED_TITLE = "New task assigned"
+        const val TASK_CREATED_BODY = "was created and is now available."
+        const val TASK_UPDATED_TITLE = "Task updated"
+        const val TASK_UPDATED_BODY = "was updated."
+        const val TASK_COMPLETED_TITLE = "Task completed"
+        const val TASK_COMPLETED_BODY = "was completed and the next assignment was generated."
+    }
+
     object Accessibility {
         const val BACK   = "Volver"
         const val LOGOUT = "Cerrar sesión"
