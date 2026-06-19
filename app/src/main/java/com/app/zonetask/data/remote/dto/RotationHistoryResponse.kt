@@ -11,6 +11,8 @@ data class RotationHistoryResponse(
     val triggerReason: String,
     @SerializedName("triggeredAt")
     val triggeredAt: String,
+    @SerializedName("taskTitle")
+    val taskTitle: String,
     @SerializedName("fromUserId")
     val fromUserId: Int? = null,
     @SerializedName("fromUsername")

@@ -68,12 +68,12 @@ private data class RotationReasonFilter(
 )
 
 private val RotationReasonFilters = listOf(
-    RotationReasonFilter("all", "All"),
-    RotationReasonFilter("schedule", "Schedule"),
-    RotationReasonFilter("completion", "Completion"),
+    RotationReasonFilter("all", "Todas"),
+    RotationReasonFilter("schedule", "Horario"),
+    RotationReasonFilter("completion", "Finalización"),
     RotationReasonFilter("manual", "Manual"),
-    RotationReasonFilter("member_left", "Member left"),
-    RotationReasonFilter("recalculation", "Recalculation")
+    RotationReasonFilter("member_left", "Miembro salió"),
+    RotationReasonFilter("recalculation", "Recalculo")
 )
 
 private val ScheduleColor = AppPrimary
@@ -101,13 +101,13 @@ fun TaskRotationHistoryScreen(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Text(
-                    "Task",
+                    "Tarea",
                     style = MaterialTheme.typography.labelMedium,
                     color = AppSecondaryText
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = uiState.taskTitle.ifBlank { "Task #$taskId" },
+                    text = uiState.taskTitle.ifBlank { "Tarea #$taskId" },
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold
@@ -126,7 +126,7 @@ fun TaskRotationHistoryScreen(
                     color = if (uiState.isTaskRotating) AppPrimary.copy(alpha = 0.16f) else AppBorder
                 ) {
                     Text(
-                        text = if (uiState.isTaskRotating) "Rotation enabled" else "Rotation disabled",
+                        text = if (uiState.isTaskRotating) "Rotación activada" else "Rotación desactivada",
                         color = if (uiState.isTaskRotating) AppPrimary else AppSecondaryText,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium,
@@ -145,7 +145,7 @@ fun TaskRotationHistoryScreen(
         ) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Text(
-                    "Filters",
+                    "Filtros",
                     style = MaterialTheme.typography.labelMedium,
                     color = AppSecondaryText
                 )
@@ -155,13 +155,13 @@ fun TaskRotationHistoryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     DatePickerChip(
-                        label = "From",
+                        label = "Desde",
                         selectedDate = uiState.dateFrom,
                         onDateSelected = viewModel::onDateFromChanged,
                         modifier = Modifier.weight(1f)
                     )
                     DatePickerChip(
-                        label = "To",
+                        label = "Hasta",
                         selectedDate = uiState.dateTo,
                         onDateSelected = viewModel::onDateToChanged,
                         modifier = Modifier.weight(1f)
@@ -192,7 +192,7 @@ fun TaskRotationHistoryScreen(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            "Clear filters",
+                            "Limpiar filtros",
                             color = AppSecondaryText,
                             style = MaterialTheme.typography.labelSmall
                         )
@@ -206,7 +206,7 @@ fun TaskRotationHistoryScreen(
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
                 ) {
                     Text(
-                        "Apply",
+                        "Aplicar",
                         color = AppOnPrimary,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold
@@ -236,7 +236,7 @@ fun TaskRotationHistoryScreen(
                         Text(uiState.errorMessage!!, color = AppSecondaryText)
                         Spacer(Modifier.height(12.dp))
                         TextButton(onClick = viewModel::retry) {
-                            Text("Retry", color = AppPrimary)
+                            Text("Reintentar", color = AppPrimary)
                         }
                     }
                 }
@@ -248,7 +248,7 @@ fun TaskRotationHistoryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No rotation records found.",
+                        text = "No se encontraron registros de rotación.",
                         color = AppSecondaryText
                     )
                 }
@@ -262,7 +262,7 @@ fun TaskRotationHistoryScreen(
                 ) {
                     item {
                         Text(
-                            text = "${uiState.items.size} ${if (uiState.items.size == 1) "entry" else "entries"}",
+                            text = "${uiState.items.size} ${if (uiState.items.size == 1) "registro" else "registros"}",
                             style = MaterialTheme.typography.labelSmall,
                             color = AppSecondaryText
                         )
@@ -320,12 +320,12 @@ private fun DatePickerChip(
                     }
                     showDialog = false
                 }) {
-                    Text("Accept", color = AppPrimary)
+                    Text("Aceptar", color = AppPrimary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("Cancel", color = AppSecondaryText)
+                    Text("Cancelar", color = AppSecondaryText)
                 }
             }
         ) {
@@ -363,6 +363,7 @@ private fun RotationReasonChip(
 private fun RotationHistoryCard(item: RotationHistoryResponse) {
     val reasonColor = rotationReasonColor(item.triggerReason)
     val reasonLabel = rotationReasonLabel(item.triggerReason)
+    val previousAssignee = item.fromDisplayName?.takeIf { it.isNotBlank() } ?: "Asignación inicial"
 
     Card(
         shape = RoundedCornerShape(14.dp),
@@ -380,7 +381,7 @@ private fun RotationHistoryCard(item: RotationHistoryResponse) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Round #${item.rotationRound}",
+                    text = "Ronda #${item.rotationRound}",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -410,6 +411,20 @@ private fun RotationHistoryCard(item: RotationHistoryResponse) {
                 }
             }
 
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = "Tarea",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AppSecondaryText
+                )
+                Text(
+                    text = item.taskTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
             HorizontalDivider(color = AppBorder)
 
             Row(
@@ -417,12 +432,12 @@ private fun RotationHistoryCard(item: RotationHistoryResponse) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 HistoryPersonColumn(
-                    label = "From",
-                    value = item.fromDisplayName?.takeIf { it.isNotBlank() } ?: "Initial assignment",
+                    label = "Asignado anterior",
+                    value = previousAssignee,
                     modifier = Modifier.weight(1f)
                 )
                 HistoryPersonColumn(
-                    label = "To",
+                    label = "Nuevo asignado",
                     value = item.toDisplayName,
                     modifier = Modifier.weight(1f)
                 )
@@ -486,11 +501,11 @@ private fun hasFilters(uiState: TaskRotationHistoryUiState): Boolean {
 
 private fun rotationReasonLabel(reason: String): String {
     return when (reason.lowercase()) {
-        "schedule", "scheduled_time" -> "Schedule"
-        "completion" -> "Completion"
+        "schedule", "scheduled_time" -> "Horario"
+        "completion" -> "Finalización"
         "manual" -> "Manual"
-        "member_left" -> "Member left"
-        "recalculation" -> "Recalculation"
+        "member_left" -> "Miembro salió"
+        "recalculation" -> "Recalculo"
         else -> reason.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
     }
 }
