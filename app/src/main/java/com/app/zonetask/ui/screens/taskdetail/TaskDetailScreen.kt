@@ -9,11 +9,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.SpaceDashboard
@@ -376,13 +376,13 @@ fun TaskDetailScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = AppSecondaryText
                                 )
-                            }
-                            Icon(
-                                ChevronRight,
-                                null,
-                                tint = AppSecondaryText,
-                                modifier = Modifier.size(18.dp)
-                            )
+                                    }
+                                    Icon(
+                                        Icons.Outlined.ChevronRight,
+                                        null,
+                                        tint = AppSecondaryText,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                         }
                     }
 
