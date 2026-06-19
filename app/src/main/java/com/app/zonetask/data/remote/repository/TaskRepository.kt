@@ -190,6 +190,46 @@ class TaskRepository(
         }
     }
 
+    suspend fun getSpaceRotationHistory(
+        spaceId: Int,
+        taskId: Int? = null,
+        zoneId: Int? = null,
+        userId: Int? = null,
+        dateFrom: String? = null,
+        dateTo: String? = null,
+        fromUserId: Int? = null,
+        toUserId: Int? = null,
+        triggerReason: String? = null
+    ): ApiResult<List<RotationHistoryResponse>> {
+        return try {
+            val response = apiService.getSpaceRotationHistory(
+                spaceId = spaceId,
+                taskId = taskId,
+                zoneId = zoneId,
+                userId = userId,
+                dateFrom = dateFrom,
+                dateTo = dateTo,
+                fromUserId = fromUserId,
+                toUserId = toUserId,
+                triggerReason = triggerReason
+            )
+
+            if (response.isSuccessful) {
+                ApiResult.Success(response.body().orEmpty())
+            } else {
+                ApiResult.Error(
+                    message = when (response.code()) {
+                        404 -> "Espacio no encontrado"
+                        else -> httpErrorMessage(response.code())
+                    },
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
     suspend fun completeTaskAssignment(
         assignmentId: Int,
         request: MarkTaskCompletionRequestDto

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -80,6 +81,7 @@ fun SpaceDetailScreen(
     onCreateTaskClick: () -> Unit = {},
     onOpenPlansClick : () -> Unit = {},
     onOpenCompletedTasksClick: () -> Unit = {},
+    onOpenRotationHistoryClick: () -> Unit = {},
     onOpenStatisticsMenuClick: () -> Unit = {},
     viewModel: SpaceDetailViewModel = viewModel(
         factory = SpaceDetailViewModelFactory(
@@ -213,6 +215,39 @@ fun SpaceDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f)
                                 )
+                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+
+                    // Rotation history row
+                    item {
+                        Surface(
+                            onClick = onOpenRotationHistoryClick,
+                            shape = RoundedCornerShape(14.dp),
+                            color = AppSurface,
+                            border = BorderStroke(1.dp, AppBorder)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Outlined.Repeat, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Historial de rotación",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        "Revisar cambios de asignación con filtros",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = AppSecondaryText
+                                    )
+                                }
                                 Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
                             }
                         }

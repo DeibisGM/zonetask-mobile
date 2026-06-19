@@ -64,6 +64,19 @@ interface TaskApiService {
         @Query("trigger_reason") triggerReason: String? = null
     ): Response<List<RotationHistoryResponse>>
 
+    @GET(AppConstants.Api.Paths.SPACE_ROTATION_HISTORY)
+    suspend fun getSpaceRotationHistory(
+        @Path("spaceId") spaceId: Int,
+        @Query("task_id") taskId: Int? = null,
+        @Query("zone_id") zoneId: Int? = null,
+        @Query("user_id") userId: Int? = null,
+        @Query("date_from") dateFrom: String? = null,
+        @Query("date_to") dateTo: String? = null,
+        @Query("from_user_id") fromUserId: Int? = null,
+        @Query("to_user_id") toUserId: Int? = null,
+        @Query("trigger_reason") triggerReason: String? = null
+    ): Response<List<RotationHistoryResponse>>
+
     // Completes one assignment round by writing task_completion; assignment stays as the schedule/owner link.
     @POST("api/assignments/{assignmentId}/completion")
     suspend fun completeTaskAssignment(

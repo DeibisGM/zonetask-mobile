@@ -40,7 +40,7 @@ import com.app.zonetask.ui.screens.profile.ProfileScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
-import com.app.zonetask.ui.screens.taskhistory.TaskRotationHistoryScreen
+import com.app.zonetask.ui.screens.taskhistory.SpaceRotationHistoryScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 
 private const val AUTH_NOTICE_KEY = "authNotice"
@@ -265,7 +265,7 @@ fun AppNavHost() {
                     navController.navigate(AppDestinations.taskEditRoute(spaceId, id))
                 },
                 onOpenRotationHistory = { id ->
-                    navController.navigate(AppDestinations.taskRotationHistoryRoute(id))
+                    navController.navigate(AppDestinations.taskRotationHistoryRoute(spaceId, id))
                 },
                 onDeleted = {
                     navController.previousBackStackEntry
@@ -278,18 +278,24 @@ fun AppNavHost() {
 
         composable(
             route = AppDestinations.TASK_ROTATION_HISTORY,
-            arguments = listOf(navArgument("taskId") { type = NavType.IntType })
+            arguments = listOf(
+                navArgument("spaceId") { type = NavType.IntType },
+                navArgument("taskId") { type = NavType.IntType }
+            )
         ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
 
             ZoneTaskScaffold(
-                title = "Rotation History",
+                title = "Historial de rotación",
                 showBack = true,
                 onBackClick = { navController.popBackStack() },
                 snackbarHostState = snackbarHostState
             ) { padding ->
-                TaskRotationHistoryScreen(
-                    taskId = taskId,
+                SpaceRotationHistoryScreen(
+                    spaceId = spaceId,
+                    requestingUserId = currentUserId,
+                    initialTaskId = taskId,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -356,6 +362,9 @@ private fun rememberSpacesNavActions(
         },
         onOpenCompletedTasks = { spaceId ->
             navController.navigate(SpacesDestinations.completedTasks(spaceId))
+        },
+        onOpenRotationHistory = { spaceId ->
+            navController.navigate(SpacesDestinations.rotationHistory(spaceId))
         },
         onOpenStatisticsMenu = { spaceId, userId ->
             navController.navigate(SpacesDestinations.statisticsMenu(spaceId, userId))

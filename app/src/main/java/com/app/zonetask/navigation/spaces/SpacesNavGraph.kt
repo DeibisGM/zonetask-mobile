@@ -27,6 +27,7 @@ import com.app.zonetask.ui.screens.statistics.SpaceStatisticsMenuScreen
 import com.app.zonetask.ui.screens.statistics.SpaceStatisticsScreen
 import com.app.zonetask.ui.screens.statistics.UserReportsScreen
 import com.app.zonetask.ui.screens.taskhistory.CompletedTaskHistoryScreen
+import com.app.zonetask.ui.screens.taskhistory.SpaceRotationHistoryScreen
 
 fun NavGraphBuilder.spacesNavGraph(
     currentUserId: Int,
@@ -136,6 +137,7 @@ fun NavGraphBuilder.spacesNavGraph(
                 onCreateTaskClick = { actions.onCreateTaskForSpace(spaceId) },
                 onOpenPlansClick = { actions.onOpenPlans(spaceId) },
                 onOpenCompletedTasksClick = { actions.onOpenCompletedTasks(spaceId) },
+                onOpenRotationHistoryClick = { actions.onOpenRotationHistory(spaceId) },
                 onOpenStatisticsMenuClick = { actions.onOpenStatisticsMenu(spaceId, currentUserId) },
                 onEditClick = actions.onOpenEdit,
                 onDeleteSuccess = { actions.onSpaceDeleted("Space deleted") }
@@ -248,6 +250,33 @@ fun NavGraphBuilder.spacesNavGraph(
         ) { padding ->
             CompletedTaskHistoryScreen(
                 spaceId = spaceId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Rotation history
+    composable(
+        route = SpacesDestinations.ROTATION_HISTORY,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_SPACE_ID) {
+            type = NavType.IntType
+        })
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+
+        val historySnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Historial de rotación",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = historySnackbarHostState
+        ) { padding ->
+            SpaceRotationHistoryScreen(
+                spaceId = spaceId,
+                requestingUserId = currentUserId,
                 modifier = Modifier.padding(padding)
             )
         }

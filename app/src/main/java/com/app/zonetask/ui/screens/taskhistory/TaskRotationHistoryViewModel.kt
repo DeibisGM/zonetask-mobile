@@ -5,10 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.di.AppContainer
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class TaskRotationHistoryViewModel(
     private val taskId: Int
@@ -71,7 +71,7 @@ class TaskRotationHistoryViewModel(
 
                     is ApiResult.Error -> {
                         _uiState.value = _uiState.value.copy(
-                            taskTitle = "Task #$taskId",
+                            taskTitle = "Tarea #$taskId",
                             errorMessage = taskResult.message
                         )
                     }
