@@ -10,15 +10,13 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.app.zonetask.MainActivity
 import com.app.zonetask.R
+import com.app.zonetask.core.UserMessages
 import com.app.zonetask.navigation.AppDestinations
 import kotlin.math.absoluteValue
 
 object ZoneTaskNotificationManager {
 
     private const val CHANNEL_ID = "zonetask_task_events"
-    private const val CHANNEL_NAME = "Task updates"
-    private const val CHANNEL_DESCRIPTION = "Push notifications for task updates"
-
     private const val EXTRA_SPACE_ID = "extra_space_id"
     private const val EXTRA_TASK_ID = "extra_task_id"
     private const val EXTRA_NOTIFICATION_TYPE = "extra_notification_type"
@@ -37,10 +35,10 @@ object ZoneTaskNotificationManager {
 
         val channel = NotificationChannel(
             CHANNEL_ID,
-            CHANNEL_NAME,
+            UserMessages.Notifications.CHANNEL_NAME,
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = CHANNEL_DESCRIPTION
+            description = UserMessages.Notifications.CHANNEL_DESCRIPTION
         }
 
         manager.createNotificationChannel(channel)
@@ -54,6 +52,7 @@ object ZoneTaskNotificationManager {
         taskId: Int,
         notificationType: String
     ) {
+        // Build a local notification that deep-links into the task detail route.
         ensureChannel(context)
 
         val route = AppDestinations.taskDetailRoute(spaceId, taskId)
@@ -89,6 +88,7 @@ object ZoneTaskNotificationManager {
     fun extractRoute(intent: Intent?): String? {
         if (intent == null) return null
 
+        // Prefer the explicit task ids, but keep a fallback string for older taps.
         val spaceId = intent.getIntExtra(EXTRA_SPACE_ID, -1)
         val taskId = intent.getIntExtra(EXTRA_TASK_ID, -1)
         if (spaceId <= 0 || taskId <= 0) {
