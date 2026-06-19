@@ -3,6 +3,8 @@ package com.app.zonetask.data.remote.service
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.ChatGroupResponse
 import com.app.zonetask.data.remote.dto.ChatMemberDto
+import com.app.zonetask.data.remote.dto.ChatMessageDto
+import com.app.zonetask.data.remote.dto.SendMessageRequest
 import com.app.zonetask.data.remote.dto.UpdateChatGroupRequest
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -43,4 +45,16 @@ interface ChatApiService {
         @Query("userId") userId: Int,
         @Part image: MultipartBody.Part
     ): Response<ChatGroupResponse>
+
+    @GET(AppConstants.Api.Paths.SPACE_MESSAGES)
+    suspend fun getMessages(
+        @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int
+    ): Response<List<ChatMessageDto>>
+
+    @POST(AppConstants.Api.Paths.SPACE_MESSAGES)
+    suspend fun sendMessage(
+        @Path("spaceId") spaceId: Int,
+        @Body request: SendMessageRequest
+    ): Response<ChatMessageDto>
 }

@@ -21,10 +21,34 @@ class ChatViewModel(
 
     init {
         loadChat()
+        loadMessages()
     }
 
     fun reload() {
         loadChat()
+        loadMessages()
+    }
+
+    fun sendMessage(content: String) {
+        val trimmed = content.trim()
+        if (trimmed.isEmpty()) return
+        _uiState.value = _uiState.value.copy(isSending = true, sendError = null)
+        viewModelScope.launch {
+            when (val result = chatGroupRepository.sendMessage(spaceId, trimmed, userId)) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSending = false,
+                        messages  = _uiState.value.messages + result.data
+                    )
+                }
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSending = false,
+                        sendError = result.message
+                    )
+                }
+            }
+        }
     }
 
     private fun loadChat() {
@@ -45,6 +69,23 @@ class ChatViewModel(
                         isLoading    = false,
                         errorMessage = result.message
                     )
+                }
+            }
+        }
+    }
+
+    private fun loadMessages() {
+        _uiState.value = _uiState.value.copy(isMessagesLoading = true)
+        viewModelScope.launch {
+            when (val result = chatGroupRepository.getMessages(spaceId, userId)) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isMessagesLoading = false,
+                        messages          = result.data
+                    )
+                }
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(isMessagesLoading = false)
                 }
             }
         }

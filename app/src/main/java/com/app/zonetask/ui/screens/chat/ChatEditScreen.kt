@@ -323,7 +323,7 @@ private fun ParticipantsSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text       = "Lista de participantes",
+                text       = "Participants",
                 style      = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color      = MaterialTheme.colorScheme.onBackground,
