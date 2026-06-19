@@ -3,12 +3,14 @@ package com.app.zonetask.data.remote.service
 import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
 import com.app.zonetask.data.remote.dto.MarkTaskCompletionRequestDto
+import com.app.zonetask.data.remote.dto.RotationHistoryResponse
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Query
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -51,6 +53,16 @@ interface TaskApiService {
     suspend fun getTaskAssignments(
         @Path("taskId") taskId: Int
     ): Response<List<TaskAssignmentResponse>>
+
+    @GET(AppConstants.Api.Paths.TASK_ROTATION_HISTORY)
+    suspend fun getTaskRotationHistory(
+        @Path("taskId") taskId: Int,
+        @Query("date_from") dateFrom: String? = null,
+        @Query("date_to") dateTo: String? = null,
+        @Query("from_user_id") fromUserId: Int? = null,
+        @Query("to_user_id") toUserId: Int? = null,
+        @Query("trigger_reason") triggerReason: String? = null
+    ): Response<List<RotationHistoryResponse>>
 
     // Completes one assignment round by writing task_completion; assignment stays as the schedule/owner link.
     @POST("api/assignments/{assignmentId}/completion")

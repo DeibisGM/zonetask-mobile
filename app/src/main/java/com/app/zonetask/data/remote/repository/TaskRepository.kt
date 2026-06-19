@@ -3,6 +3,7 @@ package com.app.zonetask.data.remote.repository
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
 import com.app.zonetask.data.remote.dto.MarkTaskCompletionRequestDto
+import com.app.zonetask.data.remote.dto.RotationHistoryResponse
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.data.remote.service.TaskApiService
@@ -147,6 +148,40 @@ class TaskRepository(
             } else {
                 ApiResult.Error(
                     message = httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
+    suspend fun getTaskRotationHistory(
+        taskId: Int,
+        dateFrom: String? = null,
+        dateTo: String? = null,
+        fromUserId: Int? = null,
+        toUserId: Int? = null,
+        triggerReason: String? = null
+    ): ApiResult<List<RotationHistoryResponse>> {
+        return try {
+            val response = apiService.getTaskRotationHistory(
+                taskId = taskId,
+                dateFrom = dateFrom,
+                dateTo = dateTo,
+                fromUserId = fromUserId,
+                toUserId = toUserId,
+                triggerReason = triggerReason
+            )
+
+            if (response.isSuccessful) {
+                ApiResult.Success(response.body().orEmpty())
+            } else {
+                ApiResult.Error(
+                    message = when (response.code()) {
+                        404 -> "Task not found"
+                        else -> httpErrorMessage(response.code())
+                    },
                     statusCode = response.code()
                 )
             }

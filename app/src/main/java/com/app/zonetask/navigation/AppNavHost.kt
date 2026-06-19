@@ -40,6 +40,7 @@ import com.app.zonetask.ui.screens.profile.ProfileScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
+import com.app.zonetask.ui.screens.taskhistory.TaskRotationHistoryScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 
 private const val AUTH_NOTICE_KEY = "authNotice"
@@ -263,6 +264,9 @@ fun AppNavHost() {
                 onEdit = { id ->
                     navController.navigate(AppDestinations.taskEditRoute(spaceId, id))
                 },
+                onOpenRotationHistory = { id ->
+                    navController.navigate(AppDestinations.taskRotationHistoryRoute(id))
+                },
                 onDeleted = {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
@@ -270,6 +274,25 @@ fun AppNavHost() {
                     navController.popBackStack()
                 }
             )
+        }
+
+        composable(
+            route = AppDestinations.TASK_ROTATION_HISTORY,
+            arguments = listOf(navArgument("taskId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+
+            ZoneTaskScaffold(
+                title = "Rotation History",
+                showBack = true,
+                onBackClick = { navController.popBackStack() },
+                snackbarHostState = snackbarHostState
+            ) { padding ->
+                TaskRotationHistoryScreen(
+                    taskId = taskId,
+                    modifier = Modifier.padding(padding)
+                )
+            }
         }
 
         spacesNavGraph(
