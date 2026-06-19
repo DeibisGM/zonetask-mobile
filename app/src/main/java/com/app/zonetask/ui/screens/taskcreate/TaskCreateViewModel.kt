@@ -11,6 +11,7 @@ import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateTaskRequestDto
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.di.AppContainer
+import com.app.zonetask.domain.model.SpaceMember
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -136,6 +137,11 @@ class TaskCreateViewModel(
                             member.status.equals("accepted", ignoreCase = true) ||
                                 member.status.equals("active", ignoreCase = true)
                         }
+                        .sortedWith(
+                            compareBy<SpaceMember> { it.rotationOrder ?: Int.MAX_VALUE }
+                                .thenBy { it.joinedAt ?: "" }
+                                .thenBy { it.memberId }
+                        )
                         .mapNotNull { member ->
                             val displayName = userNamesById[member.userId]
                                 ?: "User ${member.userId}"
@@ -192,6 +198,7 @@ class TaskCreateViewModel(
                 title = uiState.title.trim(),
                 description = uiState.description.takeIf { it.isNotBlank() }?.trim(),
                 frequency = uiState.frequency,
+                rotationStrategy = uiState.rotationStrategy,
                 recurrenceRule = uiState.recurrenceRule,
                 scheduledTime = normalizedTime,
                 startDate = uiState.startDate.ifBlank { null },
@@ -207,7 +214,7 @@ class TaskCreateViewModel(
                 categoryId = uiState.categoryId,
                 spaceId = uiState.spaceId,
                 zoneId = uiState.zoneId,
-                assignedUserId = uiState.assignedUserId,
+                assignedUserId = if (uiState.rotating) null else uiState.assignedUserId,
                 objectId = uiState.selectedObjectIds.firstOrNull(),
                 objectIds = if (uiState.objectSelectionEnabled) uiState.selectedObjectIds else emptyList()
             )
@@ -266,6 +273,7 @@ class TaskCreateViewModel(
             requiresProof = task.requiresProof,
             requiresDescription = task.requiresDescription,
             estimatedMinutes = task.estimatedMinutes,
+            rotationStrategy = task.rotationStrategy ?: "sequential",
             createdBy = task.createdBy,
             categoryId = task.categoryId,
             spaceId = task.spaceId,

@@ -10,6 +10,8 @@ data class CreateTaskRequestDto(
     val description: String?,
     @SerializedName("frequency")
     val frequency: String,
+    @SerializedName("rotationStrategy")
+    val rotationStrategy: String = "sequential",
     @SerializedName("recurrenceRule")
     val recurrenceRule: String? = null,
     @SerializedName("scheduledTime")

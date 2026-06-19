@@ -33,6 +33,8 @@ data class TaskResponse(
     val requiresDescription: Boolean = false,
     @SerializedName("estimatedMinutes")
     val estimatedMinutes: Int? = null,
+    @SerializedName("rotationStrategy")
+    val rotationStrategy: String? = null,
     @SerializedName("createdBy")
     val createdBy: Int,
     @SerializedName("categoryId")
