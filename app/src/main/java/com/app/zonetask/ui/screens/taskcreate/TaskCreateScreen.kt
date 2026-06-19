@@ -192,7 +192,10 @@ fun TaskCreateScreen(
                         },
                         onSaveClick = {
                             // Only clear the form after a successful save.
-                            if (viewModel.validate()) {
+                            val hasEnoughRotationParticipants = !uiState.rotating || formOptions.assignees.size >= 2
+                            if (!hasEnoughRotationParticipants) {
+                                saveErrorMessage = UserMessages.TaskCreate.ROTATION_MIN_PARTICIPANTS
+                            } else if (viewModel.validate()) {
                                 viewModel.saveTask { success, message ->
                                     if (success) {
                                         onSaved()
@@ -272,6 +275,12 @@ private fun TaskCreateContent(
         "Space" to "space",
         "Zone" to "zone",
         "Object" to "object"
+    )
+
+    val rotationStrategyOptions = listOf(
+        UserMessages.TaskCreate.ROTATION_STRATEGY_ROUND_ROBIN to "sequential",
+        UserMessages.TaskCreate.ROTATION_STRATEGY_RANDOM to "random",
+        UserMessages.TaskCreate.ROTATION_STRATEGY_WEIGHTED to "weighted"
     )
 
     val zoneOptions = formOptions.zones.ifEmpty {
@@ -392,6 +401,14 @@ private fun TaskCreateContent(
                 color = AppSecondaryText
             )
 
+            if (uiState.rotating) {
+                Text(
+                    text = UserMessages.TaskCreate.ASSIGNEE_ROTATION_NOTE,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AppSecondaryText
+                )
+            }
+
             formOptions.assigneesError?.let { error ->
                 Text(
                     text = error,
@@ -475,17 +492,37 @@ private fun TaskCreateContent(
             title = UserMessages.TaskCreate.RULES_SECTION
         ) {
             TaskCheckboxRow(
-                label = UserMessages.TaskCreate.ROTATING_LABEL,
+                label = UserMessages.TaskCreate.ROTATION_LABEL,
                 checked = uiState.rotating,
-                onCheckedChange = { onUpdate { copy(rotating = it) } }
+                onCheckedChange = { enabled ->
+                    onUpdate { copy(rotating = enabled) }
+                }
             )
-            
+
+            if (uiState.rotating) {
+                TaskDropdown(
+                    label = UserMessages.TaskCreate.ROTATION_STRATEGY_LABEL,
+                    value = rotationStrategyOptions.firstOrNull { it.second == uiState.rotationStrategy }?.first
+                        ?: UserMessages.TaskCreate.ROTATION_STRATEGY_ROUND_ROBIN,
+                    options = rotationStrategyOptions,
+                    onOptionSelected = { selectedValue ->
+                        onUpdate { copy(rotationStrategy = selectedValue) }
+                    }
+                )
+
+                Text(
+                    text = UserMessages.TaskCreate.ROTATION_HELP,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AppSecondaryText
+                )
+            }
+
             TaskCheckboxRow(
                 label = UserMessages.TaskCreate.REQUIRE_PROOF_LABEL,
                 checked = uiState.requiresProof,
                 onCheckedChange = { onUpdate { copy(requiresProof = it) } }
             )
-            
+
             TaskCheckboxRow(
                 label = UserMessages.TaskCreate.REQUIRE_DESCRIPTION_LABEL,
                 checked = uiState.requiresDescription,
