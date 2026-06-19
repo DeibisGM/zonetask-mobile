@@ -21,7 +21,9 @@ import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.invitations.InviteMemberScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.statistics.IndividualStatisticsScreen
+import com.app.zonetask.ui.screens.statistics.OverdueTrendsScreen
 import com.app.zonetask.ui.screens.statistics.SpaceReportsScreen
+import com.app.zonetask.ui.screens.statistics.SpaceStatisticsMenuScreen
 import com.app.zonetask.ui.screens.statistics.SpaceStatisticsScreen
 import com.app.zonetask.ui.screens.statistics.UserReportsScreen
 import com.app.zonetask.ui.screens.taskhistory.CompletedTaskHistoryScreen
@@ -134,9 +136,7 @@ fun NavGraphBuilder.spacesNavGraph(
                 onCreateTaskClick = { actions.onCreateTaskForSpace(spaceId) },
                 onOpenPlansClick = { actions.onOpenPlans(spaceId) },
                 onOpenCompletedTasksClick = { actions.onOpenCompletedTasks(spaceId) },
-                onOpenStatisticsClick = { actions.onOpenStatistics(spaceId, currentUserId) },
-                onOpenSpaceStatisticsClick = { actions.onOpenSpaceStatistics(spaceId) },
-                onOpenUserReportsClick = { actions.onOpenUserReports(spaceId) },
+                onOpenStatisticsMenuClick = { actions.onOpenStatisticsMenu(spaceId, currentUserId) },
                 onEditClick = actions.onOpenEdit,
                 onDeleteSuccess = { actions.onSpaceDeleted("Space deleted") }
             )
@@ -308,6 +308,41 @@ fun NavGraphBuilder.spacesNavGraph(
         }
     }
 
+    // Statistics hub — groups every statistics/report option for a space
+    composable(
+        route = SpacesDestinations.STATISTICS_MENU,
+        arguments = listOf(
+            navArgument(SpacesDestinations.ARG_SPACE_ID) { type = NavType.IntType },
+            navArgument(SpacesDestinations.ARG_USER_ID)  { type = NavType.IntType }
+        )
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+        val userId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_USER_ID)
+            ?: return@composable
+
+        val statsMenuSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Statistics",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = statsMenuSnackbarHostState
+        ) { padding ->
+            SpaceStatisticsMenuScreen(
+                spaceId  = spaceId,
+                userId   = userId,
+                modifier = Modifier.padding(padding),
+                onOpenMyStatistics    = { actions.onOpenStatistics(spaceId, userId) },
+                onOpenSpaceStatistics = { actions.onOpenSpaceStatistics(spaceId) },
+                onOpenUserReports     = { actions.onOpenUserReports(spaceId) },
+                onOpenOverdueTrends   = { actions.onOpenOverdueTrends(spaceId) }
+            )
+        }
+    }
+
     // Reports by user
     composable(
         route = SpacesDestinations.USER_REPORTS,
@@ -351,6 +386,30 @@ fun NavGraphBuilder.spacesNavGraph(
         ) { padding ->
             SpaceReportsScreen(
                 userId   = userId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Overdue task trends (owner/admin entry from space detail)
+    composable(
+        route = SpacesDestinations.OVERDUE_TRENDS,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_SPACE_ID) { type = NavType.IntType })
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+
+        val overdueSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Overdue Trends",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = overdueSnackbarHostState
+        ) { padding ->
+            OverdueTrendsScreen(
+                spaceId  = spaceId,
                 modifier = Modifier.padding(padding)
             )
         }

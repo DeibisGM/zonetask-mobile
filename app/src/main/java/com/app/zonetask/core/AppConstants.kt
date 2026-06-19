@@ -52,6 +52,7 @@ object AppConstants {
             const val SPACE_STATISTICS  = "api/spaces/{spaceId}/statistics"
             const val USER_REPORTS      = "api/spaces/{spaceId}/reports/users"
             const val SPACE_REPORTS     = "api/users/{userId}/reports/spaces"
+            const val OVERDUE_TRENDS    = "api/spaces/{spaceId}/reports/overdue-trends"
         }
     }
 }
