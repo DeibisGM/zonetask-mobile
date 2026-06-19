@@ -87,11 +87,13 @@ class TaskDetailViewModel(
     }
 
     private suspend fun resolveAssigneeName(taskId: Int, assignedUserId: Int?): String? {
-        val userId = assignedUserId ?: run {
-            when (val assignmentsResult = AppContainer.taskRepository.getTaskAssignments(taskId)) {
-                is ApiResult.Success -> assignmentsResult.data.firstOrNull()?.assignedUserId
-                is ApiResult.Error -> null
-            }
+        val userId = when (val assignmentsResult = AppContainer.taskRepository.getTaskAssignments(taskId)) {
+            is ApiResult.Success -> assignmentsResult.data.firstOrNull {
+                !it.status.equals("completed", ignoreCase = true) &&
+                    !it.status.equals("skipped", ignoreCase = true) &&
+                    !it.status.equals("cancelled", ignoreCase = true)
+            }?.assignedUserId ?: assignedUserId
+            is ApiResult.Error -> assignedUserId
         } ?: return null
 
         return when (val usersResult = AppContainer.userRepository.getUsers()) {
@@ -263,6 +265,26 @@ fun TaskDetailScreen(
                                 icon = Icons.Outlined.Person,
                                 label = UserMessages.TaskDetail.ASSIGNEE_LABEL,
                                 value = uiState.assigneeName ?: UserMessages.TaskDetail.NO_ASSIGNEE
+                            )
+                            HorizontalDivider(
+                                color = AppBorder,
+                                modifier = Modifier.padding(vertical = 14.dp)
+                            )
+
+                            DetailRow(
+                                icon = Icons.Outlined.Repeat,
+                                label = UserMessages.TaskDetail.ROTATION_LABEL,
+                                value = if (task.rotating) {
+                                    task.rotationStrategy?.let { strategy ->
+                                        when (strategy.lowercase()) {
+                                            "weighted" -> "On - Weighted by preferences"
+                                            "random" -> "On - Random"
+                                            else -> "On - Round robin"
+                                        }
+                                    } ?: "On"
+                                } else {
+                                    UserMessages.TaskDetail.ROTATION_OFF
+                                }
                             )
                             HorizontalDivider(
                                 color = AppBorder,

@@ -27,17 +27,12 @@ fun List<TaskAssignmentResponse>.resolveDueTimeUiState(currentUserId: Int? = nul
 private fun List<TaskAssignmentResponse>.selectRelevantDueAssignment(currentUserId: Int?): TaskAssignmentResponse? {
     if (isEmpty()) return null
 
-    // Completed assignments are no longer actionable; prefer the user's current active round.
-    val activeAssignments = filterNot { it.status.equals("completed", ignoreCase = true) }
-    val prioritized = when {
-        currentUserId != null -> {
-            // In a rotation, "mine" means the active assignment where assigned_user_id matches the session user.
-            val mine = activeAssignments.firstOrNull { it.assignedUserId == currentUserId }
-            mine ?: activeAssignments.firstOrNull() ?: firstOrNull()
-        }
-        activeAssignments.isNotEmpty() -> activeAssignments.firstOrNull()
-        else -> firstOrNull()
-    } ?: return null
+    // Completed, skipped, and cancelled assignments are no longer actionable.
+    val activeAssignments = filterNot { assignment ->
+        assignment.status.equals("completed", ignoreCase = true) ||
+            assignment.status.equals("skipped", ignoreCase = true) ||
+            assignment.status.equals("cancelled", ignoreCase = true)
+    }
 
-    return prioritized
+    return activeAssignments.firstOrNull() ?: firstOrNull()
 }

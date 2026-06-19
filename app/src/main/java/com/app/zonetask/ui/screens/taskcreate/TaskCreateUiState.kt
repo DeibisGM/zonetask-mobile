@@ -11,6 +11,7 @@ data class TaskCreateUiState(
     val startDate: String = "",
     val endDate: String? = null,
     val rotating: Boolean = false,
+    val rotationStrategy: String = "sequential",
     val isActive: Boolean = true,
     val reminderEnabled: Boolean = false,
     val reminderMinutes: Int = 30,

@@ -241,33 +241,22 @@ class TasksViewModel(
             is ApiResult.Error -> emptyList()
         }
 
-        val assignees = assignments
-            .mapNotNull { assignment ->
-                val displayName = userNamesById[assignment.assignedUserId]
-                displayName?.let {
+        val currentAssignee = assignments.selectActiveAssignment(task.assignedUserId)?.assignedUserId
+        val assignees = currentAssignee
+            ?.let { userNamesById[it] }
+            ?.let { displayName ->
+                listOf(
                     TaskAssigneeUiState(
-                        userId = assignment.assignedUserId,
-                        displayName = it
+                        userId = currentAssignee,
+                        displayName = displayName
                     )
-                }
+                )
             }
-            .distinctBy { it.userId }
-            .ifEmpty {
-                task.assignedUserId?.let { assignedUserId ->
-                    userNamesById[assignedUserId]?.let { displayName ->
-                        listOf(
-                            TaskAssigneeUiState(
-                                userId = assignedUserId,
-                                displayName = displayName
-                            )
-                        )
-                    }.orEmpty()
-                } ?: emptyList()
-            }
+            ?: emptyList()
 
+        val zoneName = task.zoneId?.let { zoneNamesById[it] ?: "Zona $it" } ?: "Sin zona"
         // dueTimeState also tells the card whether this user can complete the active assignment.
         val dueTimeState = assignments.resolveDueTimeUiState(userId)
-        val zoneName = task.zoneId?.let { zoneNamesById[it] ?: "Zona $it" } ?: "Sin zona"
         return TaskItemUiState(
             task = task,
             zoneName = zoneName,
@@ -290,6 +279,14 @@ class TasksViewModel(
             normalizedStatuses.any { it == "pending" } -> "Pendiente"
             else -> assignments.first().status.replace('_', ' ').replaceFirstChar { it.uppercase() }
         }
+    }
+
+    private fun List<TaskAssignmentResponse>.selectActiveAssignment(fallbackUserId: Int?): TaskAssignmentResponse? {
+        return firstOrNull { assignment ->
+            !assignment.status.equals("completed", ignoreCase = true) &&
+                !assignment.status.equals("skipped", ignoreCase = true) &&
+                !assignment.status.equals("cancelled", ignoreCase = true)
+        } ?: firstOrNull { assignment -> fallbackUserId != null && assignment.assignedUserId == fallbackUserId }
     }
 
 }
