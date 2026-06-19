@@ -4,6 +4,7 @@ import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.ChatGroupResponse
 import com.app.zonetask.data.remote.dto.ChatMemberDto
 import com.app.zonetask.data.remote.dto.ChatMessageDto
+import com.app.zonetask.data.remote.dto.PagedMessagesDto
 import com.app.zonetask.data.remote.dto.SendMessageRequest
 import com.app.zonetask.data.remote.dto.UpdateChatGroupRequest
 import okhttp3.MultipartBody
@@ -49,8 +50,10 @@ interface ChatApiService {
     @GET(AppConstants.Api.Paths.SPACE_MESSAGES)
     suspend fun getMessages(
         @Path("spaceId") spaceId: Int,
-        @Query("userId") userId: Int
-    ): Response<List<ChatMessageDto>>
+        @Query("userId") userId: Int,
+        @Query("page") page: Int,
+        @Query("pageSize") pageSize: Int
+    ): Response<PagedMessagesDto>
 
     @POST(AppConstants.Api.Paths.SPACE_MESSAGES)
     suspend fun sendMessage(
