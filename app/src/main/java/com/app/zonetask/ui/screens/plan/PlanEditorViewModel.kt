@@ -114,6 +114,56 @@ class PlanEditorViewModel(
         GridZoneGeometry(old.column, old.row, spanColumns, spanRows).bounded(grid)
     }
 
+    fun onAddObjectToZone(id: String, item: ZoneObjectCatalogItem) {
+        val state = _uiState.value
+        val zone = state.zones.firstOrNull { it.id == id } ?: return
+        val geometry = zone.geometry(gridFor(state))
+        if (geometry.spanColumns < item.spanColumns || geometry.spanRows < item.spanRows) {
+            return setError("This zone is too small for ${item.name.lowercase()}")
+        }
+        val position = findFreeObjectPosition(zone.objects, geometry, item.spanColumns, item.spanRows)
+            ?: return setError("There is no free space for ${item.name.lowercase()}")
+        replaceZones(state.zones.map {
+            if (it.id == id) it.copy(objects = it.objects + PlanZoneObjectDraft(name = item.name, objectType = item.type, column = position.first, row = position.second, spanColumns = item.spanColumns, spanRows = item.spanRows)) else it
+        }, id)
+    }
+
+    fun onMoveZoneObject(zoneId: String, objectId: String, column: Int, row: Int) {
+        val state = _uiState.value
+        val zone = state.zones.firstOrNull { it.id == zoneId } ?: return
+        val geometry = zone.geometry(gridFor(state))
+        val current = zone.objects.firstOrNull { it.id == objectId } ?: return
+        val candidate = current.copy(
+            column = column.coerceIn(0, geometry.spanColumns - current.rotatedSpanColumns),
+            row = row.coerceIn(0, geometry.spanRows - current.rotatedSpanRows)
+        )
+        if (zone.objects.any { it.id != objectId && objectsOverlap(candidate, it) }) return
+        replaceZones(state.zones.map {
+            if (it.id == zoneId) it.copy(objects = it.objects.map { item -> if (item.id == objectId) candidate else item }) else it
+        }, zoneId)
+    }
+
+    fun onRotateZoneObject(zoneId: String, objectId: String) {
+        val state = _uiState.value
+        val zone = state.zones.firstOrNull { it.id == zoneId } ?: return
+        val geometry = zone.geometry(gridFor(state))
+        val current = zone.objects.firstOrNull { it.id == objectId } ?: return
+        val candidate = current.copy(rotationDegrees = (current.rotationDegrees + 90) % 360)
+        if (!candidate.fitsInside(geometry) || zone.objects.any { it.id != objectId && objectsOverlap(candidate, it) }) {
+            return setError("There is not enough room to rotate ${current.name}")
+        }
+        replaceZones(state.zones.map {
+            if (it.id == zoneId) it.copy(objects = it.objects.map { item -> if (item.id == objectId) candidate else item }) else it
+        }, zoneId)
+    }
+
+    fun onDeleteZoneObject(zoneId: String, objectId: String) {
+        val state = _uiState.value
+        replaceZones(state.zones.map { zone ->
+            if (zone.id == zoneId) zone.copy(objects = zone.objects.filterNot { it.id == objectId }) else zone
+        }, zoneId)
+    }
+
     fun onZoneGeometryChanged(id: String, column: Int, row: Int, spanColumns: Int, spanRows: Int) = mutateGeometry(id, validateOverlap = false) { _, grid ->
         GridZoneGeometry(column, row, spanColumns, spanRows).bounded(grid)
     }
@@ -247,6 +297,9 @@ class PlanEditorViewModel(
         val grid = gridFor(state)
         val zone = state.zones.firstOrNull { it.id == id } ?: return
         val geometry = transform(zone, grid)
+        if (zone.objects.any { !it.fitsInside(geometry) }) {
+            return setError("Resize would cut off an object in this zone")
+        }
         if (validateOverlap && !isAreaFree(geometry, state.zones, grid, id)) return setError("Rooms cannot overlap")
         replaceZones(state.zones.map { if (it.id == id) geometry.toDraftGeometry(it, grid) else it }, id)
     }
@@ -322,6 +375,23 @@ class PlanEditorViewModel(
         while ("$base $suffix" in names) suffix++
         return "$base $suffix"
     }
+
+    private fun findFreeObjectPosition(
+        objects: List<PlanZoneObjectDraft>,
+        zone: GridZoneGeometry,
+        width: Int,
+        height: Int
+    ): Pair<Int, Int>? {
+        for (row in 0..(zone.spanRows - height)) for (column in 0..(zone.spanColumns - width)) {
+            val candidate = PlanZoneObjectDraft(column = column, row = row, spanColumns = width, spanRows = height)
+            if (objects.none { objectsOverlap(candidate, it) }) return column to row
+        }
+        return null
+    }
+
+    private fun objectsOverlap(first: PlanZoneObjectDraft, second: PlanZoneObjectDraft): Boolean =
+        first.column < second.column + second.rotatedSpanColumns && first.column + first.rotatedSpanColumns > second.column &&
+            first.row < second.row + second.rotatedSpanRows && first.row + first.rotatedSpanRows > second.row
 }
 
 class PlanEditorViewModelFactory(

@@ -82,6 +82,7 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.org.jetbrains.kotlinx.coroutines.play.services)
     implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
 
     testImplementation(libs.junit)
 

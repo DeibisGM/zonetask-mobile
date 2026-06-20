@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -92,7 +93,7 @@ fun EditableFloorPlanBoard(
     BoxWithConstraints(modifier = modifier) {
         val viewportWidth = constraints.maxWidth.toFloat()
         val viewportHeight = constraints.maxHeight.toFloat()
-        val baseCellPx = 38f
+        val baseCellPx = 32f
         val worldWidth = grid.columns * baseCellPx
         val worldHeight = grid.rows * baseCellPx
         val origin = Offset((viewportWidth - worldWidth) / 2f, (viewportHeight - worldHeight) / 2f)
@@ -184,17 +185,10 @@ fun EditableFloorPlanBoard(
                             if (interactionMode == InteractionMode.Idle) {
                                 detectTransformGestures { centroid, panChange, zoomChange, _ ->
                                     hasUserInteracted = true
-                                    val nextZoom = (zoom * zoomChange).coerceIn(0.65f, 3f)
-                                    pan = clampPan(
-                                        pan = centroid + (pan - centroid) * (nextZoom / zoom) + panChange,
-                                        scale = nextZoom,
-                                        contentWidth = worldWidth,
-                                        contentHeight = worldHeight,
-                                        viewportWidth = viewportWidth,
-                                        viewportHeight = viewportHeight,
-                                        sideMargin = 20f,
-                                        verticalMargin = 20f
-                                    )
+                                    val nextZoom = (zoom * zoomChange).coerceIn(0.4f, 14f)
+                                    // The editor is a work surface, not a locked preview. Keep panning free
+                                    // at every zoom level so users can place the grid where they need it.
+                                    pan = centroid + (pan - centroid) * (nextZoom / zoom) + panChange
                                     zoom = nextZoom
                                 }
                             }
@@ -248,6 +242,7 @@ fun EditableFloorPlanBoard(
 
                 zones.forEach { zone ->
                     val geometry = zone.geometry(grid)
+                    val latestGeometry = rememberUpdatedState(geometry)
                     val selected = zone.id == selectedZoneId
                     val x = origin.x + geometry.column * baseCellPx
                     val y = origin.y + geometry.row * baseCellPx
@@ -265,46 +260,44 @@ fun EditableFloorPlanBoard(
                                 color = if (selected) AppPrimary else zoneColor.copy(alpha = 0.75f),
                                 shape = RectangleShape
                             )
-                            .pointerInput(zone.id, isRoomToolActive, zoom) {
-                                if (!isRoomToolActive) {
+                            .pointerInput(zone.id, isRoomToolActive, selectedZoneId, interactionMode) {
+                                if (isRoomToolActive || selectedZoneId != zone.id || interactionMode != InteractionMode.Idle) {
+                                    detectTapGestures(onTap = { onZoneSelected(zone.id) })
+                                } else {
                                     var dragOrigin: GridZoneGeometry? = null
                                     var dragDistance = Offset.Zero
-                                    if (interactionMode == InteractionMode.Idle) {
-                                        detectDragGestures(
-                                            onDragStart = {
-                                                hasUserInteracted = true
-                                                interactionMode = InteractionMode.MovingZone
-                                                dragOrigin = zone.geometry(grid)
-                                                dragDistance = Offset.Zero
-                                                onZoneSelected(zone.id)
-                                            },
-                                            onDragCancel = {
-                                                interactionMode = InteractionMode.Idle
-                                                dragOrigin = null
-                                                dragDistance = Offset.Zero
-                                            },
-                                            onDragEnd = {
-                                                interactionMode = InteractionMode.Idle
-                                                dragOrigin = null
-                                                dragDistance = Offset.Zero
-                                            },
-                                            onDrag = { change, delta ->
-                                                change.consumeAllChanges()
-                                                dragDistance += delta
-                                                val base = dragOrigin ?: zone.geometry(grid)
-                                                val movedColumn = base.column + (dragDistance.x / (baseCellPx * zoom)).roundToInt()
-                                                val movedRow = base.row + (dragDistance.y / (baseCellPx * zoom)).roundToInt()
-                                                val moved = base.moveBy(
-                                                    movedColumn - base.column,
-                                                    movedRow - base.row
-                                                )
-                                                onZoneGeometryChanged(zone.id, moved.column, moved.row, base.spanColumns, base.spanRows)
-                                            }
-                                        )
-                                    }
+                                    detectDragGestures(
+                                        onDragStart = {
+                                            hasUserInteracted = true
+                                            interactionMode = InteractionMode.MovingZone
+                                            dragOrigin = latestGeometry.value
+                                            dragDistance = Offset.Zero
+                                        },
+                                        onDragCancel = {
+                                            interactionMode = InteractionMode.Idle
+                                            dragOrigin = null
+                                            dragDistance = Offset.Zero
+                                        },
+                                        onDragEnd = {
+                                            interactionMode = InteractionMode.Idle
+                                            dragOrigin = null
+                                            dragDistance = Offset.Zero
+                                        },
+                                        onDrag = { change, delta ->
+                                            change.consumeAllChanges()
+                                            dragDistance += delta
+                                            val base = dragOrigin ?: latestGeometry.value
+                                            val movedColumn = base.column + (dragDistance.x / baseCellPx).roundToInt()
+                                            val movedRow = base.row + (dragDistance.y / baseCellPx).roundToInt()
+                                            val moved = base.moveBy(
+                                                movedColumn - base.column,
+                                                movedRow - base.row
+                                            )
+                                            onZoneGeometryChanged(zone.id, moved.column, moved.row, base.spanColumns, base.spanRows)
+                                        }
+                                    )
                                 }
                             }
-                            .pointerInput(zone.id) { detectTapGestures(onTap = { onZoneSelected(zone.id) }) }
                     ) {
                         Box(Modifier.fillMaxSize()) {
                             if (!selected && zoneWidth > 54f && zoneHeight > 34f) {
@@ -324,8 +317,11 @@ fun EditableFloorPlanBoard(
                                     modifier = Modifier.align(Alignment.TopEnd).offset(24.dp, (-24).dp),
                                     onClick = { onZoneDelete(zone.id) }
                                 )
+                                val handleSize = with(density) { (36f / zoom).coerceIn(36f, 96f).toDp() }
+                                val handleOffset = with(density) { (18f / zoom).coerceIn(18f, 48f).toDp() }
                                 ResizeHandle(
-                                    modifier = Modifier.align(Alignment.TopCenter).offset(0.dp, (-8).dp),
+                                    modifier = Modifier.align(Alignment.TopStart).offset(-handleOffset, -handleOffset),
+                                    size = handleSize,
                                     onDragStart = {
                                         hasUserInteracted = true
                                         interactionMode = InteractionMode.ResizingZone
@@ -333,8 +329,9 @@ fun EditableFloorPlanBoard(
                                     },
                                     onDrag = { delta ->
                                         val current = resizeOrigin ?: zone.geometry(grid)
-                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
-                                        val resized = current.resizeTop(dy)
+                                        val dx = (delta.x / baseCellPx).roundToInt()
+                                        val dy = (delta.y / baseCellPx).roundToInt()
+                                        val resized = current.resizeTop(dy).resizeLeft(dx)
                                         onZoneGeometryChanged(zone.id, resized.column, resized.row, resized.spanColumns, resized.spanRows)
                                     },
                                     onDragEnd = {
@@ -343,7 +340,8 @@ fun EditableFloorPlanBoard(
                                     }
                                 )
                                 ResizeHandle(
-                                    modifier = Modifier.align(Alignment.TopEnd).offset((-4).dp, (-4).dp),
+                                    modifier = Modifier.align(Alignment.TopEnd).offset(handleOffset, -handleOffset),
+                                    size = handleSize,
                                     onDragStart = {
                                         hasUserInteracted = true
                                         interactionMode = InteractionMode.ResizingZone
@@ -351,8 +349,8 @@ fun EditableFloorPlanBoard(
                                     },
                                     onDrag = { delta ->
                                         val current = resizeOrigin ?: zone.geometry(grid)
-                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
-                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
+                                        val dx = (delta.x / baseCellPx).roundToInt()
+                                        val dy = (delta.y / baseCellPx).roundToInt()
                                         val resized = current.resizeTop(dy).resizeRight(dx)
                                         onZoneGeometryChanged(zone.id, resized.column, resized.row, resized.spanColumns, resized.spanRows)
                                     },
@@ -362,7 +360,8 @@ fun EditableFloorPlanBoard(
                                     }
                                 )
                                 ResizeHandle(
-                                    modifier = Modifier.align(Alignment.CenterStart).offset((-8).dp, 0.dp),
+                                    modifier = Modifier.align(Alignment.BottomStart).offset(-handleOffset, handleOffset),
+                                    size = handleSize,
                                     onDragStart = {
                                         hasUserInteracted = true
                                         interactionMode = InteractionMode.ResizingZone
@@ -370,8 +369,9 @@ fun EditableFloorPlanBoard(
                                     },
                                     onDrag = { delta ->
                                         val current = resizeOrigin ?: zone.geometry(grid)
-                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
-                                        val resized = current.resizeLeft(dx)
+                                        val dx = (delta.x / baseCellPx).roundToInt()
+                                        val dy = (delta.y / baseCellPx).roundToInt()
+                                        val resized = current.resizeBottom(dy).resizeLeft(dx)
                                         onZoneGeometryChanged(zone.id, resized.column, resized.row, resized.spanColumns, resized.spanRows)
                                     },
                                     onDragEnd = {
@@ -380,7 +380,8 @@ fun EditableFloorPlanBoard(
                                     }
                                 )
                                 ResizeHandle(
-                                    modifier = Modifier.align(Alignment.CenterEnd).offset(8.dp, 0.dp),
+                                    modifier = Modifier.align(Alignment.BottomEnd).offset(handleOffset, handleOffset),
+                                    size = handleSize,
                                     onDragStart = {
                                         hasUserInteracted = true
                                         interactionMode = InteractionMode.ResizingZone
@@ -388,63 +389,8 @@ fun EditableFloorPlanBoard(
                                     },
                                     onDrag = { delta ->
                                         val current = resizeOrigin ?: zone.geometry(grid)
-                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
-                                        val resized = current.resizeRight(dx)
-                                        onZoneGeometryChanged(zone.id, resized.column, resized.row, resized.spanColumns, resized.spanRows)
-                                    },
-                                    onDragEnd = {
-                                        interactionMode = InteractionMode.Idle
-                                        resizeOrigin = null
-                                    }
-                                )
-                                ResizeHandle(
-                                    modifier = Modifier.align(Alignment.BottomStart).offset((-8).dp, 8.dp),
-                                    onDragStart = {
-                                        hasUserInteracted = true
-                                        interactionMode = InteractionMode.ResizingZone
-                                        resizeOrigin = zone.geometry(grid)
-                                    },
-                                    onDrag = { delta ->
-                                        val current = resizeOrigin ?: zone.geometry(grid)
-                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
-                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
-                                        val resized = current.resizeLeft(dx).resizeBottom(dy)
-                                        onZoneGeometryChanged(zone.id, resized.column, resized.row, resized.spanColumns, resized.spanRows)
-                                    },
-                                    onDragEnd = {
-                                        interactionMode = InteractionMode.Idle
-                                        resizeOrigin = null
-                                    }
-                                )
-                                ResizeHandle(
-                                    modifier = Modifier.align(Alignment.BottomCenter).offset(0.dp, 8.dp),
-                                    onDragStart = {
-                                        hasUserInteracted = true
-                                        interactionMode = InteractionMode.ResizingZone
-                                        resizeOrigin = zone.geometry(grid)
-                                    },
-                                    onDrag = { delta ->
-                                        val current = resizeOrigin ?: zone.geometry(grid)
-                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
-                                        val resized = current.resizeBottom(dy)
-                                        onZoneGeometryChanged(zone.id, resized.column, resized.row, resized.spanColumns, resized.spanRows)
-                                    },
-                                    onDragEnd = {
-                                        interactionMode = InteractionMode.Idle
-                                        resizeOrigin = null
-                                    }
-                                )
-                                ResizeHandle(
-                                    modifier = Modifier.align(Alignment.BottomEnd).offset(8.dp, 8.dp),
-                                    onDragStart = {
-                                        hasUserInteracted = true
-                                        interactionMode = InteractionMode.ResizingZone
-                                        resizeOrigin = zone.geometry(grid)
-                                    },
-                                    onDrag = { delta ->
-                                        val current = resizeOrigin ?: zone.geometry(grid)
-                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
-                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
+                                        val dx = (delta.x / baseCellPx).roundToInt()
+                                        val dy = (delta.y / baseCellPx).roundToInt()
                                         val resized = current.resizeRight(dx).resizeBottom(dy)
                                         onZoneGeometryChanged(zone.id, resized.column, resized.row, resized.spanColumns, resized.spanRows)
                                     },
@@ -567,17 +513,15 @@ private fun clampPan(
     val scaledWidth = contentWidth * scale
     val scaledHeight = contentHeight * scale
 
-    val clampedX = if (scaledWidth + sideMargin * 2f <= viewportWidth) {
-        (viewportWidth - scaledWidth) / 2f
-    } else {
-        pan.x.coerceIn(viewportWidth - scaledWidth - sideMargin, sideMargin)
-    }
+    val clampedX = pan.x.coerceIn(
+        minOf(viewportWidth - scaledWidth - sideMargin, sideMargin),
+        maxOf(viewportWidth - scaledWidth - sideMargin, sideMargin)
+    )
 
-    val clampedY = if (scaledHeight + verticalMargin * 2f <= viewportHeight) {
-        (viewportHeight - scaledHeight) / 2f
-    } else {
-        pan.y.coerceIn(viewportHeight - scaledHeight - verticalMargin, verticalMargin)
-    }
+    val clampedY = pan.y.coerceIn(
+        minOf(viewportHeight - scaledHeight - verticalMargin, verticalMargin),
+        maxOf(viewportHeight - scaledHeight - verticalMargin, verticalMargin)
+    )
 
     return Offset(clampedX, clampedY)
 }
@@ -600,34 +544,38 @@ private fun DeleteBubble(modifier: Modifier, onClick: () -> Unit) {
 @Composable
 private fun ResizeHandle(
     modifier: Modifier,
+    size: androidx.compose.ui.unit.Dp,
     onDragStart: () -> Unit = {},
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit = {}
 ) {
+    val latestOnDragStart = rememberUpdatedState(onDragStart)
+    val latestOnDrag = rememberUpdatedState(onDrag)
+    val latestOnDragEnd = rememberUpdatedState(onDragEnd)
     Box(
         modifier = modifier
-            .size(18.dp)
-            .background(Color(0xFFF3F4F5), RoundedCornerShape(99.dp))
-            .border(1.dp, Color(0xFF91A1A6), RoundedCornerShape(99.dp))
+            .size(size)
+            .background(Color(0xFFF5FFFD), RoundedCornerShape(8.dp))
+            .border(3.dp, AppPrimary, RoundedCornerShape(8.dp))
             .pointerInput(Unit) {
                 var accumulated = Offset.Zero
                 detectDragGestures(
                     onDragStart = {
                         accumulated = Offset.Zero
-                        onDragStart()
+                        latestOnDragStart.value()
                     },
                     onDragCancel = {
                         accumulated = Offset.Zero
-                        onDragEnd()
+                        latestOnDragEnd.value()
                     },
                     onDragEnd = {
                         accumulated = Offset.Zero
-                        onDragEnd()
+                        latestOnDragEnd.value()
                     },
                     onDrag = { change, delta ->
                         change.consumeAllChanges()
                         accumulated += delta
-                        onDrag(accumulated)
+                        latestOnDrag.value(accumulated)
                     }
                 )
             },

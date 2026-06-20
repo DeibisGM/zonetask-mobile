@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
@@ -30,7 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.TransformOrigin
@@ -94,7 +97,10 @@ fun FloorPlanCanvas(
     gridRows: Int,
     modifier: Modifier = Modifier,
     bottomInset: Dp = 0.dp,
-    zones: List<FloorPlanZonePreview> = emptyList()
+    zones: List<FloorPlanZonePreview> = emptyList(),
+    selectedZoneBackendId: Int? = null,
+    onZoneClick: (FloorPlanZonePreview) -> Unit = {},
+    onBackgroundTap: () -> Unit = {}
 ) {
     val density = LocalDensity.current
     val columns = gridColumns.coerceAtLeast(1)
@@ -179,6 +185,24 @@ fun FloorPlanCanvas(
                 }
                 .pointerInput(Unit) {
                     detectTapGestures(
+                        onTap = { tapOffset ->
+                            // Pointer input is reported in viewport coordinates while the board is
+                            // rendered with a graphics transform. Convert it back before hit-testing.
+                            val boardTap = tapOffset.toBoardPoint(scale, pan)
+                            val tappedZone = zones.asReversed().firstOrNull { zone ->
+                                zone.containsPoint(boardTap, grid, origin)
+                            }
+
+                            if (tappedZone != null) {
+                                if (tappedZone.backendId != null) {
+                                    onZoneClick(tappedZone)
+                                } else {
+                                    onBackgroundTap()
+                                }
+                            } else {
+                                onBackgroundTap()
+                            }
+                        },
                         onDoubleTap = {
                             scale = fitState.scale
                             pan = fitState.pan
@@ -200,12 +224,24 @@ fun FloorPlanCanvas(
                 val zoneWidth = geometry.spanColumns * BASE_CELL_PX
                 val zoneHeight = geometry.spanRows * BASE_CELL_PX
                 val baseColor = zone.fillColor.asComposeColor()
-                val fillColor = baseColor.copy(alpha = (zone.opacity * 0.94f).coerceIn(0f, 1f))
-                val borderColor = baseColor.copy(alpha = 0.68f)
+                val hasPendingTasks = zone.taskCount > 0
+                val selected = zone.backendId != null && zone.backendId == selectedZoneBackendId
+                val fillColor = baseColor.copy(
+                    alpha = when {
+                        selected -> zone.opacity.coerceIn(0f, 1f)
+                        hasPendingTasks -> (zone.opacity * 0.96f).coerceIn(0f, 1f)
+                        else -> (zone.opacity * 0.94f).coerceIn(0f, 1f)
+                    }
+                )
+                val borderColor = when {
+                    selected -> AppPrimary
+                    hasPendingTasks -> baseColor.copy(alpha = 0.92f)
+                    else -> baseColor.copy(alpha = 0.68f)
+                }
 
                 Box(
                     modifier = Modifier
-                        .zIndex(0f)
+                        .zIndex(if (selected) 2f else if (hasPendingTasks) 1f else 0f)
                         .offset { IntOffset(zoneX.roundToInt(), zoneY.roundToInt()) }
                         .size(
                             with(density) { zoneWidth.toDp() },
@@ -213,7 +249,7 @@ fun FloorPlanCanvas(
                         )
                         .background(fillColor, RectangleShape)
                         .border(
-                            width = 1.dp,
+                            width = if (selected) 3.dp else 1.dp,
                             color = borderColor,
                             shape = RectangleShape
                         )
@@ -221,14 +257,24 @@ fun FloorPlanCanvas(
                     if (zoneWidth > 54f && zoneHeight > 34f) {
                         Text(
                             text = zone.name,
-                            color = Color(0xFF071112),
-                            fontWeight = FontWeight.Normal,
+                            color = if (selected) Color.White else Color(0xFF071112),
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                             fontSize = 10.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
                                 .align(Alignment.TopStart)
                                 .padding(start = 5.dp, top = 3.dp)
+                        )
+                    }
+
+                    if (hasPendingTasks) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(5.dp)
+                                .size(7.dp)
+                                .background(AppPrimary, androidx.compose.foundation.shape.CircleShape)
                         )
                     }
                 }
@@ -375,6 +421,27 @@ private fun List<FloorPlanZonePreview>.fitToBoard(
     )
 }
 
+private fun FloorPlanZonePreview.containsPoint(
+    tap: Offset,
+    grid: FloorGridSpec,
+    origin: Offset
+): Boolean {
+    val geometry = geometry(grid)
+    val left = origin.x + geometry.column * BASE_CELL_PX
+    val top = origin.y + geometry.row * BASE_CELL_PX
+    val right = left + geometry.spanColumns * BASE_CELL_PX
+    val bottom = top + geometry.spanRows * BASE_CELL_PX
+    return tap.x in left..right && tap.y in top..bottom
+}
+
+private fun Offset.toBoardPoint(scale: Float, pan: Offset): Offset {
+    val safeScale = scale.coerceAtLeast(0.0001f)
+    return Offset(
+        x = (x - pan.x) / safeScale,
+        y = (y - pan.y) / safeScale
+    )
+}
+
 private fun List<FloorPlanZonePreview>.boundingBox(
     grid: FloorGridSpec,
     origin: Offset
@@ -404,24 +471,13 @@ private fun clampPan(
     sideMargin: Float,
     verticalMargin: Float
 ): Offset {
-    val centeredX = viewportWidth / 2f - scale * contentBounds.centerX
-    val centeredY = viewportHeight / 2f - scale * contentBounds.centerY
+    val minX = viewportWidth - sideMargin - scale * contentBounds.right
+    val maxX = sideMargin - scale * contentBounds.left
+    val minY = viewportHeight - verticalMargin - scale * contentBounds.bottom
+    val maxY = verticalMargin - scale * contentBounds.top
 
-    val clampedX = if (scale * contentBounds.width + sideMargin * 2f <= viewportWidth) {
-        centeredX
-    } else {
-        val minX = viewportWidth - sideMargin - scale * contentBounds.right
-        val maxX = sideMargin - scale * contentBounds.left
-        pan.x.coerceIn(minOf(minX, maxX), maxOf(minX, maxX))
-    }
-
-    val clampedY = if (scale * contentBounds.height + verticalMargin * 2f <= viewportHeight) {
-        centeredY
-    } else {
-        val minY = viewportHeight - verticalMargin - scale * contentBounds.bottom
-        val maxY = verticalMargin - scale * contentBounds.top
-        pan.y.coerceIn(minOf(minY, maxY), maxOf(minY, maxY))
-    }
+    val clampedX = pan.x.coerceIn(minOf(minX, maxX), maxOf(minX, maxX))
+    val clampedY = pan.y.coerceIn(minOf(minY, maxY), maxOf(minY, maxY))
 
     return Offset(clampedX, clampedY)
 }
