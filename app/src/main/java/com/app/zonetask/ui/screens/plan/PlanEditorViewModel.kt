@@ -7,8 +7,10 @@ import com.app.zonetask.core.PlanDraftStore
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateFloorPlanRequest
 import com.app.zonetask.data.remote.dto.UpdateFloorPlanRequest
+import com.app.zonetask.data.remote.repository.FloorPlanTemplateRepository
 import com.app.zonetask.data.remote.repository.ZoneRepository
 import com.app.zonetask.data.repository.FloorPlanRepository
+import com.app.zonetask.domain.model.toDraft
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -17,18 +19,20 @@ import java.util.UUID
 class PlanEditorViewModel(
     private val floorPlanRepository: FloorPlanRepository,
     private val zoneRepository: ZoneRepository,
+    private val templateRepository: FloorPlanTemplateRepository,
     private val spaceId: Int,
-    private val planId: Int?
+    private val planId: Int?,
+    private val templateId: Int? = null
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(PlanEditorUiState(planId = planId, spaceId = spaceId))
+    private val _uiState = MutableStateFlow(PlanEditorUiState(planId = planId, spaceId = spaceId, templateId = templateId))
     val uiState = _uiState.asStateFlow()
     private var selectedZoneSnapshot: GridZoneGeometry? = null
 
     init {
-        if (planId == null) {
-            _uiState.value = PlanEditorUiState(planId = null, spaceId = spaceId)
-        } else {
-            loadPlan(planId)
+        when {
+            planId != null    -> loadPlan(planId)
+            templateId != null -> loadTemplate(templateId)
+            else              -> Unit
         }
     }
 
@@ -146,7 +150,9 @@ class PlanEditorViewModel(
         _uiState.value = state.copy(isSaving = true, errorBanner = null)
         viewModelScope.launch {
             val savedPlan = if (state.planId == null) {
-                floorPlanRepository.createPlan(CreateFloorPlanRequest(state.name, grid.columns.toFloat(), grid.rows.toFloat(), state.spaceId))
+                floorPlanRepository.createPlan(
+                    CreateFloorPlanRequest(state.name, grid.columns.toFloat(), grid.rows.toFloat(), state.spaceId, templateId = state.templateId)
+                )
             } else {
                 floorPlanRepository.updatePlan(state.planId, UpdateFloorPlanRequest(state.name, grid.columns.toFloat(), grid.rows.toFloat()))
             }
@@ -199,11 +205,37 @@ class PlanEditorViewModel(
         }
     }
 
-    private fun restoreDraft() {
-        _uiState.value = _uiState.value.copy(
-            name = "", canvasWidth = "240", canvasHeight = "240",
-            setupComplete = false, zones = emptyList(), selectedZoneId = null
-        )
+    private fun loadTemplate(id: Int) = viewModelScope.launch {
+        _uiState.value = _uiState.value.copy(isLoadingTemplate = true)
+        when (val result = templateRepository.getById(id)) {
+            is ApiResult.Error -> _uiState.value = _uiState.value.copy(isLoadingTemplate = false, errorBanner = result.message)
+            is ApiResult.Success -> {
+                val template = result.data
+                // Behave exactly like creating a blank plan; the only difference is that the
+                // template's default zones are pre-loaded. The canvas and name stay at the
+                // blank defaults (we don't override them), and the zones are placed at their
+                // natural size and centered, leaving the same free editable space a blank plan
+                // has all around them.
+                val canvas = PlanEditorUiState().canvasWidth.toIntOrNull() ?: 240
+                val tCols = template.defaultColumns
+                val tRows = template.defaultRows
+                val offsetX = (canvas - tCols) / 2f
+                val offsetY = (canvas - tRows) / 2f
+                val drafts = template.zones.map { z ->
+                    z.toDraft().copy(
+                        x = (offsetX + z.relativeX * tCols) / canvas,
+                        y = (offsetY + z.relativeY * tRows) / canvas,
+                        width = (z.relativeWidth * tCols) / canvas,
+                        height = (z.relativeHeight * tRows) / canvas
+                    )
+                }
+                _uiState.value = _uiState.value.copy(
+                    isLoadingTemplate = false,
+                    templateId = id,
+                    zones = drafts
+                )
+            }
+        }
     }
 
     private fun mutateGeometry(
@@ -295,10 +327,12 @@ class PlanEditorViewModel(
 class PlanEditorViewModelFactory(
     private val floorPlanRepository: FloorPlanRepository,
     private val zoneRepository: ZoneRepository,
+    private val templateRepository: FloorPlanTemplateRepository,
     private val spaceId: Int,
-    private val planId: Int?
+    private val planId: Int?,
+    private val templateId: Int? = null
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        PlanEditorViewModel(floorPlanRepository, zoneRepository, spaceId, planId) as T
+        PlanEditorViewModel(floorPlanRepository, zoneRepository, templateRepository, spaceId, planId, templateId) as T
 }

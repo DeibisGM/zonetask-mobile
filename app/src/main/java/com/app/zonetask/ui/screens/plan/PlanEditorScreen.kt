@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -45,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -61,17 +63,24 @@ import com.app.zonetask.ui.theme.AppSecondaryText
 fun PlanEditorScreen(
     spaceId: Int,
     planId: Int? = null,
+    templateId: Int? = null,
     modifier: Modifier = Modifier,
     onSaved: (message: String) -> Unit = {},
     onBack: () -> Unit = {},
     onSaveActionChanged: ((() -> Unit)?, Boolean) -> Unit = { _, _ -> },
     viewModel: PlanEditorViewModel = viewModel(
-        factory = PlanEditorViewModelFactory(AppContainer.floorPlanRepository, AppContainer.zoneRepository, spaceId, planId)
+        factory = PlanEditorViewModelFactory(AppContainer.floorPlanRepository, AppContainer.zoneRepository, AppContainer.floorPlanTemplateRepository, spaceId, planId, templateId)
     )
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    if (state.isLoadingTemplate) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = AppPrimary)
+        }
+        return
+    }
     if (!state.setupComplete) {
-        FloorSetupScreen(state, { name -> viewModel.completeSetup(name, "240", "240") }, modifier)
+        FloorSetupScreen(state, { name -> viewModel.completeSetup(name, state.canvasWidth, state.canvasHeight) }, modifier)
         return
     }
 

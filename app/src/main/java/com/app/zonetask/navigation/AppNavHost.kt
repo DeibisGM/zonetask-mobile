@@ -44,6 +44,7 @@ import com.app.zonetask.ui.screens.settings.SettingsScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.chat.ChatEditScreen
 import com.app.zonetask.ui.screens.chat.ChatScreen
+import com.app.zonetask.ui.screens.chatlist.ChatListScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.taskhistory.SpaceRotationHistoryScreen
@@ -417,6 +418,14 @@ fun AppNavHost() {
             )
         }
 
+        composable(route = AppDestinations.CHAT_LIST) {
+            ChatListScreen(
+                userId           = currentUserId,
+                onNavigateToChat = { spaceId -> navController.navigate(AppDestinations.chatRoute(spaceId)) },
+                onTabSelected    = onTabSelected
+            )
+        }
+
         spacesNavGraph(
             currentUserId = currentUserId,
             rootSnackbarHostState = snackbarHostState,
@@ -453,6 +462,7 @@ private fun navigateToTab(
             AppDestinations.homeRoute(sid)
         }
         NavDestination.TASKS    -> AppDestinations.tasksRoute(userId)
+        NavDestination.CHAT     -> AppDestinations.CHAT_LIST
         NavDestination.PROFILE  -> AppDestinations.PROFILE
         NavDestination.SETTINGS -> AppDestinations.SETTINGS
         else -> return
@@ -538,23 +548,28 @@ private fun rememberPlansNavActions(
     currentUserId: Int
 ): PlansNavActions = remember(navController, currentUserId) {
     PlansNavActions(
-        onOpenList   = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
+        onOpenList = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
         onCreatePlan = { spaceId ->
             WorkspaceStore.rememberSpace(currentUserId, spaceId)
-            navController.navigate(PlansDestinations.newPlan(spaceId))
+            navController.navigate(PlansDestinations.templateSelect(spaceId))
         },
-        onOpenPlan   = { spaceId, planId ->
+        onApplyTemplate = { spaceId, templateId ->
+            WorkspaceStore.rememberSpace(currentUserId, spaceId)
+            navController.navigate(PlansDestinations.newPlan(spaceId, templateId))
+        },
+        onOpenPlan = { spaceId, planId ->
             WorkspaceStore.rememberPlan(currentUserId, spaceId, planId)
             navController.navigate(PlansDestinations.editor(spaceId, planId))
         },
-        onPlanSaved  = { message ->
-            navController.previousBackStackEntry
-                ?.savedStateHandle
-                ?.set(PlansNavKeys.PLAN_SAVED_MESSAGE, message)
-            navController.previousBackStackEntry
-                ?.savedStateHandle
-                ?.set(PlansNavKeys.RELOAD_PLANS, true)
-            navController.popBackStack()
+        onPlanSaved = { message ->
+            // Return straight to the plan list, popping the template-selection screen too,
+            // and signal the list to reload.
+            runCatching {
+                val listEntry = navController.getBackStackEntry(PlansDestinations.LIST)
+                listEntry.savedStateHandle[PlansNavKeys.PLAN_SAVED_MESSAGE] = message
+                listEntry.savedStateHandle[PlansNavKeys.RELOAD_PLANS] = true
+            }
+            navController.popBackStack(PlansDestinations.LIST, inclusive = false)
         },
         onBack = { navController.popBackStack() }
     )
