@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.core.FirebaseMessagingTokenProvider
 import com.app.zonetask.core.PlanDraftStore
+import com.app.zonetask.core.WorkspaceStore
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.messaging.ZoneTaskNotificationManager
 import com.app.zonetask.navigation.AppNavHost
@@ -37,6 +38,7 @@ fun ZoneTaskApp() {
     ZoneTaskTheme {
         AuthSessionStore.initialize(context)
         PlanDraftStore.initialize(context)
+        WorkspaceStore.initialize(context)
 
         LaunchedEffect(Unit) {
             if (

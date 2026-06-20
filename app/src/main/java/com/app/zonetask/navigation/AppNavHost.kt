@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.core.UserMessages
+import com.app.zonetask.core.WorkspaceStore
 import com.app.zonetask.navigation.plans.PlansDestinations
 import com.app.zonetask.navigation.plans.PlansNavActions
 import com.app.zonetask.navigation.plans.PlansNavKeys
@@ -38,6 +39,7 @@ import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.passwordreset.ForgotPasswordScreen
 import com.app.zonetask.ui.screens.profile.ProfileEditScreen
 import com.app.zonetask.ui.screens.profile.ProfileScreen
+import com.app.zonetask.ui.screens.settings.SettingsScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.chat.ChatEditScreen
 import com.app.zonetask.ui.screens.chat.ChatScreen
@@ -59,20 +61,25 @@ fun AppNavHost() {
     var currentUserEmail by rememberSaveable {
         mutableStateOf(AuthSessionStore.currentUser?.email ?: "")
     }
-    var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
+    var currentSpaceId by rememberSaveable {
+        mutableIntStateOf(WorkspaceStore.getLastSpaceId(currentUserId))
+    }
     var pendingNotificationRoute by remember {
         mutableStateOf(NotificationNavigationStore.consumeLastRoute())
     }
     val startDestination = if (currentUserId > 0) {
-        AppDestinations.homeRoute(0)
+        val lastSpaceId = WorkspaceStore.getLastSpaceId(currentUserId)
+        AppDestinations.homeRoute(lastSpaceId)
     } else {
         AppDestinations.LOGIN
     }
 
     // Central logout handler that clears the cached session and returns to the login screen.
     val performLogout = {
+        WorkspaceStore.clear(currentUserId)
         AuthSessionStore.clear()
         currentUserId = 0
+        currentUserEmail = ""
         currentSpaceId = 0
         navController.navigate(AppDestinations.LOGIN) {
             popUpTo(navController.graph.startDestinationId) {
@@ -103,7 +110,7 @@ fun AppNavHost() {
     }
 
     val spacesNavActions = rememberSpacesNavActions(navController, currentUserId)
-    val plansNavActions  = rememberPlansNavActions(navController)
+    val plansNavActions  = rememberPlansNavActions(navController, currentUserId)
 
     NavHost(
         navController = navController,
@@ -134,7 +141,9 @@ fun AppNavHost() {
                         }
                         pendingNotificationRoute = null
                     } else {
-                        navController.navigate(AppDestinations.homeRoute(0)) {
+                        val lastSpaceId = WorkspaceStore.getLastSpaceId(userId)
+                        currentSpaceId = lastSpaceId
+                        navController.navigate(AppDestinations.homeRoute(lastSpaceId)) {
                             popUpTo(AppDestinations.LOGIN) { inclusive = true }
                         }
                     }
@@ -181,6 +190,19 @@ fun AppNavHost() {
                         ?.savedStateHandle
                         ?.set("profileChanged", true)
                 }
+            )
+        }
+
+        composable(route = AppDestinations.SETTINGS) {
+            SettingsScreen(
+                onTabSelected = onTabSelected,
+                onOpenSpaces = {
+                    navController.navigate(SpacesDestinations.list(currentUserId))
+                },
+                onOpenProfile = {
+                    navController.navigate(AppDestinations.PROFILE)
+                },
+                onLogout = performLogout
             )
         }
 
@@ -417,7 +439,7 @@ private fun navigateToTab(
         }
         NavDestination.TASKS    -> AppDestinations.tasksRoute(userId)
         NavDestination.PROFILE  -> AppDestinations.PROFILE
-        NavDestination.SETTINGS -> SpacesDestinations.list(userId)
+        NavDestination.SETTINGS -> AppDestinations.SETTINGS
         else -> return
     }
     navController.navigate(route) { launchSingleTop = true }
@@ -497,12 +519,19 @@ private fun rememberSpacesNavActions(
 
 @Composable
 private fun rememberPlansNavActions(
-    navController: NavHostController
-): PlansNavActions = remember(navController) {
+    navController: NavHostController,
+    currentUserId: Int
+): PlansNavActions = remember(navController, currentUserId) {
     PlansNavActions(
         onOpenList   = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
-        onCreatePlan = { spaceId -> navController.navigate(PlansDestinations.newPlan(spaceId)) },
-        onOpenPlan   = { spaceId, planId -> navController.navigate(PlansDestinations.editor(spaceId, planId)) },
+        onCreatePlan = { spaceId ->
+            WorkspaceStore.rememberSpace(currentUserId, spaceId)
+            navController.navigate(PlansDestinations.newPlan(spaceId))
+        },
+        onOpenPlan   = { spaceId, planId ->
+            WorkspaceStore.rememberPlan(currentUserId, spaceId, planId)
+            navController.navigate(PlansDestinations.editor(spaceId, planId))
+        },
         onPlanSaved  = { message ->
             navController.previousBackStackEntry
                 ?.savedStateHandle

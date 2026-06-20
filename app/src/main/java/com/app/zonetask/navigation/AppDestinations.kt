@@ -8,6 +8,7 @@ object AppDestinations {
     const val FORGOT_PASSWORD = "forgot_password"
     const val PROFILE = "profile"
     const val PROFILE_EDIT = "profile_edit"
+    const val SETTINGS = "settings"
 
     const val HOME                    = "home/{spaceId}"
     const val TASK_CREATE             = "task_create"

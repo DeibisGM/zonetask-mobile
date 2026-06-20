@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.MailOutline
-import androidx.compose.foundation.Image
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -31,16 +30,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.app.zonetask.R
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.Space
 import com.app.zonetask.domain.model.SpaceRole
+import com.app.zonetask.ui.components.ScreenLoadingState
+import com.app.zonetask.ui.components.ScreenStateCard
 import com.app.zonetask.ui.components.SpaceCard
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppPrimary
@@ -51,7 +49,7 @@ fun SpacesScreen(
     snackbarHostState: SnackbarHostState,
     userId: Int,
     modifier: Modifier = Modifier,
-    reloadTrigger        : Boolean  = false,
+    reloadTrigger: Boolean = false,
     onSuccessMessageShown: () -> Unit = {},
     onSpaceClick: (Space) -> Unit = {},
     onOpenInvitations: () -> Unit = {},
@@ -79,104 +77,88 @@ fun SpacesScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(bottom = 8.dp)
+    ) {
+        HeaderEntry(onClick = onOpenInvitations)
+        ReportsEntry(onClick = onOpenSpaceReports)
 
-        InvitationsEntry(onClick = onOpenInvitations)
-
-        SpaceReportsEntry(onClick = onOpenSpaceReports)
-
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
             when {
                 uiState.isLoading && uiState.spaces.isEmpty() -> {
                     Box(
-                        modifier         = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text  = UserMessages.Spaces.LOADING,
-                            color = AppSecondaryText,
-                            style = MaterialTheme.typography.bodyLarge
+                        ScreenLoadingState(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            lines = 3
                         )
                     }
                 }
 
                 uiState.errorBanner != null && uiState.spaces.isEmpty() -> {
                     Box(
-                        modifier         = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text      = uiState.errorBanner!!,
-                                color     = AppSecondaryText,
-                                style     = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center
-                            )
-                            TextButton(onClick = { viewModel.fetchSpaces() }) {
-                                Text(
-                                    text  = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
-                                    color = AppPrimary
-                                )
-                            }
-                        }
+                        ScreenStateCard(
+                            title = "Could not load spaces",
+                            message = uiState.errorBanner!!,
+                            actionText = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
+                            onAction = viewModel::fetchSpaces
+                        )
                     }
                 }
 
                 uiState.spaces.isEmpty() -> {
                     Box(
-                        modifier         = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_logo),
-                                contentDescription = null,
-                                modifier = Modifier.size(34.dp)
-                            )
-                            Text(
-                                text  = UserMessages.Spaces.EMPTY,
-                                color = AppSecondaryText,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            TextButton(onClick = { viewModel.fetchSpaces() }) {
-                                Text(
-                                    text  = UserMessages.Spaces.REFRESH,
-                                    color = AppPrimary
-                                )
-                            }
-                        }
+                        ScreenStateCard(
+                            title = "No spaces yet",
+                            message = "Use the + button above to create your first space.",
+                            actionText = UserMessages.Spaces.REFRESH,
+                            onAction = viewModel::fetchSpaces
+                        )
                     }
                 }
 
                 else -> {
                     LazyColumn(
-                        modifier       = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
-                            start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 12.dp,
+                            bottom = 96.dp
                         ),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(
                             items = uiState.spaces,
-                            key   = { it.spaceId }
+                            key = { it.spaceId }
                         ) { space ->
-                            val userRole  = uiState.spaceRoles[space.spaceId] ?: SpaceRole.MEMBER
+                            val userRole = uiState.spaceRoles[space.spaceId] ?: SpaceRole.MEMBER
                             val canDelete = space.spaceId in uiState.deletableSpaceIds
 
                             SpaceCard(
-                                space             = space,
-                                userRole          = userRole,
-                                canDelete         = canDelete,
-                                isDeleting        = uiState.deletingSpaceId == space.spaceId,
-                                onDeleteConfirmed  = { viewModel.deleteSpace(space.spaceId) },
+                                space = space,
+                                userRole = userRole,
+                                canDelete = canDelete,
+                                isDeleting = uiState.deletingSpaceId == space.spaceId,
+                                onDeleteConfirmed = { viewModel.deleteSpace(space.spaceId) },
                                 onDeleteNotAllowed = { viewModel.notifyDeleteNotAllowed() },
-                                onClick            = { onSpaceClick(space) }
+                                onClick = { onSpaceClick(space) }
                             )
                         }
                     }
@@ -187,12 +169,12 @@ fun SpacesScreen(
 }
 
 @Composable
-private fun SpaceReportsEntry(onClick: () -> Unit) {
+private fun ReportsEntry(onClick: () -> Unit) {
     Surface(
-        onClick  = onClick,
-        shape    = RoundedCornerShape(12.dp),
-        color    = MaterialTheme.colorScheme.surface,
-        border   = BorderStroke(1.dp, AppBorder),
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, AppBorder),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
@@ -203,35 +185,35 @@ private fun SpaceReportsEntry(onClick: () -> Unit) {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Icon(
-                imageVector        = Icons.Outlined.Insights,
+                imageVector = Icons.Outlined.Insights,
                 contentDescription = null,
-                tint               = AppPrimary,
-                modifier           = Modifier.size(20.dp)
+                tint = AppPrimary,
+                modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.width(12.dp))
             Text(
-                text     = "Reportes por espacio",
-                style    = MaterialTheme.typography.bodyLarge,
-                color    = MaterialTheme.colorScheme.onSurface,
+                text = "Reportes por espacio",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
             Icon(
-                imageVector        = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                 contentDescription = null,
-                tint               = AppSecondaryText,
-                modifier           = Modifier.size(20.dp)
+                tint = AppSecondaryText,
+                modifier = Modifier.size(20.dp)
             )
         }
     }
 }
 
 @Composable
-private fun InvitationsEntry(onClick: () -> Unit) {
+private fun HeaderEntry(onClick: () -> Unit) {
     Surface(
-        onClick  = onClick,
-        shape    = RoundedCornerShape(12.dp),
-        color    = MaterialTheme.colorScheme.surface,
-        border   = BorderStroke(1.dp, AppBorder),
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, AppBorder),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -241,23 +223,23 @@ private fun InvitationsEntry(onClick: () -> Unit) {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Icon(
-                imageVector        = Icons.Outlined.MailOutline,
+                imageVector = Icons.Outlined.MailOutline,
                 contentDescription = null,
-                tint               = AppPrimary,
-                modifier           = Modifier.size(20.dp)
+                tint = AppPrimary,
+                modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.width(12.dp))
             Text(
-                text     = UserMessages.Invitations.ENTRY_LABEL,
-                style    = MaterialTheme.typography.bodyLarge,
-                color    = MaterialTheme.colorScheme.onSurface,
+                text = UserMessages.Invitations.ENTRY_LABEL,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
             Icon(
-                imageVector        = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                 contentDescription = null,
-                tint               = AppSecondaryText,
-                modifier           = Modifier.size(20.dp)
+                tint = AppSecondaryText,
+                modifier = Modifier.size(20.dp)
             )
         }
     }

@@ -1,6 +1,7 @@
 package com.app.zonetask.ui.screens.spaces
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,24 +18,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -49,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -56,10 +54,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.Space
+import com.app.zonetask.ui.components.ScreenLoadingState
+import com.app.zonetask.ui.components.ScreenStateCard
+import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.AppBorder
+import com.app.zonetask.ui.theme.AppCardElevated
 import com.app.zonetask.ui.theme.AppError
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
@@ -73,13 +74,13 @@ fun SpaceDetailScreen(
     spaceId: Int,
     userId: Int,
     modifier: Modifier = Modifier,
-    refreshTrigger   : Boolean  = false,
-    onRefreshHandled : () -> Unit = {},
-    onEditClick      : (Int) -> Unit = {},
-    onDeleteSuccess  : () -> Unit = {},
+    refreshTrigger: Boolean = false,
+    onRefreshHandled: () -> Unit = {},
+    onEditClick: (Int) -> Unit = {},
+    onDeleteSuccess: () -> Unit = {},
     onNavigateToPermissions: (Int) -> Unit = {},
     onCreateTaskClick: () -> Unit = {},
-    onOpenPlansClick : () -> Unit = {},
+    onOpenPlansClick: () -> Unit = {},
     onOpenCompletedTasksClick: () -> Unit = {},
     onOpenRotationHistoryClick: () -> Unit = {},
     onOpenStatisticsMenuClick: () -> Unit = {},
@@ -87,12 +88,15 @@ fun SpaceDetailScreen(
         factory = SpaceDetailViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
             spaceId = spaceId,
-            userId  = userId
+            userId = userId
         )
     )
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val canManageSpace = uiState.userRole == ROLE_OWNER || uiState.userRole == ROLE_ADMIN
+    val activeTaskCount = uiState.tasks.size
+    val overdueTaskCount = uiState.tasks.count { it.dueStatusKey == "overdue" }
 
     LaunchedEffect(refreshTrigger) {
         if (refreshTrigger) {
@@ -113,12 +117,14 @@ fun SpaceDetailScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Delete space") },
-            text = { Text("Are you sure? This cannot be undone.") },
+            text = { Text("This removes the space and everything inside it. The action cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = {
-                    showDeleteDialog = false
-                    viewModel.deleteSpace()
-                }) {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteSpace()
+                    }
+                ) {
                     Text("Delete", color = AppError, fontWeight = FontWeight.Bold)
                 }
             },
@@ -132,353 +138,554 @@ fun SpaceDetailScreen(
 
     when {
         uiState.isLoading -> {
-            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = AppPrimary)
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(AppBackground)
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                ScreenLoadingState(modifier = Modifier.fillMaxWidth(), lines = 4)
             }
         }
 
         uiState.errorBanner != null -> {
-            Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(uiState.errorBanner!!, color = AppSecondaryText)
-                    Spacer(Modifier.height(12.dp))
-                    TextButton(onClick = { viewModel.loadSpace() }) {
-                        Text("Retry", color = AppPrimary)
-                    }
-                }
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(AppBackground)
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                ScreenStateCard(
+                    title = "Could not load space",
+                    message = uiState.errorBanner ?: "Try again.",
+                    actionText = "Retry",
+                    onAction = viewModel::loadSpace
+                )
             }
         }
 
         uiState.space != null -> {
             val space = uiState.space!!
-            val canViewPermissions = uiState.userRole == ROLE_OWNER || uiState.userRole == ROLE_ADMIN
 
-            Column(modifier = modifier.fillMaxSize()) {
-
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(AppBackground)
+            ) {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // Space header
                     item {
-                        Text(
-                            text = space.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                        SpaceHeroCard(
+                            space = space,
+                            userRole = uiState.userRole,
+                            activeTaskCount = activeTaskCount,
+                            overdueTaskCount = overdueTaskCount
                         )
                     }
 
-                    // Info card
                     item {
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = AppSurface),
-                            border = BorderStroke(1.dp, AppBorder)
-                        ) {
-                            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                                DetailRow(
-                                    icon = Icons.Outlined.Category,
-                                    label = "Type",
-                                    value = space.spaceType
-                                )
-                                HorizontalDivider(color = AppBorder)
-                                DetailRow(
-                                    icon = Icons.Outlined.Info,
-                                    label = "Description",
-                                    value = space.description ?: "No description"
-                                )
-                            }
-                        }
+                        DetailSectionHeader(
+                            title = "Quick actions",
+                            subtitle = "Everything you need is visible and in one place."
+                        )
                     }
 
-                    // Task history row
                     item {
-                        Surface(
-                            onClick = onOpenCompletedTasksClick,
-                            shape = RoundedCornerShape(14.dp),
-                            color = AppSurface,
-                            border = BorderStroke(1.dp, AppBorder)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Outlined.CheckCircle, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    "Task History",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                            }
-                        }
+                        ActionRowCard(
+                            title = "New task",
+                            subtitle = "Create work in this space.",
+                            icon = Icons.Outlined.Add,
+                            onClick = onCreateTaskClick
+                        )
                     }
 
-                    // Rotation history row
                     item {
-                        Surface(
-                            onClick = onOpenRotationHistoryClick,
-                            shape = RoundedCornerShape(14.dp),
-                            color = AppSurface,
-                            border = BorderStroke(1.dp, AppBorder)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Outlined.Repeat, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "Historial de rotación",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        "Revisar cambios de asignación con filtros",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = AppSecondaryText
-                                    )
-                                }
-                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                            }
-                        }
+                        ActionRowCard(
+                            title = "Floor plans",
+                            subtitle = "Open and edit plans for this space.",
+                            icon = Icons.Outlined.GridView,
+                            onClick = onOpenPlansClick
+                        )
                     }
 
-                    // Statistics row — opens the statistics hub with all report options
                     item {
-                        Surface(
-                            onClick = onOpenStatisticsMenuClick,
-                            shape = RoundedCornerShape(14.dp),
-                            color = AppSurface,
-                            border = BorderStroke(1.dp, AppBorder)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Outlined.BarChart, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    "Statistics",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                            }
-                        }
+                        ActionRowCard(
+                            title = "Members & roles",
+                            subtitle = if (canManageSpace) "Invite people and adjust permissions." else "Owner and admins only.",
+                            icon = Icons.Outlined.AdminPanelSettings,
+                            onClick = { if (canManageSpace) onNavigateToPermissions(spaceId) },
+                            enabled = canManageSpace
+                        )
                     }
 
-                    // Plans row
                     item {
-                        Surface(
-                            onClick = onOpenPlansClick,
-                            shape = RoundedCornerShape(14.dp),
-                            color = AppSurface,
-                            border = BorderStroke(1.dp, AppBorder)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Outlined.GridView, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    "Floor Plans",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                            }
-                        }
+                        ActionRowCard(
+                            title = "Completed tasks",
+                            subtitle = "Review finished work in this space.",
+                            icon = Icons.Outlined.CheckCircle,
+                            onClick = onOpenCompletedTasksClick
+                        )
                     }
 
-                    // Permissions row
-                    if (canViewPermissions) {
-                        item {
-                            Surface(
-                                onClick = { onNavigateToPermissions(spaceId) },
-                                shape = RoundedCornerShape(14.dp),
-                                color = AppSurface,
-                                border = BorderStroke(1.dp, AppBorder)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Outlined.AdminPanelSettings, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        "Roles & Permissions",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                                }
-                            }
-                        }
-                    }
-
-                    // Tasks header
                     item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Tasks",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            TextButton(onClick = onCreateTaskClick) {
-                                Text("+ New", color = AppPrimary)
-                            }
-                        }
+                        ActionRowCard(
+                            title = "Rotation history",
+                            subtitle = "See how assignments moved over time.",
+                            icon = Icons.Outlined.Repeat,
+                            onClick = onOpenRotationHistoryClick
+                        )
                     }
 
-                    // Completion error
-                    uiState.completionError?.let { err ->
-                        item {
-                            Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                        }
+                    item {
+                        ActionRowCard(
+                            title = "Reports",
+                            subtitle = "Open statistics and space insights.",
+                            icon = Icons.Outlined.BarChart,
+                            onClick = onOpenStatisticsMenuClick
+                        )
                     }
 
-                    // Task list
+                    item {
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+
+                    item {
+                        DetailSectionHeader(
+                            title = "Tasks",
+                            subtitle = "Active work for this space, with clear due state and completion."
+                        )
+                    }
+
                     when {
+                        uiState.completionError != null -> {
+                            item {
+                                ScreenStateCard(
+                                    title = "Could not complete task",
+                                    message = uiState.completionError ?: "Try again.",
+                                    actionText = "Retry",
+                                    onAction = viewModel::loadTasks
+                                )
+                            }
+                        }
+
                         uiState.tasksLoading -> {
                             item {
-                                Text("Loading...", color = AppSecondaryText)
+                                ScreenLoadingState(modifier = Modifier.fillMaxWidth(), lines = 3)
                             }
                         }
 
                         uiState.tasksError != null -> {
                             item {
-                                Text(uiState.tasksError!!, color = MaterialTheme.colorScheme.error)
+                                ScreenStateCard(
+                                    title = "Tasks could not load",
+                                    message = uiState.tasksError ?: "Try again.",
+                                    actionText = "Retry",
+                                    onAction = viewModel::loadTasks
+                                )
                             }
                         }
 
                         uiState.tasks.isEmpty() -> {
                             item {
-                                Text("No tasks in this space yet.", color = AppSecondaryText)
+                                ScreenStateCard(
+                                    title = "No tasks yet",
+                                    message = "Create the first task when you want work to start in this space.",
+                                    actionText = "New task",
+                                    onAction = onCreateTaskClick
+                                )
                             }
                         }
 
                         else -> {
                             items(uiState.tasks, key = { it.task.taskId }) { task ->
-                                Card(
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = AppSurface),
-                                    border = BorderStroke(1.dp, AppBorder),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = task.task.title,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        task.task.description?.takeIf { it.isNotBlank() }?.let { desc ->
-                                            Text(desc, style = MaterialTheme.typography.bodySmall, color = AppSecondaryText)
-                                        }
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Outlined.AccessTime, null,
-                                                tint = when (task.dueStatusKey) {
-                                                    "overdue" -> Color(0xFFE57373)
-                                                    "upcoming" -> AppPrimary
-                                                    else -> AppSecondaryText
-                                                },
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                            Text(task.dueLabel, style = MaterialTheme.typography.labelSmall,
-                                                color = when (task.dueStatusKey) {
-                                                    "overdue" -> Color(0xFFE57373)
-                                                    "upcoming" -> AppPrimary
-                                                    else -> AppSecondaryText
-                                                }
-                                            )
-                                        }
-                                        if (task.canComplete && task.completionAssignmentId != null) {
-                                            TextButton(
-                                                onClick = { task.completionAssignmentId?.let(viewModel::completeAssignment) }
-                                            ) {
-                                                Text("Complete", color = AppPrimary, style = MaterialTheme.typography.labelMedium)
-                                            }
-                                        }
+                                TaskRowCard(
+                                    task = task,
+                                    isCompleting = uiState.completingAssignmentId == task.completionAssignmentId,
+                                    onComplete = {
+                                        task.completionAssignmentId?.let(viewModel::completeAssignment)
                                     }
-                                }
+                                )
                             }
                         }
                     }
 
-                    item { Spacer(Modifier.height(80.dp)) } // room for bottom buttons
-                }
-
-                // Bottom actions
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = AppSurface,
-                    shadowElevation = 8.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = { onEditClick(spaceId) },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
-                        ) {
-                            Icon(Icons.Outlined.Edit, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("EDIT", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    if (canManageSpace) {
+                        item {
+                            DetailSectionHeader(
+                                title = "Administration",
+                                subtitle = "Only owners and admins can change these settings."
+                            )
                         }
 
-                        Button(
-                            onClick = { showDeleteDialog = true },
-                            enabled = !uiState.isDeleting,
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = AppError)
-                        ) {
-                            if (uiState.isDeleting) {
-                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Outlined.Delete, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("DELETE", color = Color.White, fontWeight = FontWeight.SemiBold)
-                            }
+                        item {
+                            ActionRowCard(
+                                title = "Edit space",
+                                subtitle = "Adjust name, type, description, and cover.",
+                                icon = Icons.Outlined.Edit,
+                                onClick = { onEditClick(spaceId) }
+                            )
+                        }
+
+                        item {
+                            DangerRowCard(
+                                title = "Delete space",
+                                subtitle = "Remove the space and all of its content.",
+                                icon = Icons.Outlined.Delete,
+                                onClick = { showDeleteDialog = true }
+                            )
+                        }
+                    } else {
+                        item {
+                            ScreenStateCard(
+                                title = "Read only settings",
+                                message = "Only owners and admins can edit the space, manage roles, or delete it."
+                            )
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpaceHeroCard(
+    space: Space,
+    userRole: String,
+    activeTaskCount: Int,
+    overdueTaskCount: Int
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(10.dp, RoundedCornerShape(28.dp)),
+        shape = RoundedCornerShape(28.dp),
+        color = AppCardElevated,
+        border = BorderStroke(1.dp, AppBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = AppPrimary.copy(alpha = 0.14f)
+                ) {
+                    Box(
+                        modifier = Modifier.size(54.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = space.name.take(1).uppercase(),
+                            color = AppPrimary,
+                            fontWeight = FontWeight.ExtraBold,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = space.name,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = space.spaceType,
+                        color = AppSecondaryText,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                RoleBadge(role = userRole)
+            }
+
+            Text(
+                text = space.description?.takeIf { it.isNotBlank() } ?: "No description yet.",
+                color = AppSecondaryText,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                InfoPill(label = "Tasks", value = activeTaskCount.toString())
+                InfoPill(label = "Overdue", value = overdueTaskCount.toString())
+                InfoPill(label = "Role", value = userRole.ifBlank { "member" }.replaceFirstChar { it.uppercase() })
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailSectionHeader(
+    title: String,
+    subtitle: String? = null
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                color = AppSecondaryText,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionRowCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    enabled: Boolean = true
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = if (enabled) AppCardElevated else AppSurface,
+        border = BorderStroke(1.dp, if (enabled) AppBorder else AppBorder.copy(alpha = 0.55f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (enabled) AppPrimary.copy(alpha = 0.14f) else AppSecondaryText.copy(alpha = 0.08f)
+            ) {
+                Box(
+                    modifier = Modifier.size(44.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = if (enabled) AppPrimary else AppSecondaryText.copy(alpha = 0.45f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = title,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface else AppSecondaryText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = subtitle,
+                    color = AppSecondaryText,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = if (enabled) AppSecondaryText else AppSecondaryText.copy(alpha = 0.35f),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun DangerRowCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = AppError.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, AppError.copy(alpha = 0.28f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = AppError.copy(alpha = 0.14f)
+            ) {
+                Box(
+                    modifier = Modifier.size(44.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = AppError)
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = title,
+                    color = AppError,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = subtitle,
+                    color = AppSecondaryText,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = AppError,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun TaskRowCard(
+    task: SpaceTaskUiState,
+    isCompleting: Boolean,
+    onComplete: () -> Unit
+) {
+    val statusColor = when (task.dueStatusKey) {
+        "overdue" -> Color(0xFFE57373)
+        "upcoming" -> AppPrimary
+        else -> AppSecondaryText
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = AppSurface,
+        border = BorderStroke(1.dp, AppBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = statusColor.copy(alpha = 0.12f)
+                ) {
+                    Box(
+                        modifier = Modifier.size(40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.AccessTime,
+                            contentDescription = null,
+                            tint = statusColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = task.task.title,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    task.task.description?.takeIf { it.isNotBlank() }?.let { description ->
+                        Text(
+                            text = description,
+                            color = AppSecondaryText,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                task.task.scheduledTime?.let { time ->
+                    Text(
+                        text = time.take(5),
+                        color = AppSecondaryText,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                InfoTonePill(
+                    label = task.dueLabel,
+                    tone = statusColor
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                if (task.task.zoneId != null) {
+                    InfoTonePill(
+                        label = "Zone ${task.task.zoneId}",
+                        tone = AppSecondaryText
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                if (task.canComplete && task.completionAssignmentId != null) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    OutlinedButton(
+                        onClick = onComplete,
+                        enabled = !isCompleting,
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        if (isCompleting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = AppPrimary
+                            )
+                        } else {
+                            Text("Complete", color = AppPrimary)
                         }
                     }
                 }
@@ -488,22 +695,74 @@ fun SpaceDetailScreen(
 }
 
 @Composable
-private fun DetailRow(
-    icon: ImageVector,
+private fun InfoPill(
     label: String,
     value: String
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = AppSurface,
+        border = BorderStroke(1.dp, AppBorder)
     ) {
-        Icon(icon, null, modifier = Modifier.size(18.dp), tint = AppSecondaryText)
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = AppSecondaryText)
-            Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = label,
+                color = AppSecondaryText,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold
+            )
         }
+    }
+}
+
+@Composable
+private fun InfoTonePill(
+    label: String,
+    tone: Color
+) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = tone.copy(alpha = 0.12f)
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            color = tone,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun RoleBadge(role: String) {
+    val tone = when (role.lowercase()) {
+        ROLE_OWNER -> AppPrimary
+        ROLE_ADMIN -> AppPrimary.copy(alpha = 0.86f)
+        else -> AppSecondaryText
+    }
+
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = tone.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, tone.copy(alpha = 0.22f))
+    ) {
+        Text(
+            text = role.ifBlank { "member" }.replaceFirstChar { it.uppercase() },
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            color = tone,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }

@@ -52,6 +52,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.core.UserMessages
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.SpaceMember
+import com.app.zonetask.ui.components.ScreenLoadingState
+import com.app.zonetask.ui.components.ScreenStateCard
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppOnPrimary
 import com.app.zonetask.ui.theme.AppIconTint
@@ -93,37 +95,18 @@ fun SpacePermissionsScreen(
     when {
         uiState.isLoading -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = AppPrimary)
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text  = UserMessages.SpacePermissions.LOADING,
-                        color = AppSecondaryText,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
+                ScreenLoadingState(modifier = Modifier.fillMaxWidth(), lines = 2)
             }
         }
 
         uiState.errorBanner != null -> {
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text      = uiState.errorBanner!!,
-                        color     = AppSecondaryText,
-                        style     = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
-                    TextButton(onClick = { viewModel.loadPermissions() }) {
-                        Text(
-                            text  = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
-                            color = AppPrimary
-                        )
-                    }
-                }
+                ScreenStateCard(
+                    title = "Could not load permissions",
+                    message = uiState.errorBanner!!,
+                    actionText = UserMessages.TAP_TO_RETRY_SUFFIX.trim(),
+                    onAction = viewModel::loadPermissions
+                )
             }
         }
 
