@@ -28,7 +28,6 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -36,6 +35,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -114,85 +115,6 @@ fun HomeScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // Top Bar
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = AppCardElevated
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { showSpacePicker = true },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = uiState.spaceName.ifBlank { "ZoneTask" },
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    IconButton(onClick = {
-                        val sid = uiState.currentSpaceId ?: spaceId
-                        onNavigateToMembers(sid)
-                    }) {
-                        Icon(
-                            imageVector        = Icons.Outlined.Group,
-                            contentDescription = "Members",
-                            tint               = MaterialTheme.colorScheme.onSurface,
-                            modifier           = Modifier.size(22.dp)
-                        )
-                    }
-                    IconButton(onClick = {
-                        val sid = uiState.currentSpaceId ?: spaceId
-                        onNavigateToChat(sid)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Outlined.KeyboardArrowDown,
-                            contentDescription = "Switch spaces",
-                            tint = AppSecondaryText,
-                            modifier = Modifier
-                                .padding(start = 4.dp)
-                                .size(22.dp)
-                        )
-                    }
-                    if (uiState.currentSpaceId != null && uiState.currentSpaceId!! > 0) {
-                        IconButton(onClick = onNavigateToManageSpaces) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_logo),
-                                contentDescription = "Spaces",
-                                modifier = Modifier.size(22.dp),
-                                colorFilter = ColorFilter.tint(AppPrimary)
-                            )
-                        }
-                        IconButton(onClick = {
-                            val sid = uiState.currentSpaceId ?: spaceId
-                            onNavigateToChat(sid)
-                        }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Chat,
-                                contentDescription = "Chat",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        IconButton(onClick = onNavigateToCreateTask) {
-                            Icon(
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = "Add task",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
             HomeTopBar(
                 title = uiState.spaceName.ifBlank { "ZoneTask" },
                 onTitleClick = { showSpacePicker = true },
@@ -401,9 +323,9 @@ private fun HomeTopBar(
             ) {
                 Text(
                     text = title,
-                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(fontSize = 21.sp),
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 21.sp),
                     fontWeight = FontWeight.SemiBold,
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -416,7 +338,7 @@ private fun HomeTopBar(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chat_circle),
                     contentDescription = "Chat",
-                    tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(27.dp)
                 )
             }
@@ -427,7 +349,7 @@ private fun HomeTopBar(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_logo),
                     contentDescription = "Manage spaces",
-                    tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(27.dp)
                 )
             }
@@ -438,7 +360,7 @@ private fun HomeTopBar(
                 Icon(
                     imageVector = Icons.Outlined.Add,
                     contentDescription = "New task",
-                    tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(27.dp)
                 )
             }
@@ -473,11 +395,11 @@ private fun HomeFloorSwitcher(
         Text(
             text = activePlan ?: "No floor yet",
             modifier = Modifier.weight(1f),
-            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
 
         IconButton(
@@ -528,12 +450,12 @@ private fun TasksPanel(
                     Text(
                         text = "Today's tasks",
                         fontWeight = FontWeight.SemiBold,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "${pendingTasks.size} pending",
                         color = AppSecondaryText,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
 
@@ -626,7 +548,7 @@ private fun HomeTaskRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = task.title,
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -637,7 +559,7 @@ private fun HomeTaskRow(
                         .joinToString(" · ")
                         .ifBlank { "No extra details" },
                     color = AppSecondaryText,
-                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -647,7 +569,7 @@ private fun HomeTaskRow(
                 Text(
                     text = task.scheduledTime.take(5),
                     color = AppSecondaryText,
-                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -671,14 +593,14 @@ private fun SpacePickerSheet(
     ) {
         Text(
             text = "Switch spaces",
-            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
-            style = androidx.compose.material3.MaterialTheme.typography.titleLarge
+            style = MaterialTheme.typography.titleLarge
         )
         Text(
             text = "Open a different group without losing your floor context.",
             color = AppSecondaryText,
-            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium
         )
 
         TextButton(onClick = onManageSpaces) {
@@ -726,7 +648,7 @@ private fun SpacePickerSheet(
                         ) {
                             Text(
                                 text = space.name.take(1).uppercase(),
-                                color = if (isActive) AppPrimary else androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                color = if (isActive) AppPrimary else MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -736,7 +658,7 @@ private fun SpacePickerSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = space.name,
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Medium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -745,7 +667,7 @@ private fun SpacePickerSheet(
                             Text(
                                 text = space.spaceType,
                                 color = AppSecondaryText,
-                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
 
@@ -754,7 +676,7 @@ private fun SpacePickerSheet(
                                 text = "Active",
                                 color = AppPrimary,
                                 fontWeight = FontWeight.SemiBold,
-                                style = androidx.compose.material3.MaterialTheme.typography.labelMedium
+                                style = MaterialTheme.typography.labelMedium
                             )
                         }
                     }
