@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material3.Button
@@ -82,6 +83,7 @@ fun HomeScreen(
     onNavigateToManageSpaces: () -> Unit = {},
     onNavigateToTaskDetail: (spaceId: Int, taskId: Int) -> Unit = { _, _ -> },
     onNavigateToChat: (spaceId: Int) -> Unit = {},
+    onNavigateToMembers: (spaceId: Int) -> Unit = {},
     onSpaceChanged: (newSpaceId: Int) -> Unit = {},
     viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(spaceId = spaceId, userId = userId)
@@ -111,6 +113,86 @@ fun HomeScreen(
             .background(AppBackground)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
+
+            // Top Bar
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = AppCardElevated
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showSpacePicker = true },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = uiState.spaceName.ifBlank { "ZoneTask" },
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    IconButton(onClick = {
+                        val sid = uiState.currentSpaceId ?: spaceId
+                        onNavigateToMembers(sid)
+                    }) {
+                        Icon(
+                            imageVector        = Icons.Outlined.Group,
+                            contentDescription = "Members",
+                            tint               = MaterialTheme.colorScheme.onSurface,
+                            modifier           = Modifier.size(22.dp)
+                        )
+                    }
+                    IconButton(onClick = {
+                        val sid = uiState.currentSpaceId ?: spaceId
+                        onNavigateToChat(sid)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Outlined.KeyboardArrowDown,
+                            contentDescription = "Switch spaces",
+                            tint = AppSecondaryText,
+                            modifier = Modifier
+                                .padding(start = 4.dp)
+                                .size(22.dp)
+                        )
+                    }
+                    if (uiState.currentSpaceId != null && uiState.currentSpaceId!! > 0) {
+                        IconButton(onClick = onNavigateToManageSpaces) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_logo),
+                                contentDescription = "Spaces",
+                                modifier = Modifier.size(22.dp),
+                                colorFilter = ColorFilter.tint(AppPrimary)
+                            )
+                        }
+                        IconButton(onClick = {
+                            val sid = uiState.currentSpaceId ?: spaceId
+                            onNavigateToChat(sid)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Chat,
+                                contentDescription = "Chat",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        IconButton(onClick = onNavigateToCreateTask) {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = "Add task",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
             HomeTopBar(
                 title = uiState.spaceName.ifBlank { "ZoneTask" },
                 onTitleClick = { showSpacePicker = true },

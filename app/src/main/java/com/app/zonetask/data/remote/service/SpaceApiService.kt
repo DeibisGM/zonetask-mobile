@@ -4,6 +4,8 @@ import com.app.zonetask.core.AppConstants
 import com.app.zonetask.data.remote.dto.CreateSpaceRequest
 import com.app.zonetask.data.remote.dto.EditSpaceRequest
 import com.app.zonetask.data.remote.dto.SpaceMemberResponse
+import com.app.zonetask.data.remote.dto.SpaceMemberWithUserDto
+import com.app.zonetask.data.remote.dto.SpacePendingInvitationDto
 import com.app.zonetask.data.remote.dto.SpacePermissionsResponse
 import com.app.zonetask.data.remote.dto.SpaceResponse
 import com.app.zonetask.data.remote.dto.UpdateMemberRoleRequest
@@ -56,6 +58,18 @@ interface SpaceApiService {
         @Path("spaceId") spaceId: Int,
         @Query("userId") userId: Int
     ): Response<List<SpaceMemberResponse>>
+
+    @GET(AppConstants.Api.Paths.SPACE_MEMBER_DIRECTORY)
+    suspend fun getMemberDirectory(
+        @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int
+    ): Response<List<SpaceMemberWithUserDto>>
+
+    @GET(AppConstants.Api.Paths.SPACE_PENDING_INVITATIONS)
+    suspend fun getSpacePendingInvitations(
+        @Path("spaceId") spaceId: Int,
+        @Query("userId") userId: Int
+    ): Response<List<SpacePendingInvitationDto>>
 
     @PUT(AppConstants.Api.Paths.UPDATE_MEMBER_ROLE)
     suspend fun updateMemberRole(

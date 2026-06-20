@@ -31,7 +31,9 @@ object AppConstants {
 
             // Member & permissions endpoints
             const val SPACE_PERMISSIONS = "api/spaces/{spaceId}/permissions"
-            const val SPACE_MEMBERS = "api/spaces/{spaceId}/members"
+            const val SPACE_MEMBERS            = "api/spaces/{spaceId}/members"
+            const val SPACE_MEMBER_DIRECTORY   = "api/spaces/{spaceId}/members/directory"
+            const val SPACE_PENDING_INVITATIONS = "api/spaces/{spaceId}/invitations/pending"
             const val UPDATE_MEMBER_ROLE =
                 "api/spaces/{spaceId}/members/{memberId}/role"
 
