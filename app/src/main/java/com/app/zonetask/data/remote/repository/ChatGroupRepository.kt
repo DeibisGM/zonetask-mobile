@@ -145,6 +145,23 @@ class ChatGroupRepository(private val apiService: ChatApiService) {
         }
     }
 
+    suspend fun getUserChats(userId: Int): ApiResult<List<ChatGroupResponse>> {
+        return try {
+            val response = apiService.getUserChats(userId)
+            if (response.isSuccessful) {
+                val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message    = ApiErrorHandler.fromHttpCode(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(ApiErrorHandler.fromException(e))
+        }
+    }
+
     suspend fun sendMessage(spaceId: Int, content: String, senderId: Int): ApiResult<ChatMessageDto> {
         return try {
             val response = apiService.sendMessage(spaceId, SendMessageRequest(content, senderId))
