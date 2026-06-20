@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.MailOutline
 import androidx.compose.foundation.Image
 import androidx.compose.material3.Icon
@@ -54,6 +55,7 @@ fun SpacesScreen(
     onSuccessMessageShown: () -> Unit = {},
     onSpaceClick: (Space) -> Unit = {},
     onOpenInvitations: () -> Unit = {},
+    onOpenSpaceReports: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
     viewModel: SpacesViewModel = viewModel(
         factory = SpacesViewModelFactory(
@@ -80,6 +82,8 @@ fun SpacesScreen(
     Column(modifier = modifier.fillMaxSize()) {
 
         InvitationsEntry(onClick = onOpenInvitations)
+
+        SpaceReportsEntry(onClick = onOpenSpaceReports)
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
@@ -178,6 +182,45 @@ fun SpacesScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SpaceReportsEntry(onClick: () -> Unit) {
+    Surface(
+        onClick  = onClick,
+        shape    = RoundedCornerShape(12.dp),
+        color    = MaterialTheme.colorScheme.surface,
+        border   = BorderStroke(1.dp, AppBorder),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+        ) {
+            Icon(
+                imageVector        = Icons.Outlined.Insights,
+                contentDescription = null,
+                tint               = AppPrimary,
+                modifier           = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text     = "Reportes por espacio",
+                style    = MaterialTheme.typography.bodyLarge,
+                color    = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector        = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint               = AppSecondaryText,
+                modifier           = Modifier.size(20.dp)
+            )
         }
     }
 }

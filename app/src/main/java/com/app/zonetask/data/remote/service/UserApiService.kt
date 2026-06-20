@@ -1,10 +1,12 @@
 package com.app.zonetask.data.remote.service
 
+import com.app.zonetask.core.AppConstants
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
 import com.app.zonetask.data.remote.dto.UserResponse
 import com.app.zonetask.data.remote.dto.UpdateUserProfileRequest
+import com.app.zonetask.data.remote.dto.UpdatePushTokenRequest
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.PUT
@@ -26,6 +28,12 @@ interface UserApiService {
         @Path("userId") userId: Int,
         @Body body: UpdateUserProfileRequest
     ): Response<UserResponse>
+
+    @PUT(AppConstants.Api.Paths.USER_PUSH_TOKEN)
+    suspend fun updatePushToken(
+        @Path("userId") userId: Int,
+        @Body body: UpdatePushTokenRequest
+    ): Response<Unit>
 
     @Multipart
     @retrofit2.http.POST("api/users/{userId}/profile-picture")

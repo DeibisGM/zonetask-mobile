@@ -14,10 +14,15 @@ object AppDestinations {
     const val TASK_CREATE_WITH_SPACE  = "task_create/{spaceId}"
     const val TASK_EDIT_WITH_SPACE    = "task_edit/{spaceId}/{taskId}"
     const val TASK_DETAIL             = "task_detail/{spaceId}/{taskId}"
+    const val TASK_ROTATION_HISTORY    = "task_rotation_history/{spaceId}/{taskId}"
     const val TASKS                   = "tasks/{userId}"
     const val MY_INVITATIONS          = "my_invitations/{userId}"
+    const val CHAT                    = "chat/{spaceId}"
+    const val CHAT_EDIT               = "edit_chat/{spaceId}"
 
-    fun homeRoute(spaceId: Int): String = "home/$spaceId"
+    fun homeRoute(spaceId: Int): String    = "home/$spaceId"
+    fun chatRoute(spaceId: Int): String    = "chat/$spaceId"
+    fun editChatRoute(spaceId: Int): String = "edit_chat/$spaceId"
     fun tasksRoute(userId: Int): String = "tasks/$userId"
     fun myInvitationsRoute(userId: Int): String = "my_invitations/$userId"
     fun taskCreateRoute(spaceId: Int): String = "task_create/$spaceId"
@@ -25,4 +30,6 @@ object AppDestinations {
         "task_edit/$spaceId/$taskId"
     fun taskDetailRoute(spaceId: Int, taskId: Int): String =
         "task_detail/$spaceId/$taskId"
+    fun taskRotationHistoryRoute(spaceId: Int, taskId: Int): String =
+        "task_rotation_history/$spaceId/$taskId"
 }

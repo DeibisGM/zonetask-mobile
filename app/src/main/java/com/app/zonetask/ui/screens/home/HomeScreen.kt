@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -98,6 +99,7 @@ fun HomeScreen(
     onNavigateToCreateTask: () -> Unit = {},
     onNavigateToManageSpaces: () -> Unit = {},
     onNavigateToTaskDetail: (spaceId: Int, taskId: Int) -> Unit = { _, _ -> },
+    onNavigateToChat: (spaceId: Int) -> Unit = {},
     onSpaceChanged: (newSpaceId: Int) -> Unit = {},
     viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(spaceId = spaceId, userId = userId)
@@ -153,7 +155,6 @@ fun HomeScreen(
                                 .size(22.dp)
                         )
                     }
-
                     if (uiState.currentSpaceId != null && uiState.currentSpaceId!! > 0) {
                         IconButton(onClick = onNavigateToManageSpaces) {
                             Image(
@@ -161,6 +162,17 @@ fun HomeScreen(
                                 contentDescription = "Spaces",
                                 modifier = Modifier.size(22.dp),
                                 colorFilter = ColorFilter.tint(AppPrimary)
+                            )
+                        }
+                        IconButton(onClick = {
+                            val sid = uiState.currentSpaceId ?: spaceId
+                            onNavigateToChat(sid)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Chat,
+                                contentDescription = "Chat",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                         IconButton(onClick = onNavigateToCreateTask) {

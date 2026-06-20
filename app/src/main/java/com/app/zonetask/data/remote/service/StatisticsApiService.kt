@@ -1,8 +1,10 @@
 package com.app.zonetask.data.remote.service
 
 import com.app.zonetask.core.AppConstants
+import com.app.zonetask.data.remote.dto.OverdueTrendsResponse
 import com.app.zonetask.data.remote.dto.SpaceStatisticsResponse
 import com.app.zonetask.data.remote.dto.SpaceUserReportsResponse
+import com.app.zonetask.data.remote.dto.UserSpaceReportsResponse
 import com.app.zonetask.data.remote.dto.UserStatisticsResponse
 import retrofit2.Response
 import retrofit2.http.GET
@@ -36,4 +38,22 @@ interface StatisticsApiService {
         @Query("date_to") dateTo: String?,
         @Query("sort_by") sortBy: String?
     ): Response<SpaceUserReportsResponse>
+
+    @GET(AppConstants.Api.Paths.SPACE_REPORTS)
+    suspend fun getSpaceReports(
+        @Path("userId") userId: Int,
+        @Query("period") period: String?,
+        @Query("date_from") dateFrom: String?,
+        @Query("date_to") dateTo: String?,
+        @Query("sort_by") sortBy: String?
+    ): Response<UserSpaceReportsResponse>
+
+    @GET(AppConstants.Api.Paths.OVERDUE_TRENDS)
+    suspend fun getOverdueTrends(
+        @Path("spaceId") spaceId: Int,
+        @Query("period") period: String?,
+        @Query("date_from") dateFrom: String?,
+        @Query("date_to") dateTo: String?,
+        @Query("interval") interval: String?
+    ): Response<OverdueTrendsResponse>
 }

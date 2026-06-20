@@ -12,9 +12,13 @@ object SpacesDestinations {
     const val PERMISSIONS      = "space_permissions/{$ARG_SPACE_ID}"
     const val INVITE           = "space_invite/{$ARG_SPACE_ID}"
     const val COMPLETED_TASKS  = "completed_tasks/{$ARG_SPACE_ID}"
+    const val ROTATION_HISTORY = "rotation_history/{$ARG_SPACE_ID}"
+    const val STATISTICS_MENU  = "statistics_menu/{$ARG_SPACE_ID}/{$ARG_USER_ID}"
     const val STATISTICS       = "statistics/{$ARG_SPACE_ID}/{$ARG_USER_ID}"
     const val SPACE_STATISTICS = "space_statistics/{$ARG_SPACE_ID}"
     const val USER_REPORTS     = "user_reports/{$ARG_SPACE_ID}"
+    const val SPACE_REPORTS    = "space_reports/{$ARG_USER_ID}"
+    const val OVERDUE_TRENDS   = "overdue_trends/{$ARG_SPACE_ID}"
 
     // Type-safe builders — prefer over string concatenation at call sites.
     fun list(userId: Int): String                     = "spaces/$userId"
@@ -23,9 +27,13 @@ object SpacesDestinations {
     fun permissions(spaceId: Int): String             = "space_permissions/$spaceId"
     fun invite(spaceId: Int): String                  = "space_invite/$spaceId"
     fun completedTasks(spaceId: Int): String          = "completed_tasks/$spaceId"
+    fun rotationHistory(spaceId: Int): String         = "rotation_history/$spaceId"
+    fun statisticsMenu(spaceId: Int, userId: Int): String = "statistics_menu/$spaceId/$userId"
     fun statistics(spaceId: Int, userId: Int): String = "statistics/$spaceId/$userId"
     fun spaceStatistics(spaceId: Int): String         = "space_statistics/$spaceId"
     fun userReports(spaceId: Int): String             = "user_reports/$spaceId"
+    fun spaceReports(userId: Int): String             = "space_reports/$userId"
+    fun overdueTrends(spaceId: Int): String           = "overdue_trends/$spaceId"
 }
 
 // Keys for results passed between spaces screens via savedStateHandle.

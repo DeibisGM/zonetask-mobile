@@ -29,6 +29,7 @@ import com.app.zonetask.navigation.spaces.SpacesDestinations
 import com.app.zonetask.navigation.spaces.SpacesNavActions
 import com.app.zonetask.navigation.spaces.SpacesNavKeys
 import com.app.zonetask.navigation.spaces.spacesNavGraph
+import com.app.zonetask.messaging.NotificationNavigationStore
 import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.home.HomeScreen
@@ -38,9 +39,13 @@ import com.app.zonetask.ui.screens.passwordreset.ForgotPasswordScreen
 import com.app.zonetask.ui.screens.profile.ProfileEditScreen
 import com.app.zonetask.ui.screens.profile.ProfileScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
+import com.app.zonetask.ui.screens.chat.ChatEditScreen
+import com.app.zonetask.ui.screens.chat.ChatScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
+import com.app.zonetask.ui.screens.taskhistory.SpaceRotationHistoryScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
+import kotlinx.coroutines.flow.collect
 
 private const val AUTH_NOTICE_KEY = "authNotice"
 
@@ -55,6 +60,9 @@ fun AppNavHost() {
         mutableStateOf(AuthSessionStore.currentUser?.email ?: "")
     }
     var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
+    var pendingNotificationRoute by remember {
+        mutableStateOf(NotificationNavigationStore.consumeLastRoute())
+    }
     val startDestination = if (currentUserId > 0) {
         AppDestinations.homeRoute(0)
     } else {
@@ -76,6 +84,22 @@ fun AppNavHost() {
 
     val onTabSelected: (NavDestination) -> Unit = { destination ->
         navigateToTab(navController, destination, currentUserId, currentSpaceId)
+    }
+
+    LaunchedEffect(Unit) {
+        NotificationNavigationStore.events.collect { route ->
+            pendingNotificationRoute = route
+        }
+    }
+
+    LaunchedEffect(currentUserId, pendingNotificationRoute) {
+        val route = pendingNotificationRoute
+        if (currentUserId > 0 && !route.isNullOrBlank()) {
+            navController.navigate(route) {
+                launchSingleTop = true
+            }
+            pendingNotificationRoute = null
+        }
     }
 
     val spacesNavActions = rememberSpacesNavActions(navController, currentUserId)
@@ -102,8 +126,17 @@ fun AppNavHost() {
                 onLoginSuccess = { userId, email ->
                     currentUserId    = userId
                     currentUserEmail = email
-                    navController.navigate(AppDestinations.homeRoute(0)) {
-                        popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                    val route = pendingNotificationRoute
+                    if (!route.isNullOrBlank()) {
+                        navController.navigate(route) {
+                            popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                        pendingNotificationRoute = null
+                    } else {
+                        navController.navigate(AppDestinations.homeRoute(0)) {
+                            popUpTo(AppDestinations.LOGIN) { inclusive = true }
+                        }
                     }
                 },
                 onCreateAccount = {
@@ -231,6 +264,9 @@ fun AppNavHost() {
                     onNavigateToTaskDetail = { sid, taskId ->
                         navController.navigate(AppDestinations.taskDetailRoute(sid, taskId))
                     },
+                    onNavigateToChat = { sid ->
+                        navController.navigate(AppDestinations.chatRoute(sid))
+                    },
                     onSpaceChanged = { newSpaceId ->
                         currentSpaceId = newSpaceId
                         navController.navigate(AppDestinations.homeRoute(newSpaceId)) {
@@ -250,19 +286,96 @@ fun AppNavHost() {
         ) { backStackEntry ->
             val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 1
             val taskId  = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+            val taskChanged by backStackEntry.savedStateHandle
+                .getStateFlow("taskChanged", false)
+                .collectAsStateWithLifecycle()
 
             TaskDetailScreen(
                 spaceId = spaceId,
                 taskId = taskId,
                 modifier = Modifier.fillMaxSize(),
+                refreshTrigger = taskChanged,
+                onRefreshHandled = {
+                    backStackEntry.savedStateHandle["taskChanged"] = false
+                },
                 onBack = { navController.popBackStack() },
                 onEdit = { id ->
                     navController.navigate(AppDestinations.taskEditRoute(spaceId, id))
+                },
+                onOpenRotationHistory = { id ->
+                    navController.navigate(AppDestinations.taskRotationHistoryRoute(spaceId, id))
                 },
                 onDeleted = {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set("taskChanged", true)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = AppDestinations.TASK_ROTATION_HISTORY,
+            arguments = listOf(
+                navArgument("spaceId") { type = NavType.IntType },
+                navArgument("taskId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+
+            ZoneTaskScaffold(
+                title = "Historial de rotación",
+                showBack = true,
+                onBackClick = { navController.popBackStack() },
+                snackbarHostState = snackbarHostState
+            ) { padding ->
+                SpaceRotationHistoryScreen(
+                    spaceId = spaceId,
+                    requestingUserId = currentUserId,
+                    initialTaskId = taskId,
+                    modifier = Modifier.padding(padding)
+                )
+            }
+        }
+
+        composable(
+            route = AppDestinations.CHAT,
+            arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val spaceId     = backStackEntry.arguments?.getInt("spaceId") ?: 0
+            val chatChanged by backStackEntry.savedStateHandle
+                .getStateFlow("chatChanged", false)
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(chatChanged) {
+                if (chatChanged) {
+                    backStackEntry.savedStateHandle["chatChanged"] = false
+                }
+            }
+
+            ChatScreen(
+                spaceId          = spaceId,
+                userId           = currentUserId,
+                reloadTrigger    = chatChanged,
+                onBack           = { navController.popBackStack() },
+                onNavigateToEdit = { navController.navigate(AppDestinations.editChatRoute(spaceId)) }
+            )
+        }
+
+        composable(
+            route = AppDestinations.CHAT_EDIT,
+            arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 0
+            ChatEditScreen(
+                spaceId = spaceId,
+                userId  = currentUserId,
+                onBack  = { navController.popBackStack() },
+                onSaved = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("chatChanged", true)
                     navController.popBackStack()
                 }
             )
@@ -330,6 +443,12 @@ private fun rememberSpacesNavActions(
         onOpenCompletedTasks = { spaceId ->
             navController.navigate(SpacesDestinations.completedTasks(spaceId))
         },
+        onOpenRotationHistory = { spaceId ->
+            navController.navigate(SpacesDestinations.rotationHistory(spaceId))
+        },
+        onOpenStatisticsMenu = { spaceId, userId ->
+            navController.navigate(SpacesDestinations.statisticsMenu(spaceId, userId))
+        },
         onOpenStatistics = { spaceId, userId ->
             navController.navigate(SpacesDestinations.statistics(spaceId, userId))
         },
@@ -338,6 +457,12 @@ private fun rememberSpacesNavActions(
         },
         onOpenUserReports = { spaceId ->
             navController.navigate(SpacesDestinations.userReports(spaceId))
+        },
+        onOpenSpaceReports = {
+            navController.navigate(SpacesDestinations.spaceReports(currentUserId))
+        },
+        onOpenOverdueTrends = { spaceId ->
+            navController.navigate(SpacesDestinations.overdueTrends(spaceId))
         },
         onBack = { navController.popBackStack() },
         onOpenInvitations = { navController.navigate(AppDestinations.myInvitationsRoute(currentUserId)) },
@@ -398,12 +523,21 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
     onTabSelected: (NavDestination) -> Unit,
     onLogout: () -> Unit
 ) {
+    fun markTaskRefresh(backStackEntry: androidx.navigation.NavBackStackEntry?) {
+        backStackEntry?.savedStateHandle?.set("taskChanged", true)
+        runCatching {
+            navController.getBackStackEntry(AppDestinations.tasksRoute(currentUserId))
+                .savedStateHandle["taskChanged"] = true
+        }
+    }
+
     composable(route = AppDestinations.TASK_CREATE) {
         TaskCreateScreen(
             initialSpaceId   = 1,
             initialCreatedBy = currentUserId,
             onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
             onLogout         = onLogout,
+            onSaved          = { markTaskRefresh(navController.previousBackStackEntry) },
             onClose          = { navController.popBackStack() }
         )
     }
@@ -418,6 +552,7 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
             initialCreatedBy = currentUserId,
             onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
             onLogout         = onLogout,
+            onSaved          = { markTaskRefresh(navController.previousBackStackEntry) },
             onClose          = { navController.popBackStack() }
         )
     }
@@ -437,6 +572,7 @@ private fun androidx.navigation.NavGraphBuilder.tasksGraph(
             taskId           = taskId,
             onNavigate       = { route -> navigateToSpacesFromTasks(navController, route, currentUserId) },
             onLogout         = onLogout,
+            onSaved          = { markTaskRefresh(navController.previousBackStackEntry) },
             onClose          = { navController.popBackStack() }
         )
     }

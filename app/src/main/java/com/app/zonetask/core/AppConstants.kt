@@ -13,6 +13,7 @@ object AppConstants {
 
             // Space endpoints .
             const val USER_SPACES = "api/spaces/users/{userId}"
+            const val USER_PUSH_TOKEN = "api/users/{userId}/push-token"
             const val SPACE_BY_ID = "api/spaces/{spaceId}"
             const val CREATE_SPACE = "api/spaces"
             const val UPDATE_SPACE = "api/spaces/{spaceId}"
@@ -48,13 +49,25 @@ object AppConstants {
             const val PLAN_ZONES = "api/plans/{planId}/zones"
             const val ZONE_BY_ID = "api/zones/{zoneId}"
 
+            // Chat endpoints
+            const val CHAT_BY_SPACE  = "api/spaces/{spaceId}/chat"
+            const val CHAT_IMAGE     = "api/spaces/{spaceId}/chat/image"
+            const val CHAT_MEMBERS   = "api/spaces/{spaceId}/chat/members"
+            const val SPACE_MESSAGES = "api/spaces/{spaceId}/messages"
+
             // Completion history endpoint
             const val COMPLETED_TASKS = "api/spaces/{spaceId}/completed-tasks"
+
+            // Rotation history endpoint
+            const val TASK_ROTATION_HISTORY = "api/tasks/{taskId}/rotation-log"
+            const val SPACE_ROTATION_HISTORY = "api/spaces/{spaceId}/rotation-log"
 
             // Statistics endpoints
             const val USER_STATISTICS   = "api/spaces/{spaceId}/members/{userId}/statistics"
             const val SPACE_STATISTICS  = "api/spaces/{spaceId}/statistics"
             const val USER_REPORTS      = "api/spaces/{spaceId}/reports/users"
+            const val SPACE_REPORTS     = "api/users/{userId}/reports/spaces"
+            const val OVERDUE_TRENDS    = "api/spaces/{spaceId}/reports/overdue-trends"
         }
     }
 }

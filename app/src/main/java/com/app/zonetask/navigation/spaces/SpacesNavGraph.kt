@@ -21,9 +21,13 @@ import com.app.zonetask.ui.screens.spaces.SpacePermissionsScreen
 import com.app.zonetask.ui.screens.invitations.InviteMemberScreen
 import com.app.zonetask.ui.screens.spaces.SpacesScreen
 import com.app.zonetask.ui.screens.statistics.IndividualStatisticsScreen
+import com.app.zonetask.ui.screens.statistics.OverdueTrendsScreen
+import com.app.zonetask.ui.screens.statistics.SpaceReportsScreen
+import com.app.zonetask.ui.screens.statistics.SpaceStatisticsMenuScreen
 import com.app.zonetask.ui.screens.statistics.SpaceStatisticsScreen
 import com.app.zonetask.ui.screens.statistics.UserReportsScreen
 import com.app.zonetask.ui.screens.taskhistory.CompletedTaskHistoryScreen
+import com.app.zonetask.ui.screens.taskhistory.SpaceRotationHistoryScreen
 
 fun NavGraphBuilder.spacesNavGraph(
     currentUserId: Int,
@@ -72,7 +76,8 @@ fun NavGraphBuilder.spacesNavGraph(
                     backStackEntry.savedStateHandle[SpacesNavKeys.SUCCESS_MESSAGE] = null
                 },
                 onSpaceClick = { space -> actions.onOpenDetail(space.spaceId) },
-                onOpenInvitations = actions.onOpenInvitations
+                onOpenInvitations = actions.onOpenInvitations,
+                onOpenSpaceReports = actions.onOpenSpaceReports
             )
         }
     }
@@ -133,9 +138,8 @@ fun NavGraphBuilder.spacesNavGraph(
                 onCreateTaskClick = { actions.onCreateTaskForSpace(spaceId) },
                 onOpenPlansClick = { actions.onOpenPlans(spaceId) },
                 onOpenCompletedTasksClick = { actions.onOpenCompletedTasks(spaceId) },
-                onOpenStatisticsClick = { actions.onOpenStatistics(spaceId, currentUserId) },
-                onOpenSpaceStatisticsClick = { actions.onOpenSpaceStatistics(spaceId) },
-                onOpenUserReportsClick = { actions.onOpenUserReports(spaceId) },
+                onOpenRotationHistoryClick = { actions.onOpenRotationHistory(spaceId) },
+                onOpenStatisticsMenuClick = { actions.onOpenStatisticsMenu(spaceId, currentUserId) },
                 onEditClick = actions.onOpenEdit,
                 onDeleteSuccess = { actions.onSpaceDeleted("Space deleted") }
             )
@@ -156,7 +160,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val editSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Editar espacio",
+            title = "Edit space",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = editSnackbarHostState
@@ -240,13 +244,40 @@ fun NavGraphBuilder.spacesNavGraph(
         val historySnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Task History",
+            title = "Completed tasks",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = historySnackbarHostState
         ) { padding ->
             CompletedTaskHistoryScreen(
                 spaceId = spaceId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Rotation history
+    composable(
+        route = SpacesDestinations.ROTATION_HISTORY,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_SPACE_ID) {
+            type = NavType.IntType
+        })
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+
+        val historySnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Rotation history",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = historySnackbarHostState
+        ) { padding ->
+            SpaceRotationHistoryScreen(
+                spaceId = spaceId,
+                requestingUserId = currentUserId,
                 modifier = Modifier.padding(padding)
             )
         }
@@ -264,7 +295,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val spaceStatsSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Space Statistics",
+            title = "Space statistics",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = spaceStatsSnackbarHostState
@@ -294,7 +325,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val statsSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "My Statistics",
+            title = "My statistics",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = statsSnackbarHostState
@@ -303,6 +334,41 @@ fun NavGraphBuilder.spacesNavGraph(
                 spaceId  = spaceId,
                 userId   = userId,
                 modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Statistics hub — groups every statistics/report option for a space
+    composable(
+        route = SpacesDestinations.STATISTICS_MENU,
+        arguments = listOf(
+            navArgument(SpacesDestinations.ARG_SPACE_ID) { type = NavType.IntType },
+            navArgument(SpacesDestinations.ARG_USER_ID)  { type = NavType.IntType }
+        )
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+        val userId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_USER_ID)
+            ?: return@composable
+
+        val statsMenuSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Statistics",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = statsMenuSnackbarHostState
+        ) { padding ->
+            SpaceStatisticsMenuScreen(
+                spaceId  = spaceId,
+                userId   = userId,
+                modifier = Modifier.padding(padding),
+                onOpenMyStatistics    = { actions.onOpenStatistics(spaceId, userId) },
+                onOpenSpaceStatistics = { actions.onOpenSpaceStatistics(spaceId) },
+                onOpenUserReports     = { actions.onOpenUserReports(spaceId) },
+                onOpenOverdueTrends   = { actions.onOpenOverdueTrends(spaceId) }
             )
         }
     }
@@ -319,12 +385,60 @@ fun NavGraphBuilder.spacesNavGraph(
         val reportsSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Reports by User",
+            title = "Reports by user",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = reportsSnackbarHostState
         ) { padding ->
             UserReportsScreen(
+                spaceId  = spaceId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Reports by space (cross-space comparison for the current user)
+    composable(
+        route = SpacesDestinations.SPACE_REPORTS,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_USER_ID) { type = NavType.IntType })
+    ) { backStackEntry ->
+        val userId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_USER_ID)
+            ?: currentUserId
+
+        val spaceReportsSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Reports by space",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = spaceReportsSnackbarHostState
+        ) { padding ->
+            SpaceReportsScreen(
+                userId   = userId,
+                modifier = Modifier.padding(padding)
+            )
+        }
+    }
+
+    // Overdue task trends (owner/admin entry from space detail)
+    composable(
+        route = SpacesDestinations.OVERDUE_TRENDS,
+        arguments = listOf(navArgument(SpacesDestinations.ARG_SPACE_ID) { type = NavType.IntType })
+    ) { backStackEntry ->
+        val spaceId = backStackEntry.arguments
+            ?.getInt(SpacesDestinations.ARG_SPACE_ID)
+            ?: return@composable
+
+        val overdueSnackbarHostState = remember { SnackbarHostState() }
+
+        ZoneTaskScaffold(
+            title = "Overdue trends",
+            showBack = true,
+            onBackClick = actions.onBack,
+            snackbarHostState = overdueSnackbarHostState
+        ) { padding ->
+            OverdueTrendsScreen(
                 spaceId  = spaceId,
                 modifier = Modifier.padding(padding)
             )
