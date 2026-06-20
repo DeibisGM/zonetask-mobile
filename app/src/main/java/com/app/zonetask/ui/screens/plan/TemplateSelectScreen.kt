@@ -138,8 +138,8 @@ private fun BlankTemplateCard(onClick: () -> Unit) {
                 Text("+", color = AppSecondaryText, style = MaterialTheme.typography.displaySmall)
             }
             Column(Modifier.padding(horizontal = 12.dp).padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("Plano en blanco", color = AppOnSurface, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
-                Text("Empieza desde cero", color = AppSecondaryText, style = MaterialTheme.typography.bodySmall)
+                Text("Blank plan", color = AppOnSurface, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                Text("Start from scratch", color = AppSecondaryText, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -203,12 +203,12 @@ private fun TemplatePreviewDialog(
 
                 Text(template.description, color = AppSecondaryText, style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    "${template.zones.size} zonas · ${template.defaultColumns}×${template.defaultRows} celdas",
+                    "${template.zones.size} zones · ${template.defaultColumns}×${template.defaultRows} cells",
                     color = AppPrimary,
                     style = MaterialTheme.typography.labelMedium
                 )
                 Text(
-                    "Podrás mover, redimensionar y editar todas las zonas después de aplicar la plantilla.",
+                    "You can move, resize, and edit all zones after applying the template.",
                     color = AppSecondaryText,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -219,7 +219,7 @@ private fun TemplatePreviewDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancelar", color = AppSecondaryText)
+                        Text("Cancel", color = AppSecondaryText)
                     }
                     Spacer(Modifier.width(8.dp))
                     Button(
@@ -227,7 +227,7 @@ private fun TemplatePreviewDialog(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
                     ) {
-                        Text("Usar plantilla", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text("Use template", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 }
             }

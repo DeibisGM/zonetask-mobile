@@ -81,7 +81,7 @@ fun NavGraphBuilder.plansNavGraph(
             ?.getInt(PlansDestinations.ARG_SPACE_ID) ?: return@composable
 
         ZoneTaskScaffold(
-            title         = "Elegir plantilla",
+            title         = "Choose template",
             showBack      = true,
             onBackClick   = actions.onBack,
             snackbarHostState = rootSnackbarHostState
