@@ -17,6 +17,7 @@ import okhttp3.Interceptor
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
@@ -26,6 +27,10 @@ object RetrofitClient {
     }
 
     private val client = OkHttpClient.Builder()
+        // Save requests can wait on background work, so the client needs a longer write/read window.
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor(loggingInterceptor)
         .addInterceptor(authHeaderInterceptor())
         .build()
