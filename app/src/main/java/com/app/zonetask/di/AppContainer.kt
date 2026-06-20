@@ -9,6 +9,7 @@ import com.app.zonetask.data.remote.repository.TaskLookupRepository
 import com.app.zonetask.data.repository.InvitationRepository
 import com.app.zonetask.data.remote.repository.TaskRepository
 import com.app.zonetask.data.remote.repository.UserRepository
+import com.app.zonetask.data.remote.repository.FloorPlanTemplateRepository
 import com.app.zonetask.data.repository.FloorPlanRepository
 import com.app.zonetask.data.repository.SpaceRepository
 import com.app.zonetask.data.remote.repository.ZoneRepository
@@ -22,6 +23,10 @@ object AppContainer {
 
     val floorPlanRepository: FloorPlanRepository by lazy {
         FloorPlanRepository(RetrofitClient.floorPlanApiService)
+    }
+
+    val floorPlanTemplateRepository: FloorPlanTemplateRepository by lazy {
+        FloorPlanTemplateRepository(RetrofitClient.floorPlanTemplateApiService)
     }
 
     val zoneRepository: ZoneRepository by lazy {

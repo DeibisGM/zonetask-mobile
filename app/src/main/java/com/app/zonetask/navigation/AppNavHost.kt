@@ -500,10 +500,11 @@ private fun rememberPlansNavActions(
     navController: NavHostController
 ): PlansNavActions = remember(navController) {
     PlansNavActions(
-        onOpenList   = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
-        onCreatePlan = { spaceId -> navController.navigate(PlansDestinations.newPlan(spaceId)) },
-        onOpenPlan   = { spaceId, planId -> navController.navigate(PlansDestinations.editor(spaceId, planId)) },
-        onPlanSaved  = { message ->
+        onOpenList      = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
+        onCreatePlan    = { spaceId -> navController.navigate(PlansDestinations.templateSelect(spaceId)) },
+        onApplyTemplate = { spaceId, templateId -> navController.navigate(PlansDestinations.newPlan(spaceId, templateId)) },
+        onOpenPlan      = { spaceId, planId -> navController.navigate(PlansDestinations.editor(spaceId, planId)) },
+        onPlanSaved     = { message ->
             navController.previousBackStackEntry
                 ?.savedStateHandle
                 ?.set(PlansNavKeys.PLAN_SAVED_MESSAGE, message)
