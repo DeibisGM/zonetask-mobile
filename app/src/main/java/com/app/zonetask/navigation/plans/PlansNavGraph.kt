@@ -99,17 +99,17 @@ fun NavGraphBuilder.plansNavGraph(
         route     = PlansDestinations.NEW,
         arguments = listOf(
             navArgument(PlansDestinations.ARG_SPACE_ID) { type = NavType.IntType },
+            // NavType.IntType cannot be nullable, so a non-template plan uses the -1 sentinel.
             navArgument(PlansDestinations.ARG_TEMPLATE_ID) {
                 type = NavType.IntType
-                nullable = true
-                defaultValue = null
+                defaultValue = -1
             }
         )
     ) { backStackEntry ->
         var saveFloorAction by remember { mutableStateOf<(() -> Unit)?>(null) }
         var canSaveFloor by remember { mutableStateOf(false) }
         val spaceId    = backStackEntry.arguments?.getInt(PlansDestinations.ARG_SPACE_ID) ?: return@composable
-        val templateId = backStackEntry.arguments?.getInt(PlansDestinations.ARG_TEMPLATE_ID)
+        val templateId = backStackEntry.arguments?.getInt(PlansDestinations.ARG_TEMPLATE_ID)?.takeIf { it >= 0 }
 
         ZoneTaskScaffold(
             title         = "Create floor",
