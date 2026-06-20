@@ -9,10 +9,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.SpaceDashboard
 import androidx.compose.material3.*
@@ -28,6 +30,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.zonetask.core.UserMessages
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.di.AppContainer
@@ -44,6 +47,7 @@ import kotlinx.coroutines.launch
 
 data class TaskDetailUiState(
     val task: TaskResponse? = null,
+    val assigneeName: String? = null,
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -65,8 +69,11 @@ class TaskDetailViewModel(
             _uiState.value = TaskDetailUiState(isLoading = true)
             when (val result = AppContainer.taskRepository.getTaskById(taskId)) {
                 is ApiResult.Success -> {
+                    val task = result.data
+                    val assigneeName = resolveAssigneeName(task.taskId, task.assignedUserId)
                     _uiState.value = TaskDetailUiState(
-                        task = result.data,
+                        task = task,
+                        assigneeName = assigneeName,
                         isLoading = false
                     )
                 }
@@ -77,6 +84,31 @@ class TaskDetailViewModel(
                     )
                 }
             }
+        }
+    }
+
+    private suspend fun resolveAssigneeName(taskId: Int, assignedUserId: Int?): String? {
+        val userId = when (val assignmentsResult = AppContainer.taskRepository.getTaskAssignments(taskId)) {
+            is ApiResult.Success -> assignmentsResult.data.firstOrNull {
+                !it.status.equals("completed", ignoreCase = true) &&
+                    !it.status.equals("skipped", ignoreCase = true) &&
+                    !it.status.equals("cancelled", ignoreCase = true)
+            }?.assignedUserId ?: assignedUserId
+            is ApiResult.Error -> assignedUserId
+        } ?: return null
+
+        return when (val usersResult = AppContainer.userRepository.getUsers()) {
+            is ApiResult.Success -> {
+                usersResult.data.firstOrNull { user -> user.userId == userId }?.displayName
+                    ?.takeIf { it.isNotBlank() }
+                    ?: usersResult.data.firstOrNull { user -> user.userId == userId }?.let { user ->
+                        listOfNotNull(user.firstName, user.lastName)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" ")
+                            .ifBlank { user.username.ifBlank { "User $userId" } }
+                    }
+            }
+            is ApiResult.Error -> null
         }
     }
 
@@ -106,8 +138,11 @@ fun TaskDetailScreen(
     spaceId: Int,
     taskId: Int,
     modifier: Modifier = Modifier,
+    refreshTrigger: Boolean = false,
+    onRefreshHandled: () -> Unit = {},
     onBack: () -> Unit = {},
     onEdit: (taskId: Int) -> Unit = {},
+    onOpenRotationHistory: (taskId: Int) -> Unit = {},
     onDeleted: () -> Unit = {},
     viewModel: TaskDetailViewModel = viewModel(
         factory = TaskDetailViewModelFactory(spaceId, taskId)
@@ -116,6 +151,13 @@ fun TaskDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger) {
+            viewModel.loadTask()
+            onRefreshHandled()
+        }
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
 
@@ -135,7 +177,7 @@ fun TaskDetailScreen(
                 )
             }
             Text(
-                text = "Task Details",
+                text = UserMessages.TaskDetail.TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -148,7 +190,15 @@ fun TaskDetailScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = AppPrimary)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = AppPrimary)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = UserMessages.TaskDetail.LOADING,
+                            color = AppSecondaryText,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
 
@@ -164,7 +214,7 @@ fun TaskDetailScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        TextButton(onClick = { viewModel.loadTask() }) {
+                            TextButton(onClick = { viewModel.loadTask() }) {
                             Text("Retry", color = AppPrimary)
                         }
                     }
@@ -214,6 +264,36 @@ fun TaskDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             DetailRow(
+                                icon = Icons.Outlined.Person,
+                                label = UserMessages.TaskDetail.ASSIGNEE_LABEL,
+                                value = uiState.assigneeName ?: UserMessages.TaskDetail.NO_ASSIGNEE
+                            )
+                            HorizontalDivider(
+                                color = AppBorder,
+                                modifier = Modifier.padding(vertical = 14.dp)
+                            )
+
+                            DetailRow(
+                                icon = Icons.Outlined.Repeat,
+                                label = UserMessages.TaskDetail.ROTATION_LABEL,
+                                value = if (task.rotating) {
+                                    task.rotationStrategy?.let { strategy ->
+                                        when (strategy.lowercase()) {
+                                            "weighted" -> "On - Weighted by preferences"
+                                            "random" -> "On - Random"
+                                            else -> "On - Round robin"
+                                        }
+                                    } ?: "On"
+                                } else {
+                                    UserMessages.TaskDetail.ROTATION_OFF
+                                }
+                            )
+                            HorizontalDivider(
+                                color = AppBorder,
+                                modifier = Modifier.padding(vertical = 14.dp)
+                            )
+
+                            DetailRow(
                                 icon = Icons.Outlined.SpaceDashboard,
                                 label = "Assigned zone",
                                 value = task.zoneId?.let { "Zone $it" } ?: "None"
@@ -262,6 +342,47 @@ fun TaskDetailScreen(
                                 label = "Reminder",
                                 value = if (task.reminderEnabled) "On" else "Off"
                             )
+                        }
+                    }
+
+                    Surface(
+                        onClick = { onOpenRotationHistory(task.taskId) },
+                        shape = RoundedCornerShape(14.dp),
+                        color = AppSurface,
+                        border = BorderStroke(1.dp, AppBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Outlined.Repeat,
+                                null,
+                                tint = AppPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Rotation history",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    "Review how assignees changed over time",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = AppSecondaryText
+                                )
+                                    }
+                                    Icon(
+                                        Icons.Outlined.ChevronRight,
+                                        null,
+                                        tint = AppSecondaryText,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                         }
                     }
 

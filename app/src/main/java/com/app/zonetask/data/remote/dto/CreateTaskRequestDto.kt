@@ -10,6 +10,8 @@ data class CreateTaskRequestDto(
     val description: String?,
     @SerializedName("frequency")
     val frequency: String,
+    @SerializedName("rotationStrategy")
+    val rotationStrategy: String = "sequential",
     @SerializedName("recurrenceRule")
     val recurrenceRule: String? = null,
     @SerializedName("scheduledTime")
@@ -40,6 +42,8 @@ data class CreateTaskRequestDto(
     val spaceId: Int,
     @SerializedName("zoneId")
     val zoneId: Int?,
+    @SerializedName("assignedUserId")
+    val assignedUserId: Int? = null,
     // Main selected object, kept for compatibility with the API payload.
     @SerializedName("objectId")
     val objectId: Int? = null,

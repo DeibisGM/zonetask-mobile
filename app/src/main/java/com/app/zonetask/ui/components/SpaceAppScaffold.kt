@@ -1,6 +1,7 @@
 package com.app.zonetask.ui.components
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -25,6 +26,7 @@ import com.app.zonetask.core.UserMessages
 import com.app.zonetask.ui.theme.AppOnPrimary
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppTopBar
+import com.app.zonetask.ui.theme.AppBackground
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +40,7 @@ fun ZoneTaskScaffold(
     onLogout: () -> Unit = {},
     snackbarHostState: SnackbarHostState? = null,
     onAddClick: (() -> Unit)? = null,
+    topBarActions: @Composable RowScope.() -> Unit = {},
     showTopBar: Boolean = true,
     showBottomBar: Boolean = true,
     centerTitle: Boolean = true,
@@ -46,7 +49,7 @@ fun ZoneTaskScaffold(
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = AppBackground,
         topBar = {
             if (showTopBar) {
                 if (centerTitle) {
@@ -71,6 +74,7 @@ fun ZoneTaskScaffold(
                             }
                         },
                         actions = {
+                            topBarActions()
                             if (onAddClick != null) {
                                 IconButton(onClick = onAddClick) {
                                     Icon(
@@ -107,6 +111,7 @@ fun ZoneTaskScaffold(
                             }
                         },
                         actions = {
+                            topBarActions()
                             if (onAddClick != null) {
                                 IconButton(onClick = onAddClick) {
                                     Icon(

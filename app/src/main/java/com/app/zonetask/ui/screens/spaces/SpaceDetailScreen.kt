@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -80,9 +81,8 @@ fun SpaceDetailScreen(
     onCreateTaskClick: () -> Unit = {},
     onOpenPlansClick : () -> Unit = {},
     onOpenCompletedTasksClick: () -> Unit = {},
-    onOpenStatisticsClick: () -> Unit = {},
-    onOpenSpaceStatisticsClick: () -> Unit = {},
-    onOpenUserReportsClick: () -> Unit = {},
+    onOpenRotationHistoryClick: () -> Unit = {},
+    onOpenStatisticsMenuClick: () -> Unit = {},
     viewModel: SpaceDetailViewModel = viewModel(
         factory = SpaceDetailViewModelFactory(
             spaceRepository = AppContainer.spaceRepository,
@@ -220,10 +220,10 @@ fun SpaceDetailScreen(
                         }
                     }
 
-                    // My Statistics row
+                    // Rotation history row
                     item {
                         Surface(
-                            onClick = onOpenStatisticsClick,
+                            onClick = onOpenRotationHistoryClick,
                             shape = RoundedCornerShape(14.dp),
                             color = AppSurface,
                             border = BorderStroke(1.dp, AppBorder)
@@ -234,71 +234,48 @@ fun SpaceDetailScreen(
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Outlined.BarChart, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Outlined.Repeat, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(12.dp))
-                                Text(
-                                    "My Statistics",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
-
-                    // Space Statistics row
-                    item {
-                        Surface(
-                            onClick = onOpenSpaceStatisticsClick,
-                            shape = RoundedCornerShape(14.dp),
-                            color = AppSurface,
-                            border = BorderStroke(1.dp, AppBorder)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Outlined.BarChart, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    "Space Statistics",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
-
-                    // Reports by User row (owner/admin only)
-                    if (canViewPermissions) {
-                        item {
-                            Surface(
-                                onClick = onOpenUserReportsClick,
-                                shape = RoundedCornerShape(14.dp),
-                                color = AppSurface,
-                                border = BorderStroke(1.dp, AppBorder)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Outlined.BarChart, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        "Reports by User",
+                                        "Historial de rotación",
                                         style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.weight(1f)
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
+                                    Text(
+                                        "Revisar cambios de asignación con filtros",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = AppSecondaryText
+                                    )
                                 }
+                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+
+                    // Statistics row — opens the statistics hub with all report options
+                    item {
+                        Surface(
+                            onClick = onOpenStatisticsMenuClick,
+                            shape = RoundedCornerShape(14.dp),
+                            color = AppSurface,
+                            border = BorderStroke(1.dp, AppBorder)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Outlined.BarChart, null, tint = AppPrimary, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    "Statistics",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(Icons.Outlined.ChevronRight, null, tint = AppSecondaryText, modifier = Modifier.size(18.dp))
                             }
                         }
                     }

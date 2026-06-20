@@ -2,6 +2,7 @@ package com.app.zonetask.data.remote.repository
 
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.UpdateUserProfileRequest
+import com.app.zonetask.data.remote.dto.UpdatePushTokenRequest
 import com.app.zonetask.data.remote.dto.UserResponse
 import com.app.zonetask.data.remote.service.UserApiService
 import java.io.File
@@ -126,6 +127,26 @@ class UserRepository(
             } else {
                 ApiResult.Error(
                     message = serverErrorMessage(response) ?: httpErrorMessage(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(message = networkErrorMessage(e))
+        }
+    }
+
+    suspend fun updatePushToken(userId: Int, token: String): ApiResult<Unit> {
+        return try {
+            val response = apiService.updatePushToken(
+                userId = userId,
+                body = UpdatePushTokenRequest(tokenCfm = token)
+            )
+
+            if (response.isSuccessful) {
+                ApiResult.Success(Unit)
+            } else {
+                ApiResult.Error(
+                    message = httpErrorMessage(response.code()),
                     statusCode = response.code()
                 )
             }
