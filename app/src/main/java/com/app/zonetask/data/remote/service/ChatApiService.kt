@@ -60,4 +60,12 @@ interface ChatApiService {
         @Path("spaceId") spaceId: Int,
         @Body request: SendMessageRequest
     ): Response<ChatMessageDto>
+
+    @Multipart
+    @POST(AppConstants.Api.Paths.SPACE_MESSAGES_UPLOAD)
+    suspend fun uploadMessageImage(
+        @Path("spaceId") spaceId: Int,
+        @Query("senderId") senderId: Int,
+        @Part image: MultipartBody.Part
+    ): Response<ChatMessageDto>
 }

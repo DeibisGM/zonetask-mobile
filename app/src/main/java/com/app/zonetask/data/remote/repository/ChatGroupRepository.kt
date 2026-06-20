@@ -116,6 +116,35 @@ class ChatGroupRepository(private val apiService: ChatApiService) {
         }
     }
 
+    suspend fun uploadMessageImage(
+        spaceId: Int,
+        senderId: Int,
+        imageUri: Uri,
+        contentResolver: ContentResolver
+    ): ApiResult<ChatMessageDto> {
+        return try {
+            val mimeType    = contentResolver.getType(imageUri) ?: "image/jpeg"
+            val ext         = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "jpg"
+            val bytes       = contentResolver.openInputStream(imageUri)?.use { it.readBytes() }
+                ?: return ApiResult.Error("No se pudo leer la imagen seleccionada")
+            val requestBody = bytes.toRequestBody(mimeType.toMediaType())
+            val part        = MultipartBody.Part.createFormData("file", "message_image.$ext", requestBody)
+
+            val response = apiService.uploadMessageImage(spaceId, senderId, part)
+            if (response.isSuccessful) {
+                val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message    = ApiErrorHandler.fromHttpCode(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(ApiErrorHandler.fromException(e))
+        }
+    }
+
     suspend fun sendMessage(spaceId: Int, content: String, senderId: Int): ApiResult<ChatMessageDto> {
         return try {
             val response = apiService.sendMessage(spaceId, SendMessageRequest(content, senderId))

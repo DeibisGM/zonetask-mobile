@@ -7,9 +7,10 @@ data class ChatMessageDto(
     @SerializedName("content")       val content: String,
     @SerializedName("spaceId")       val spaceId: Int,
     @SerializedName("senderId")      val senderId: Int,
-    @SerializedName("senderDisplayName")      val senderDisplayName: String,
+    @SerializedName("senderDisplayName")       val senderDisplayName: String,
     @SerializedName("senderProfilePictureUrl") val senderProfilePictureUrl: String?,
-    @SerializedName("createdAt")     val createdAt: String
+    @SerializedName("createdAt")     val createdAt: String,
+    @SerializedName("mediaUrl")      val mediaUrl: String? = null
 ) {
     val initials: String get() {
         val parts = senderDisplayName.trim().split(" ").filter { it.isNotEmpty() }
