@@ -1,5 +1,8 @@
 package com.app.zonetask.ui.screens.chat
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,8 +24,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,12 +92,16 @@ fun ChatScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val context = LocalContext.current
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> uri?.let { viewModel.selectImage(it) } }
 
     LaunchedEffect(reloadTrigger) {
         if (reloadTrigger) viewModel.reload()
     }
 
-    // Scroll to bottom after initial load and after sending a message
     LaunchedEffect(viewModel) {
         viewModel.scrollToBottomEvent.collectLatest {
             val total = listState.layoutInfo.totalItemsCount
@@ -104,7 +117,6 @@ fun ChatScreen(
             .map { (key, msgs) -> key to msgs }
     }
 
-    // Trigger load-more when the user scrolls near the top (within 3 items)
     val shouldLoadMore by remember {
         derivedStateOf {
             val firstVisible = listState.firstVisibleItemIndex
@@ -115,6 +127,42 @@ fun ChatScreen(
     LaunchedEffect(shouldLoadMore) {
         if (shouldLoadMore && uiState.hasMore && !uiState.isLoadingMore && !uiState.isMessagesLoading) {
             viewModel.loadMoreMessages()
+        }
+    }
+
+    // Full-screen image viewer
+    if (uiState.viewingImageUrl != null) {
+        Dialog(
+            onDismissRequest = { viewModel.closeImageViewer() },
+            properties       = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                AsyncImage(
+                    model              = uiState.viewingImageUrl,
+                    contentDescription = "Full screen image",
+                    contentScale       = ContentScale.Fit,
+                    modifier           = Modifier.fillMaxSize()
+                )
+                IconButton(
+                    onClick  = { viewModel.closeImageViewer() },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .size(40.dp)
+                        .background(Color.Black.copy(alpha = 0.55f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector        = Icons.Filled.Close,
+                        contentDescription = "Close viewer",
+                        tint               = Color.White,
+                        modifier           = Modifier.size(22.dp)
+                    )
+                }
+            }
         }
     }
 
@@ -140,7 +188,6 @@ fun ChatScreen(
                 .fillMaxWidth(),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            // Spinner while the initial load is in progress
             if (uiState.isMessagesLoading) {
                 item(key = "messages_loading") {
                     Box(
@@ -152,7 +199,6 @@ fun ChatScreen(
                 }
             }
 
-            // Spinner at the top while older pages are loading
             if (uiState.isLoadingMore) {
                 item(key = "load_more_indicator") {
                     Box(
@@ -175,7 +221,8 @@ fun ChatScreen(
                 items(msgs, key = { it.chatMessageId }) { msg ->
                     MessageBubble(
                         msg               = msg,
-                        isFromCurrentUser = msg.senderId == userId
+                        isFromCurrentUser = msg.senderId == userId,
+                        onImageClick      = { viewModel.openImageViewer(it) }
                     )
                 }
             }
@@ -183,13 +230,80 @@ fun ChatScreen(
 
         HorizontalDivider(color = AppBorder, thickness = 0.5.dp)
 
+        // Image preview area (shown when an image is selected but not yet sent)
+        if (uiState.pendingImageUri != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AppTopBar)
+                    .padding(8.dp)
+            ) {
+                AsyncImage(
+                    model              = uiState.pendingImageUri,
+                    contentDescription = "Image preview",
+                    contentScale       = ContentScale.Fit,
+                    modifier           = Modifier
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .align(Alignment.Center)
+                )
+                if (uiState.isUploadingImage) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(32.dp))
+                    }
+                } else {
+                    IconButton(
+                        onClick  = { viewModel.clearPendingImage() },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(32.dp)
+                            .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector        = Icons.Filled.Close,
+                            contentDescription = "Cancel image",
+                            tint               = Color.White,
+                            modifier           = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Input bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(AppTopBar)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.Bottom
         ) {
+            // Attachment button
+            IconButton(
+                onClick  = { imagePickerLauncher.launch("image/*") },
+                enabled  = !uiState.isSending && !uiState.isUploadingImage,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(AppCardElevated)
+            ) {
+                Icon(
+                    imageVector        = Icons.Outlined.AttachFile,
+                    contentDescription = "Attach image",
+                    tint               = if (!uiState.isSending && !uiState.isUploadingImage) AppPrimary
+                                         else AppPrimary.copy(alpha = 0.3f),
+                    modifier           = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(Modifier.width(6.dp))
+
             OutlinedTextField(
                 value         = messageText,
                 onValueChange = { messageText = it },
@@ -215,28 +329,30 @@ fun ChatScreen(
                 modifier  = Modifier.weight(1f)
             )
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(6.dp))
+
+            val canSend = (uiState.pendingImageUri != null || messageText.isNotBlank())
+                && !uiState.isSending && !uiState.isUploadingImage
 
             IconButton(
                 onClick = {
-                    val content = messageText.trim()
-                    if (content.isNotEmpty() && !uiState.isSending) {
-                        viewModel.sendMessage(content)
-                        messageText = ""
+                    if (uiState.pendingImageUri != null) {
+                        viewModel.sendImageMessage(context.contentResolver)
+                    } else {
+                        val content = messageText.trim()
+                        if (content.isNotEmpty()) {
+                            viewModel.sendMessage(content)
+                            messageText = ""
+                        }
                     }
                 },
-                enabled  = messageText.isNotBlank() && !uiState.isSending,
+                enabled  = canSend,
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (messageText.isNotBlank() && !uiState.isSending)
-                            AppPrimary
-                        else
-                            AppPrimary.copy(alpha = 0.3f)
-                    )
+                    .background(if (canSend) AppPrimary else AppPrimary.copy(alpha = 0.3f))
             ) {
-                if (uiState.isSending) {
+                if (uiState.isSending || uiState.isUploadingImage) {
                     CircularProgressIndicator(
                         color       = Color.White,
                         strokeWidth = 2.dp,
@@ -279,7 +395,11 @@ private fun DateHeader(label: String) {
 }
 
 @Composable
-private fun MessageBubble(msg: ChatMessageDto, isFromCurrentUser: Boolean) {
+private fun MessageBubble(
+    msg: ChatMessageDto,
+    isFromCurrentUser: Boolean,
+    onImageClick: (String) -> Unit = {}
+) {
     val bubbleColor = if (isFromCurrentUser) AppPrimary else AppCardElevated
     val textColor   = if (isFromCurrentUser) Color.White else MaterialTheme.colorScheme.onSurface
     val timeColor   = if (isFromCurrentUser) Color.White.copy(alpha = 0.7f) else AppSecondaryText
@@ -315,22 +435,48 @@ private fun MessageBubble(msg: ChatMessageDto, isFromCurrentUser: Boolean) {
                 )
             }
 
-            Surface(shape = bubbleShape, color = bubbleColor) {
-                Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    Text(
-                        text  = msg.content,
-                        color = textColor,
-                        style = MaterialTheme.typography.bodyMedium
+            if (msg.mediaUrl != null) {
+                // Image message
+                val absoluteMediaUrl = BuildConfig.API_BASE_URL.trimEnd('/') + "/" + msg.mediaUrl.trimStart('/')
+                Column(
+                    horizontalAlignment = if (isFromCurrentUser) Alignment.End else Alignment.Start
+                ) {
+                    AsyncImage(
+                        model              = absoluteMediaUrl,
+                        contentDescription = "Image",
+                        contentScale       = ContentScale.Fit,
+                        modifier           = Modifier
+                            .widthIn(max = 220.dp)
+                            .clip(bubbleShape)
+                            .clickable { onImageClick(absoluteMediaUrl) }
                     )
                     Text(
                         text     = formatMessageTime(msg.createdAt),
-                        color    = timeColor,
+                        color    = AppSecondaryText,
                         style    = MaterialTheme.typography.labelSmall,
                         fontSize = 10.sp,
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(top = 3.dp)
+                        modifier = Modifier.padding(top = 2.dp, end = if (isFromCurrentUser) 2.dp else 0.dp)
                     )
+                }
+            } else {
+                // Text message
+                Surface(shape = bubbleShape, color = bubbleColor) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        Text(
+                            text  = msg.content,
+                            color = textColor,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text     = formatMessageTime(msg.createdAt),
+                            color    = timeColor,
+                            style    = MaterialTheme.typography.labelSmall,
+                            fontSize = 10.sp,
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .padding(top = 3.dp)
+                        )
+                    }
                 }
             }
         }
@@ -439,7 +585,6 @@ private fun ChatToolbar(
     }
 }
 
-// Returns "yyyy-MM-dd" in local timezone for grouping messages by day
 private fun getLocalDateKey(isoString: String): String {
     return try {
         val sdfIn = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
@@ -454,7 +599,6 @@ private fun getLocalDateKey(isoString: String): String {
     }
 }
 
-// Converts a "yyyy-MM-dd" key into "Today", "Yesterday", or a formatted date string
 private fun getDateLabel(dateKey: String): String {
     val fmt       = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     val today     = fmt.format(Date())
@@ -470,7 +614,6 @@ private fun getDateLabel(dateKey: String): String {
     }
 }
 
-// Returns "HH:mm" in local timezone for display inside the message bubble
 private fun formatMessageTime(isoString: String): String {
     return try {
         val sdfIn = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {

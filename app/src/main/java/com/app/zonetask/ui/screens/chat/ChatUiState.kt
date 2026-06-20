@@ -1,5 +1,6 @@
 package com.app.zonetask.ui.screens.chat
 
+import android.net.Uri
 import com.app.zonetask.data.remote.dto.ChatMessageDto
 
 data class ChatUiState(
@@ -15,5 +16,8 @@ data class ChatUiState(
     val hasMore: Boolean = false,
     val currentPage: Int = 1,
     val isSending: Boolean = false,
-    val sendError: String? = null
+    val sendError: String? = null,
+    val pendingImageUri: Uri? = null,
+    val isUploadingImage: Boolean = false,
+    val viewingImageUrl: String? = null
 )

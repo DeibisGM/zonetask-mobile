@@ -1,5 +1,7 @@
 package com.app.zonetask.ui.screens.chat
 
+import android.content.ContentResolver
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -53,6 +55,43 @@ class ChatViewModel(
                         isSending = false,
                         sendError = result.message
                     )
+                }
+            }
+        }
+    }
+
+    fun openImageViewer(url: String) {
+        _uiState.value = _uiState.value.copy(viewingImageUrl = url)
+    }
+
+    fun closeImageViewer() {
+        _uiState.value = _uiState.value.copy(viewingImageUrl = null)
+    }
+
+    fun selectImage(uri: Uri) {
+        _uiState.value = _uiState.value.copy(pendingImageUri = uri)
+    }
+
+    fun clearPendingImage() {
+        _uiState.value = _uiState.value.copy(pendingImageUri = null)
+    }
+
+    fun sendImageMessage(contentResolver: ContentResolver) {
+        val uri = _uiState.value.pendingImageUri ?: return
+        if (_uiState.value.isUploadingImage) return
+        _uiState.value = _uiState.value.copy(isUploadingImage = true)
+        viewModelScope.launch {
+            when (val result = chatGroupRepository.uploadMessageImage(spaceId, userId, uri, contentResolver)) {
+                is ApiResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isUploadingImage = false,
+                        pendingImageUri  = null,
+                        messages         = _uiState.value.messages + result.data
+                    )
+                    _scrollToBottomEvent.tryEmit(Unit)
+                }
+                is ApiResult.Error -> {
+                    _uiState.value = _uiState.value.copy(isUploadingImage = false)
                 }
             }
         }
