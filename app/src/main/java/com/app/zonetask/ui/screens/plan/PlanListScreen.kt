@@ -86,7 +86,7 @@ fun PlanListScreen(
                         CircularProgressIndicator(color = AppPrimary)
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text  = "Cargando planos...",
+                            text  = "Loading floors...",
                             color = AppSecondaryText,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -100,17 +100,17 @@ fun PlanListScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text      = state.errorBanner!!,
-                            color     = AppSecondaryText,
-                            style     = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                        TextButton(onClick = viewModel::loadPlans) {
-                            Text("Reintentar", color = AppPrimary)
+                            Text(
+                                text      = state.errorBanner!!,
+                                color     = AppSecondaryText,
+                                style     = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
+                            TextButton(onClick = viewModel::loadPlans) {
+                                Text("Retry", color = AppPrimary)
+                            }
                         }
                     }
-                }
             }
 
             else -> {
@@ -134,23 +134,45 @@ fun PlanListScreen(
                                     modifier           = Modifier.size(48.dp)
                                 )
                                 Text(
-                                    text      = "No hay planos en este espacio.",
-                                    color     = AppSecondaryText,
-                                    style     = MaterialTheme.typography.bodyMedium,
+                                    text = "No floors in this space yet.",
+                                    color = AppSecondaryText,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
-                                    text      = "Crea un plano en blanco para empezar.",
-                                    color     = AppSecondaryText,
-                                    style     = MaterialTheme.typography.bodySmall,
+                                    text = "Create your first floor to start building rooms.",
+                                    color = AppSecondaryText,
+                                    style = MaterialTheme.typography.bodySmall,
                                     textAlign = TextAlign.Center
                                 )
+                                Button(
+                                    onClick = onCreatePlan,
+                                    modifier = Modifier
+                                        .padding(top = 12.dp)
+                                        .height(52.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Add,
+                                        contentDescription = null,
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        text = "Create floor",
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                }
                             }
                         }
                     } else {
                         item {
                             Text(
-                                text  = "Planos del espacio",
+                                text  = "Floors",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontWeight = FontWeight.SemiBold
@@ -164,35 +186,6 @@ fun PlanListScreen(
                     item { HorizontalDivider(color = AppBorder, modifier = Modifier.padding(vertical = 4.dp)) }
                 }
 
-                // Fixed bottom bar with "New plan" button
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Button(
-                        onClick  = onCreatePlan,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape  = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
-                    ) {
-                        Icon(
-                            imageVector        = Icons.Outlined.Add,
-                            contentDescription = null,
-                            tint               = Color(0xFF000000),
-                            modifier           = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            text       = "NUEVO PLANO",
-                            color      = Color(0xFF000000),
-                            fontWeight = FontWeight.Bold,
-                            style      = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }
             }
         }
     }

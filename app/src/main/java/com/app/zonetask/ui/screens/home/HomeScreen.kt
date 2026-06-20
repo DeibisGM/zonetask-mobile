@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -26,13 +27,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.zonetask.R
 import com.app.zonetask.ui.components.FloorPlanCanvas
 import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.AppBorder
@@ -40,7 +46,48 @@ import com.app.zonetask.ui.theme.AppCardElevated
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
-import com.app.zonetask.ui.theme.AppTopBar
+
+private val HomeSheetTitleStyle = TextStyle(
+    fontSize = 22.sp,
+    lineHeight = 28.sp,
+    fontWeight = FontWeight.SemiBold
+)
+
+private val HomeSheetSubtitleStyle = TextStyle(
+    fontSize = 14.sp,
+    lineHeight = 20.sp,
+    fontWeight = FontWeight.Normal
+)
+
+private val HomeEmptyTitleStyle = TextStyle(
+    fontSize = 24.sp,
+    lineHeight = 30.sp,
+    fontWeight = FontWeight.SemiBold
+)
+
+private val HomeEmptyBodyStyle = TextStyle(
+    fontSize = 14.sp,
+    lineHeight = 20.sp,
+    fontWeight = FontWeight.Normal
+)
+
+private val HomeItemTitleStyle = TextStyle(
+    fontSize = 16.sp,
+    lineHeight = 22.sp,
+    fontWeight = FontWeight.SemiBold
+)
+
+private val HomeItemMetaStyle = TextStyle(
+    fontSize = 12.sp,
+    lineHeight = 16.sp,
+    fontWeight = FontWeight.Normal
+)
+
+private val HomeActionTextStyle = TextStyle(
+    fontSize = 15.sp,
+    lineHeight = 20.sp,
+    fontWeight = FontWeight.SemiBold
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +96,7 @@ fun HomeScreen(
     userId: Int,
     modifier: Modifier = Modifier,
     onNavigateToCreateSpace: () -> Unit = {},
+    onNavigateToCreatePlan: (spaceId: Int) -> Unit = {},
     onNavigateToCreateTask: () -> Unit = {},
     onNavigateToManageSpaces: () -> Unit = {},
     onNavigateToTaskDetail: (spaceId: Int, taskId: Int) -> Unit = { _, _ -> },
@@ -76,44 +124,29 @@ fun HomeScreen(
         Column(modifier = Modifier.fillMaxSize()) {
 
             // Top Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(AppTopBar)
-                    .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = AppCardElevated
             ) {
                 Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .clickable { showSpacePicker = true },
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 12.dp, top = 16.dp, bottom = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = uiState.spaceName.ifBlank { "ZoneTask" },
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.KeyboardArrowDown,
-                        contentDescription = "Switch space",
-                        tint = AppSecondaryText,
+                    Row(
                         modifier = Modifier
-                            .padding(start = 4.dp)
-                            .size(22.dp)
-                    )
-                }
-
-                if (uiState.currentSpaceId != null && uiState.currentSpaceId!! > 0) {
-                    IconButton(onClick = onNavigateToManageSpaces) {
-                        Icon(
-                            painter = painterResource(id = com.app.zonetask.R.drawable.ic_buildings),
-                            contentDescription = "Spaces",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(22.dp)
+                            .weight(1f)
+                            .clickable { showSpacePicker = true },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = uiState.spaceName.ifBlank { "ZoneTask" },
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                     IconButton(onClick = {
@@ -132,19 +165,42 @@ fun HomeScreen(
                         onNavigateToChat(sid)
                     }) {
                         Icon(
-                            imageVector = Icons.Outlined.Chat,
-                            contentDescription = "Chat",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(22.dp)
+                            imageVector = Icons.Outlined.KeyboardArrowDown,
+                            contentDescription = "Switch spaces",
+                            tint = AppSecondaryText,
+                            modifier = Modifier
+                                .padding(start = 4.dp)
+                                .size(22.dp)
                         )
                     }
-                    IconButton(onClick = onNavigateToCreateTask) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "Add task",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(24.dp)
-                        )
+                    if (uiState.currentSpaceId != null && uiState.currentSpaceId!! > 0) {
+                        IconButton(onClick = onNavigateToManageSpaces) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_logo),
+                                contentDescription = "Spaces",
+                                modifier = Modifier.size(22.dp),
+                                colorFilter = ColorFilter.tint(AppPrimary)
+                            )
+                        }
+                        IconButton(onClick = {
+                            val sid = uiState.currentSpaceId ?: spaceId
+                            onNavigateToChat(sid)
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Chat,
+                                contentDescription = "Chat",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        IconButton(onClick = onNavigateToCreateTask) {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = "Add task",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -169,20 +225,10 @@ fun HomeScreen(
                             .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = uiState.errorMessage!!,
-                                color = AppSecondaryText,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = onNavigateToCreateSpace,
-                                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
-                            ) {
-                                Text("Create your first space")
-                            }
-                        }
+                        EmptySpacesState(
+                            message = uiState.errorMessage!!,
+                            onCreateSpace = onNavigateToCreateSpace
+                        )
                     }
                 }
 
@@ -201,22 +247,76 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else {
-                            Column(
+                            Box(
                                 modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "No floor plan",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = AppSecondaryText
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Create one from your spaces",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = AppSecondaryText.copy(alpha = 0.7f)
-                                )
+                                Surface(
+                                    color = AppCardElevated,
+                                    shape = RoundedCornerShape(28.dp),
+                                    border = BorderStroke(1.dp, AppBorder),
+                                    modifier = Modifier
+                                        .padding(horizontal = 24.dp)
+                                        .fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(52.dp)
+                                                .background(
+                                                    color = AppPrimary.copy(alpha = 0.10f),
+                                                    shape = RoundedCornerShape(18.dp)
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Image(
+                                                painter = painterResource(id = R.drawable.ic_logo),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(26.dp),
+                                                colorFilter = ColorFilter.tint(AppPrimary)
+                                            )
+                                        }
+
+                                        Text(
+                                            text = "No floor plan yet",
+                                            style = HomeEmptyTitleStyle.copy(fontSize = 22.sp),
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            textAlign = TextAlign.Center
+                                        )
+
+                                        Text(
+                                            text = "Create a floor from this space and start placing rooms.",
+                                            style = HomeEmptyBodyStyle,
+                                            color = AppSecondaryText,
+                                            textAlign = TextAlign.Center
+                                        )
+
+                                        Button(
+                                            onClick = {
+                                                val sid = uiState.currentSpaceId ?: spaceId
+                                                if (sid > 0) {
+                                                    onNavigateToCreatePlan(sid)
+                                                }
+                                            },
+                                            enabled = (uiState.currentSpaceId ?: spaceId) > 0,
+                                            colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
+                                            shape = RoundedCornerShape(16.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(52.dp)
+                                        ) {
+                                            Text(
+                                                text = "Create floor",
+                                                color = Color.Black,
+                                                style = HomeActionTextStyle
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -377,98 +477,211 @@ fun HomeScreen(
         }
     }
 
-    // === Space Picker Bottom Sheet ===
     if (showSpacePicker) {
         ModalBottomSheet(
             onDismissRequest = { showSpacePicker = false },
-            containerColor = AppTopBar,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            containerColor = Color(0xFF121212),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 36.dp)
+                    .padding(horizontal = 18.dp)
+                    .padding(bottom = 28.dp)
             ) {
                 Text(
-                    text = "Your spaces",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AppSecondaryText,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    text = "Switch spaces",
+                    style = HomeSheetTitleStyle,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 6.dp, bottom = 6.dp)
                 )
 
-                uiState.userSpaces.forEach { space ->
-                    val isActive = space.spaceId == uiState.currentSpaceId
+                Text(
+                    text = "Choose a space to open it quickly.",
+                    style = HomeSheetSubtitleStyle,
+                    color = AppSecondaryText,
+                    modifier = Modifier.padding(bottom = 22.dp)
+                )
+
+                if (uiState.userSpaces.isEmpty()) {
                     Surface(
-                        onClick = {
-                            onSpaceChanged(space.spaceId)
-                            showSpacePicker = false
-                        },
-                        color = if (isActive) AppPrimary.copy(alpha = 0.10f) else Color.Transparent,
-                        shape = RoundedCornerShape(12.dp),
+                        color = AppBackground,
+                        shape = RoundedCornerShape(20.dp),
+                        border = BorderStroke(1.dp, AppBorder),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
+                        Column(
+                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 26.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_logo),
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp),
+                                colorFilter = ColorFilter.tint(AppPrimary)
+                            )
+                            Text(
+                                text = "No spaces yet",
+                                style = HomeSheetTitleStyle,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Create one to get started.",
+                                style = HomeEmptyBodyStyle,
+                                color = AppSecondaryText,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    uiState.userSpaces.forEach { space ->
+                        val isActive = space.spaceId == uiState.currentSpaceId
+                        Surface(
+                            onClick = {
+                                onSpaceChanged(space.spaceId)
+                                showSpacePicker = false
+                            },
+                            color = if (isActive) AppPrimary.copy(alpha = 0.10f) else AppBackground,
+                            shape = RoundedCornerShape(18.dp),
+                            border = BorderStroke(
+                                1.dp,
+                                if (isActive) AppPrimary.copy(alpha = 0.35f) else AppBorder
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(bottom = 10.dp)
                         ) {
-                            Column {
-                                Text(
-                                    text = space.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = if (isActive) AppPrimary
-                                    else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (isActive) FontWeight.Medium
-                                    else FontWeight.Normal
-                                )
-                                Text(
-                                    text = space.spaceType,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = AppSecondaryText
-                                )
-                            }
-                            if (isActive) {
-                                Icon(
-                                    imageVector = Icons.Outlined.CheckCircle,
-                                    contentDescription = null,
-                                    tint = AppPrimary,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 15.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = space.name,
+                                        style = HomeItemTitleStyle,
+                                        color = if (isActive) AppPrimary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(3.dp))
+                                    Text(
+                                        text = space.spaceType,
+                                        style = HomeItemMetaStyle,
+                                        color = AppSecondaryText
+                                    )
+                                }
+                                if (isActive) {
+                                    Surface(
+                                        color = AppPrimary.copy(alpha = 0.14f),
+                                        shape = RoundedCornerShape(999.dp)
+                                    ) {
+                                        Text(
+                                            text = "Active",
+                                            color = AppPrimary,
+                                            fontWeight = FontWeight.SemiBold,
+                                            style = HomeItemMetaStyle,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Button(
+                    onClick = {
+                        showSpacePicker = false
+                        onNavigateToCreateSpace()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
                 ) {
-                    TextButton(
-                        onClick = {
-                            showSpacePicker = false
-                            onNavigateToCreateSpace()
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("New space")
-                    }
-                    TextButton(
-                        onClick = {
-                            showSpacePicker = false
-                            onNavigateToManageSpaces()
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Manage spaces")
-                    }
+                    Text("New space", color = Color.Black, style = HomeActionTextStyle)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptySpacesState(
+    message: String,
+    onCreateSpace: () -> Unit
+) {
+    Surface(
+        color = AppCardElevated,
+        shape = RoundedCornerShape(28.dp),
+        border = BorderStroke(1.dp, AppBorder),
+        modifier = Modifier
+            .padding(start = 20.dp, top = 12.dp, end = 20.dp)
+            .fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .background(
+                        color = AppPrimary.copy(alpha = 0.10f),
+                        shape = RoundedCornerShape(18.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_logo),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = ColorFilter.tint(AppPrimary)
+                )
+            }
+
+            Text(
+                text = "No spaces yet",
+                style = HomeEmptyTitleStyle,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+
+            Text(
+                text = if (message.contains("spaces yet", ignoreCase = true)) {
+                    "Create one to get started."
+                } else {
+                    message
+                },
+                style = HomeEmptyBodyStyle,
+                color = AppSecondaryText,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = onCreateSpace,
+                colors = ButtonDefaults.buttonColors(containerColor = AppPrimary),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp)
+            ) {
+                Text(
+                    text = "Create your first space",
+                    color = Color.Black,
+                    style = HomeActionTextStyle
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
         }
     }
 }
