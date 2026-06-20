@@ -13,6 +13,7 @@ object AppConstants {
 
             // Space endpoints .
             const val USER_SPACES = "api/spaces/users/{userId}"
+            const val USER_PUSH_TOKEN = "api/users/{userId}/push-token"
             const val SPACE_BY_ID = "api/spaces/{spaceId}"
             const val CREATE_SPACE = "api/spaces"
             const val UPDATE_SPACE = "api/spaces/{spaceId}"
@@ -43,6 +44,12 @@ object AppConstants {
             const val PLAN_BY_ID  = "api/plans/{planId}"
             const val CREATE_PLAN = "api/plans"
             const val UPDATE_PLAN = "api/plans/{planId}"
+
+            // Chat endpoints
+            const val CHAT_BY_SPACE  = "api/spaces/{spaceId}/chat"
+            const val CHAT_IMAGE     = "api/spaces/{spaceId}/chat/image"
+            const val CHAT_MEMBERS   = "api/spaces/{spaceId}/chat/members"
+            const val SPACE_MESSAGES = "api/spaces/{spaceId}/messages"
 
             // Completion history endpoint
             const val COMPLETED_TASKS = "api/spaces/{spaceId}/completed-tasks"

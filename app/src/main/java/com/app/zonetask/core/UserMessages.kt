@@ -5,23 +5,22 @@ object UserMessages {
     const val TAP_TO_RETRY_SUFFIX = " Toca para reintentar."
 
     object Spaces {
-        const val LOADING               = "Cargando espacios..."
-        const val EMPTY                 = "No tenés espacios aún"
-        const val REFRESH               = "Refrescar"
-        const val TYPE_PREFIX           = "Tipo: "
-
-        const val OWNER_PREFIX          = "Propietario ID: "
-        const val DELETE_SUCCESS        = "Espacio eliminado correctamente"
-        const val DELETE_ERROR          = "No se pudo eliminar el espacio"
-        const val DELETE_CONFIRM        = "¿Eliminar este espacio?"
-        const val DELETE_CONFIRM_BODY   = "será eliminado permanentemente."
-        const val DELETE_CONFIRM_ACTION = "Eliminar"
-        const val DELETE_CANCEL_ACTION  = "Cancelar"
-        const val DELETE_FORBIDDEN      = "No tienes permiso para eliminar este espacio"
-        const val DELETE_NOT_OWNER      = "Solo el propietario puede eliminar este espacio"
-        const val ROLE_OWNER            = "Propietario"
-        const val ROLE_ADMIN            = "Administrador"
-        const val ROLE_MEMBER           = "Miembro"
+        const val LOADING               = "Loading spaces..."
+        const val EMPTY                 = "No spaces yet"
+        const val REFRESH               = "Refresh"
+        const val TYPE_PREFIX           = "Type: "
+        const val OWNER_PREFIX          = "Owner ID: "
+        const val DELETE_SUCCESS        = "Space deleted"
+        const val DELETE_ERROR          = "Could not delete space"
+        const val DELETE_CONFIRM        = "Delete this space?"
+        const val DELETE_CONFIRM_BODY   = "will be permanently deleted."
+        const val DELETE_CONFIRM_ACTION = "Delete"
+        const val DELETE_CANCEL_ACTION  = "Cancel"
+        const val DELETE_FORBIDDEN      = "You don't have permission to delete this space"
+        const val DELETE_NOT_OWNER      = "Only the owner can delete this space"
+        const val ROLE_OWNER            = "Owner"
+        const val ROLE_ADMIN            = "Admin"
+        const val ROLE_MEMBER           = "Member"
     }
 
     object SpaceDetail {
@@ -125,6 +124,26 @@ object UserMessages {
         const val ROTATION_LABEL = "Automatic rotation"
         const val ROTATION_OFF   = "Off"
         const val LOADING        = "Loading task..."
+    }
+
+    object Notifications {
+        // Centralized strings for the notification channel and task event messages.
+        const val CHANNEL_NAME = "Task updates"
+        const val CHANNEL_DESCRIPTION = "Push notifications for task updates"
+        const val DEFAULT_TITLE = "ZoneTask"
+        const val DEFAULT_BODY = "You have a new task update."
+        const val TASK_ASSIGNED_TITLE = "Task assigned"
+        const val TASK_ASSIGNED_BODY = "You have been assigned a new task."
+        const val TASK_CREATED_TITLE = "New task assigned"
+        const val TASK_CREATED_BODY = "was created and is now available."
+        const val TASK_UPDATED_TITLE = "Task updated"
+        const val TASK_UPDATED_BODY = "was updated."
+        const val TASK_REMINDER_TITLE = "Task reminder"
+        const val TASK_REMINDER_BODY = "is due soon."
+        const val TASK_OVERDUE_TITLE = "Task overdue"
+        const val TASK_OVERDUE_BODY = "is now overdue."
+        const val TASK_COMPLETED_TITLE = "Task completed"
+        const val TASK_COMPLETED_BODY = "was completed and the next assignment was generated."
     }
 
     object Accessibility {

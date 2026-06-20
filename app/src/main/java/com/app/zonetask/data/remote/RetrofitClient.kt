@@ -1,9 +1,10 @@
 package com.app.zonetask.data.remote
 
 import com.app.zonetask.core.AppConstants
-import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.data.remote.service.AuthApiService
+import com.app.zonetask.data.remote.service.ChatApiService
+import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.TaskApiService
 import com.app.zonetask.data.remote.service.SpaceApiService
@@ -16,6 +17,7 @@ import okhttp3.Interceptor
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
@@ -25,6 +27,10 @@ object RetrofitClient {
     }
 
     private val client = OkHttpClient.Builder()
+        // Save requests can wait on background work, so the client needs a longer write/read window.
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor(loggingInterceptor)
         .addInterceptor(authHeaderInterceptor())
         .build()
@@ -58,6 +64,14 @@ object RetrofitClient {
         retrofit.create(UserApiService::class.java)
     }
 
+    val invitationApiService: InvitationApiService by lazy {
+        retrofit.create(InvitationApiService::class.java)
+    }
+
+    val chatApiService: ChatApiService by lazy {
+        retrofit.create(ChatApiService::class.java)
+    }
+
     val completionApiService: CompletionApiService by lazy {
         retrofit.create(CompletionApiService::class.java)
     }
@@ -68,10 +82,6 @@ object RetrofitClient {
 
     val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
-    }
-
-    val invitationApiService: InvitationApiService by lazy {
-        retrofit.create(InvitationApiService::class.java)
     }
 
     private fun authHeaderInterceptor(): Interceptor = Interceptor { chain ->
