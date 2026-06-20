@@ -211,27 +211,27 @@ class PlanEditorViewModel(
             is ApiResult.Error -> _uiState.value = _uiState.value.copy(isLoadingTemplate = false, errorBanner = result.message)
             is ApiResult.Success -> {
                 val template = result.data
-                // Place the template's zones inside a central region of a larger canvas so
-                // there is free space around them (outer margin) and small gaps between them.
-                // This leaves room to enlarge any zone and to keep editing freely, like a
-                // blank plan, instead of zones tiling the whole grid edge to edge.
-                val margin = 0.12f          // free frame around the whole layout
-                val gap = 0.03f             // separation between adjacent zones
-                val span = 1f - margin * 2f
+                // Behave exactly like creating a blank plan; the only difference is that the
+                // template's default zones are pre-loaded. The canvas and name stay at the
+                // blank defaults (we don't override them), and the zones are placed at their
+                // natural size and centered, leaving the same free editable space a blank plan
+                // has all around them.
+                val canvas = PlanEditorUiState().canvasWidth.toIntOrNull() ?: 240
+                val tCols = template.defaultColumns
+                val tRows = template.defaultRows
+                val offsetX = (canvas - tCols) / 2f
+                val offsetY = (canvas - tRows) / 2f
                 val drafts = template.zones.map { z ->
                     z.toDraft().copy(
-                        x = margin + z.relativeX * span + gap,
-                        y = margin + z.relativeY * span + gap,
-                        width = (z.relativeWidth * span - gap * 2f).coerceAtLeast(0.02f),
-                        height = (z.relativeHeight * span - gap * 2f).coerceAtLeast(0.02f)
+                        x = (offsetX + z.relativeX * tCols) / canvas,
+                        y = (offsetY + z.relativeY * tRows) / canvas,
+                        width = (z.relativeWidth * tCols) / canvas,
+                        height = (z.relativeHeight * tRows) / canvas
                     )
                 }
                 _uiState.value = _uiState.value.copy(
                     isLoadingTemplate = false,
                     templateId = id,
-                    name = template.name,
-                    canvasWidth = template.defaultColumns.toString(),
-                    canvasHeight = template.defaultRows.toString(),
                     zones = drafts
                 )
             }
