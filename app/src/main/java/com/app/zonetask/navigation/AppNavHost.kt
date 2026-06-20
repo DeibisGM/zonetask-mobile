@@ -41,6 +41,8 @@ import com.app.zonetask.ui.screens.profile.ProfileScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
+import com.app.zonetask.ui.screens.chat.ChatEditScreen
+import com.app.zonetask.ui.screens.chat.ChatScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 import kotlinx.coroutines.flow.collect
 
@@ -258,6 +260,9 @@ fun AppNavHost() {
                     onNavigateToTaskDetail = { sid, taskId ->
                         navController.navigate(AppDestinations.taskDetailRoute(sid, taskId))
                     },
+                    onNavigateToChat = { sid ->
+                        navController.navigate(AppDestinations.chatRoute(sid))
+                    },
                     onSpaceChanged = { newSpaceId ->
                         currentSpaceId = newSpaceId
                         navController.navigate(AppDestinations.homeRoute(newSpaceId)) {
@@ -297,6 +302,48 @@ fun AppNavHost() {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set("taskChanged", true)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = AppDestinations.CHAT,
+            arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val spaceId     = backStackEntry.arguments?.getInt("spaceId") ?: 0
+            val chatChanged by backStackEntry.savedStateHandle
+                .getStateFlow("chatChanged", false)
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(chatChanged) {
+                if (chatChanged) {
+                    backStackEntry.savedStateHandle["chatChanged"] = false
+                }
+            }
+
+            ChatScreen(
+                spaceId          = spaceId,
+                userId           = currentUserId,
+                reloadTrigger    = chatChanged,
+                onBack           = { navController.popBackStack() },
+                onNavigateToEdit = { navController.navigate(AppDestinations.editChatRoute(spaceId)) }
+            )
+        }
+
+        composable(
+            route = AppDestinations.CHAT_EDIT,
+            arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 0
+            ChatEditScreen(
+                spaceId = spaceId,
+                userId  = currentUserId,
+                onBack  = { navController.popBackStack() },
+                onSaved = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("chatChanged", true)
                     navController.popBackStack()
                 }
             )

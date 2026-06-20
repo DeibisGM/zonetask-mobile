@@ -1,9 +1,10 @@
 package com.app.zonetask.data.remote
 
 import com.app.zonetask.core.AppConstants
-import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.data.remote.service.AuthApiService
+import com.app.zonetask.data.remote.service.ChatApiService
+import com.app.zonetask.data.remote.service.CompletionApiService
 import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.TaskApiService
 import com.app.zonetask.data.remote.service.SpaceApiService
@@ -58,6 +59,14 @@ object RetrofitClient {
         retrofit.create(UserApiService::class.java)
     }
 
+    val invitationApiService: InvitationApiService by lazy {
+        retrofit.create(InvitationApiService::class.java)
+    }
+
+    val chatApiService: ChatApiService by lazy {
+        retrofit.create(ChatApiService::class.java)
+    }
+
     val completionApiService: CompletionApiService by lazy {
         retrofit.create(CompletionApiService::class.java)
     }
@@ -68,10 +77,6 @@ object RetrofitClient {
 
     val authApiService: AuthApiService by lazy {
         retrofit.create(AuthApiService::class.java)
-    }
-
-    val invitationApiService: InvitationApiService by lazy {
-        retrofit.create(InvitationApiService::class.java)
     }
 
     private fun authHeaderInterceptor(): Interceptor = Interceptor { chain ->
