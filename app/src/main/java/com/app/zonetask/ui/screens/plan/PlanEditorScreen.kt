@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -109,7 +110,8 @@ fun PlanEditorScreen(
         onDismiss = { showRenameRoom = false }
     )
 
-    Column(modifier.fillMaxSize().background(Color(0xFF090B0C))) {
+    Box(modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().background(Color(0xFF090B0C))) {
         state.errorBanner?.let { message ->
             Surface(color = Color(0xFF311E22), modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -174,6 +176,29 @@ fun PlanEditorScreen(
             onRename = { selectedZone?.let { roomName = it.name; showRenameRoom = true } },
             onColor = viewModel::onSelectedZoneColorChange
         )
+    }
+
+        // Saving overlay: covers the editor and blocks input while the plan and its
+        // zones are being persisted (create plan + sync zones).
+        if (state.isSaving) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xCC05090A))
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) { awaitPointerEvent().changes.forEach { it.consume() } }
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = AppPrimary)
+                    Spacer(Modifier.height(14.dp))
+                    Text("Saving floor…", color = AppOnSurface, fontWeight = FontWeight.Medium)
+                }
+            }
+        }
     }
 }
 

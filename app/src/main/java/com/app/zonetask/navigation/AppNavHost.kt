@@ -505,13 +505,14 @@ private fun rememberPlansNavActions(
         onApplyTemplate = { spaceId, templateId -> navController.navigate(PlansDestinations.newPlan(spaceId, templateId)) },
         onOpenPlan      = { spaceId, planId -> navController.navigate(PlansDestinations.editor(spaceId, planId)) },
         onPlanSaved     = { message ->
-            navController.previousBackStackEntry
-                ?.savedStateHandle
-                ?.set(PlansNavKeys.PLAN_SAVED_MESSAGE, message)
-            navController.previousBackStackEntry
-                ?.savedStateHandle
-                ?.set(PlansNavKeys.RELOAD_PLANS, true)
-            navController.popBackStack()
+            // Return straight to the plan list, popping the template-selection screen too
+            // (stack is list → templateSelect → editor), and signal the list to reload.
+            runCatching {
+                val listEntry = navController.getBackStackEntry(PlansDestinations.LIST)
+                listEntry.savedStateHandle[PlansNavKeys.PLAN_SAVED_MESSAGE] = message
+                listEntry.savedStateHandle[PlansNavKeys.RELOAD_PLANS] = true
+            }
+            navController.popBackStack(PlansDestinations.LIST, inclusive = false)
         },
         onBack = { navController.popBackStack() }
     )
