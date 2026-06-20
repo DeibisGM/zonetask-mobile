@@ -11,6 +11,9 @@ data class ChatUiState(
     val errorMessage: String? = null,
     val messages: List<ChatMessageDto> = emptyList(),
     val isMessagesLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val hasMore: Boolean = false,
+    val currentPage: Int = 1,
     val isSending: Boolean = false,
     val sendError: String? = null
 )

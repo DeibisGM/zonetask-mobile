@@ -8,6 +8,7 @@ import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.ChatGroupResponse
 import com.app.zonetask.data.remote.dto.ChatMemberDto
 import com.app.zonetask.data.remote.dto.ChatMessageDto
+import com.app.zonetask.data.remote.dto.PagedMessagesDto
 import com.app.zonetask.data.remote.dto.SendMessageRequest
 import com.app.zonetask.data.remote.dto.UpdateChatGroupRequest
 import com.app.zonetask.data.remote.service.ChatApiService
@@ -98,11 +99,12 @@ class ChatGroupRepository(private val apiService: ChatApiService) {
         }
     }
 
-    suspend fun getMessages(spaceId: Int, userId: Int): ApiResult<List<ChatMessageDto>> {
+    suspend fun getMessages(spaceId: Int, userId: Int, page: Int = 1, pageSize: Int = 50): ApiResult<PagedMessagesDto> {
         return try {
-            val response = apiService.getMessages(spaceId, userId)
+            val response = apiService.getMessages(spaceId, userId, page, pageSize)
             if (response.isSuccessful) {
-                ApiResult.Success(response.body() ?: emptyList())
+                val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
+                ApiResult.Success(body)
             } else {
                 ApiResult.Error(
                     message    = ApiErrorHandler.fromHttpCode(response.code()),

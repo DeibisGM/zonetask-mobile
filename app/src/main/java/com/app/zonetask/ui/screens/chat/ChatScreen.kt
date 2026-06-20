@@ -33,6 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +58,7 @@ import com.app.zonetask.ui.theme.AppCardElevated
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppTopBar
+import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -86,6 +88,14 @@ fun ChatScreen(
         if (reloadTrigger) viewModel.reload()
     }
 
+    // Scroll to bottom after initial load and after sending a message
+    LaunchedEffect(viewModel) {
+        viewModel.scrollToBottomEvent.collectLatest {
+            val total = listState.layoutInfo.totalItemsCount
+            if (total > 0) listState.animateScrollToItem(total - 1)
+        }
+    }
+
     val groupedMessages: List<Pair<String, List<ChatMessageDto>>> = remember(uiState.messages) {
         uiState.messages
             .groupBy { msg -> getLocalDateKey(msg.createdAt) }
@@ -94,11 +104,17 @@ fun ChatScreen(
             .map { (key, msgs) -> key to msgs }
     }
 
-    val totalLazyItems = groupedMessages.sumOf { (_, msgs) -> 1 + msgs.size }
-
-    LaunchedEffect(totalLazyItems) {
-        if (totalLazyItems > 0) {
-            listState.animateScrollToItem(totalLazyItems - 1)
+    // Trigger load-more when the user scrolls near the top (within 3 items)
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val firstVisible = listState.firstVisibleItemIndex
+            val total        = listState.layoutInfo.totalItemsCount
+            total > 0 && firstVisible <= 2
+        }
+    }
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore && uiState.hasMore && !uiState.isLoadingMore && !uiState.isMessagesLoading) {
+            viewModel.loadMoreMessages()
         }
     }
 
@@ -118,19 +134,36 @@ fun ChatScreen(
         HorizontalDivider(color = AppBorder, thickness = 0.5.dp)
 
         LazyColumn(
-            state           = listState,
-            modifier        = Modifier
+            state          = listState,
+            modifier       = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
-            contentPadding  = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
+            // Spinner while the initial load is in progress
             if (uiState.isMessagesLoading) {
-                item {
+                item(key = "messages_loading") {
                     Box(
                         modifier         = Modifier.fillMaxWidth().padding(24.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = AppPrimary, modifier = Modifier.size(24.dp))
+                    }
+                }
+            }
+
+            // Spinner at the top while older pages are loading
+            if (uiState.isLoadingMore) {
+                item(key = "load_more_indicator") {
+                    Box(
+                        modifier         = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color       = AppPrimary,
+                            modifier    = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
                     }
                 }
             }
@@ -212,7 +245,7 @@ fun ChatScreen(
                 } else {
                     Icon(
                         imageVector        = Icons.Filled.Send,
-                        contentDescription = "Enviar",
+                        contentDescription = "Send",
                         tint               = Color.White,
                         modifier           = Modifier.size(20.dp)
                     )
@@ -268,7 +301,7 @@ private fun MessageBubble(msg: ChatMessageDto, isFromCurrentUser: Boolean) {
         }
 
         Column(
-            modifier           = Modifier.widthIn(max = 260.dp),
+            modifier            = Modifier.widthIn(max = 260.dp),
             horizontalAlignment = if (isFromCurrentUser) Alignment.End else Alignment.Start
         ) {
             if (!isFromCurrentUser) {
@@ -421,7 +454,7 @@ private fun getLocalDateKey(isoString: String): String {
     }
 }
 
-// Converts a "yyyy-MM-dd" key into "Hoy", "Ayer", or a localized date string
+// Converts a "yyyy-MM-dd" key into "Today", "Yesterday", or a formatted date string
 private fun getDateLabel(dateKey: String): String {
     val fmt       = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     val today     = fmt.format(Date())
