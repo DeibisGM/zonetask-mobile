@@ -26,8 +26,10 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -44,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -60,17 +63,24 @@ import com.app.zonetask.ui.theme.AppSecondaryText
 fun PlanEditorScreen(
     spaceId: Int,
     planId: Int? = null,
+    templateId: Int? = null,
     modifier: Modifier = Modifier,
     onSaved: (message: String) -> Unit = {},
     onBack: () -> Unit = {},
     onSaveActionChanged: ((() -> Unit)?, Boolean) -> Unit = { _, _ -> },
     viewModel: PlanEditorViewModel = viewModel(
-        factory = PlanEditorViewModelFactory(AppContainer.floorPlanRepository, AppContainer.zoneRepository, spaceId, planId)
+        factory = PlanEditorViewModelFactory(AppContainer.floorPlanRepository, AppContainer.zoneRepository, AppContainer.floorPlanTemplateRepository, spaceId, planId, templateId)
     )
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    if (state.isLoadingTemplate) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = AppPrimary)
+        }
+        return
+    }
     if (!state.setupComplete) {
-        FloorSetupScreen(state, { name -> viewModel.completeSetup(name, "240", "240") }, modifier)
+        FloorSetupScreen(state, { name -> viewModel.completeSetup(name, state.canvasWidth, state.canvasHeight) }, modifier)
         return
     }
 
@@ -79,14 +89,21 @@ fun PlanEditorScreen(
     var resetRequest by rememberSaveable { mutableIntStateOf(0) }
     var showRenameFloor by remember { mutableStateOf(false) }
     var showRenameRoom by remember { mutableStateOf(false) }
+    var showCustomColor by remember { mutableStateOf(false) }
     var floorName by rememberSaveable { mutableStateOf(state.name) }
     var roomName by rememberSaveable { mutableStateOf("") }
+    var customColorInput by rememberSaveable { mutableStateOf(PlanZonePalette.first()) }
 
     LaunchedEffect(state.isSaved) {
         if (state.isSaved) { viewModel.consumeSaved(); onSaved("Floor saved") }
     }
     LaunchedEffect(state.setupComplete, state.isSaving) {
         onSaveActionChanged(if (state.setupComplete && !state.isSaving) viewModel::save else null, state.setupComplete && !state.isSaving)
+    }
+    LaunchedEffect(showCustomColor, selectedZone?.fillColor) {
+        if (showCustomColor) {
+            customColorInput = selectedZone?.fillColor ?: PlanZonePalette.first()
+        }
     }
     BackHandler(enabled = state.isDirty) { onBack() }
 
@@ -101,72 +118,93 @@ fun PlanEditorScreen(
         onDismiss = { showRenameRoom = false }
     )
 
-    Column(modifier.fillMaxSize().background(Color(0xFF090B0C))) {
-        state.errorBanner?.let { message ->
-            Surface(color = Color(0xFF311E22), modifier = Modifier.fillMaxWidth()) {
-                Row(Modifier.padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(message, color = Color(0xFFFFC2CB), modifier = Modifier.weight(1f))
-                    TextButton(onClick = viewModel::clearErrorBanner) { Text("Dismiss", color = Color(0xFFFFC2CB)) }
-                }
-            }
-        }
-        Surface(
-            color = Color(0xFF0A0E0F),
-            border = BorderStroke(1.dp, Color(0xFF243034)),
-            shape = RoundedCornerShape(16.dp),
-            shadowElevation = 0.dp,
-            modifier = Modifier
-                .padding(horizontal = 18.dp, vertical = 10.dp)
-                .zIndex(2f)
-        ) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("Build your floor", color = AppOnSurface, fontWeight = FontWeight.SemiBold, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
-                Text(
-                    "Draw a zone on the grid. Long-press and drag the zone to move it. Resize it from the circles around the edges.",
-                    color = AppSecondaryText,
-                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall
-                )
-                Text("1 cell = 1 m", color = AppPrimary, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
-            }
-        }
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            EditableFloorPlanBoard(
-                grid = grid, zones = state.zones, selectedZoneId = state.selectedZoneId,
-                isRoomToolActive = false, focusRequestKey = 0,
-                focusZoneId = null, resetRequestKey = resetRequest,
-                modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 10.dp),
-                onZoneSelected = { id -> viewModel.onSelectZone(id) },
-                onRoomCreated = { column, row, width, height -> viewModel.onCreateRoom(column, row, width, height) },
-                onZoneGeometryChanged = viewModel::onZoneGeometryChanged,
-                onZoneDelete = { _ -> viewModel.onDeleteSelectedZone() }
-            )
-            if (selectedZone == null) {
-                Surface(
-                    onClick = { resetRequest++ },
-                    color = Color(0xFF151C1E),
-                    border = BorderStroke(1.dp, Color(0xFF2A3436)),
-                    shape = RoundedCornerShape(999.dp),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Outlined.CenterFocusStrong, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(7.dp))
-                        Text("Center", color = AppOnSurface, fontWeight = FontWeight.SemiBold)
+    Box(modifier.fillMaxSize().background(Color(0xFF090B0C))) {
+        Column(Modifier.fillMaxSize()) {
+            state.errorBanner?.let { message ->
+                Surface(color = Color(0xFF311E22), modifier = Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(message, color = Color(0xFFFFC2CB), modifier = Modifier.weight(1f))
+                        TextButton(onClick = viewModel::clearErrorBanner) { Text("Dismiss", color = Color(0xFFFFC2CB)) }
                     }
                 }
             }
+            Surface(
+                color = Color(0xFF0A0E0F),
+                border = BorderStroke(1.dp, Color(0xFF243034)),
+                shape = RoundedCornerShape(16.dp),
+                shadowElevation = 0.dp,
+                modifier = Modifier
+                    .padding(horizontal = 18.dp, vertical = 10.dp)
+                    .zIndex(2f)
+            ) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("Build your floor", color = AppOnSurface, fontWeight = FontWeight.SemiBold, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Draw a zone on the grid. Long-press and drag the zone to move it. Resize it from the circles around the edges.",
+                        color = AppSecondaryText,
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+                    )
+                    Text("1 cell = 1 m", color = AppPrimary, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
+                }
+            }
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                EditableFloorPlanBoard(
+                    grid = grid, zones = state.zones, selectedZoneId = state.selectedZoneId,
+                    isRoomToolActive = false, focusRequestKey = 0,
+                    focusZoneId = null, resetRequestKey = resetRequest,
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 10.dp),
+                    onZoneSelected = { id -> viewModel.onSelectZone(id) },
+                    onRoomCreated = { column, row, width, height -> viewModel.onCreateRoom(column, row, width, height) },
+                    onZoneGeometryChanged = viewModel::onZoneGeometryChanged,
+                    onZoneDelete = { _ -> viewModel.onDeleteSelectedZone() }
+                )
+                if (selectedZone == null) {
+                    Surface(
+                        onClick = { resetRequest++ },
+                        color = Color(0xFF151C1E),
+                        border = BorderStroke(1.dp, Color(0xFF2A3436)),
+                        shape = RoundedCornerShape(999.dp),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.CenterFocusStrong, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(7.dp))
+                            Text("Center", color = AppOnSurface, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+            BottomToolTray(
+                selectedZone = selectedZone, grid = grid,
+                onAddZone = viewModel::onAddZone,
+                onRename = { selectedZone?.let { roomName = it.name; showRenameRoom = true } },
+                onColor = viewModel::onSelectedZoneColorChange,
+                onCustomColor = { showCustomColor = true }
+            )
         }
-        BottomToolTray(
-            selectedZone = selectedZone, grid = grid,
-            onAddZone = viewModel::onAddZone,
-            onRename = { selectedZone?.let { roomName = it.name; showRenameRoom = true } },
-            onColor = viewModel::onSelectedZoneColorChange
-        )
+
+        if (state.isSaving) {
+            SavingOverlay()
+        }
+        if (showCustomColor && selectedZone != null) {
+            CustomColorDialog(
+                title = "Custom color",
+                value = customColorInput,
+                onValueChange = { customColorInput = it },
+                onConfirm = {
+                    normalizeColorInput(customColorInput)?.let { normalized ->
+                        viewModel.onSelectedZoneColorChange(normalized)
+                        showCustomColor = false
+                    }
+                },
+                onDismiss = { showCustomColor = false }
+            )
+        }
     }
 }
 
@@ -192,7 +230,8 @@ private fun FloorSetupScreen(state: PlanEditorUiState, onStart: (String) -> Unit
 private fun BottomToolTray(
     selectedZone: PlanZoneDraft?, grid: FloorGridSpec,
     onAddZone: () -> Unit, onRename: () -> Unit,
-    onColor: (String) -> Unit
+    onColor: (String) -> Unit,
+    onCustomColor: () -> Unit
 ) {
     Surface(color = Color(0xFF121718), shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -230,9 +269,94 @@ private fun BottomToolTray(
                         Surface(onClick = { onColor(color) }, color = color.asZoneColor(), shape = RoundedCornerShape(7.dp), border = BorderStroke(if (active) 2.dp else 0.dp, Color.White), modifier = Modifier.size(28.dp)) {}
                     }
                 }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CompactActionChip("Custom color", onCustomColor)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun SavingOverlay() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .zIndex(20f)
+            .background(Color.Black.copy(alpha = 0.62f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            color = Color(0xFF111618),
+            border = BorderStroke(1.dp, Color(0xFF273237)),
+            shape = RoundedCornerShape(22.dp),
+            shadowElevation = 0.dp,
+            modifier = Modifier.widthIn(min = 240.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text("Saving floor", color = AppOnSurface, fontWeight = FontWeight.SemiBold)
+                Text("Updating the floor and zones...", color = AppSecondaryText)
+                LinearProgressIndicator(
+                    color = AppPrimary,
+                    trackColor = AppPrimary.copy(alpha = 0.16f),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomColorDialog(
+    title: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val normalized = normalizeColorInput(value)
+    val previewColor = normalized?.asZoneColor() ?: AppPrimary
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Use a hex color like #76D6D0 or #FF76D6D0.", color = AppSecondaryText)
+                Surface(
+                    color = previewColor,
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color(0xFF2D373B)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                ) {}
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    singleLine = true,
+                    label = { Text("Hex color") },
+                    isError = value.isNotBlank() && normalized == null,
+                    supportingText = {
+                        if (value.isNotBlank() && normalized == null) {
+                            Text("Enter #RRGGBB or #AARRGGBB", color = Color(0xFFFFB6C0))
+                        }
+                    },
+                    colors = fieldColors()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = normalized != null
+            ) { Text("Apply", color = if (normalized != null) AppPrimary else AppSecondaryText) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
 
 @Composable
@@ -257,3 +381,11 @@ private fun RenameDialog(title: String, value: String, onValueChange: (String) -
 
 @Composable
 private fun fieldColors() = OutlinedTextFieldDefaults.colors(focusedBorderColor = AppPrimary, focusedLabelColor = AppPrimary, cursorColor = AppPrimary, focusedTextColor = AppOnSurface, unfocusedTextColor = AppOnSurface, unfocusedBorderColor = AppBorder, unfocusedLabelColor = AppSecondaryText)
+
+private fun normalizeColorInput(value: String): String? {
+    val trimmed = value.trim()
+    if (trimmed.isBlank()) return null
+    val withHash = if (trimmed.startsWith("#")) trimmed else "#$trimmed"
+    val valid = Regex("^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
+    return if (valid.matches(withHash)) withHash.uppercase() else null
+}

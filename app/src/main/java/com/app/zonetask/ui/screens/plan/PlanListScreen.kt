@@ -44,6 +44,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.di.AppContainer
 import com.app.zonetask.domain.model.FloorPlan
+import com.app.zonetask.ui.components.ScreenLoadingState
+import com.app.zonetask.ui.components.ScreenStateCard
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
@@ -82,35 +84,19 @@ fun PlanListScreen(
         when {
             state.isLoading -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = AppPrimary)
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text  = "Loading floors...",
-                            color = AppSecondaryText,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                    ScreenLoadingState(modifier = Modifier.fillMaxWidth(), lines = 2)
                 }
             }
 
             state.errorBanner != null -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                            Text(
-                                text      = state.errorBanner!!,
-                                color     = AppSecondaryText,
-                                style     = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center
-                            )
-                            TextButton(onClick = viewModel::loadPlans) {
-                                Text("Retry", color = AppPrimary)
-                            }
-                        }
-                    }
+                    ScreenStateCard(
+                        title = "Could not load floors",
+                        message = state.errorBanner!!,
+                        actionText = "Retry",
+                        onAction = viewModel::loadPlans
+                    )
+                }
             }
 
             else -> {
@@ -121,53 +107,12 @@ fun PlanListScreen(
                 ) {
                     if (state.plans.isEmpty()) {
                         item {
-                            Column(
-                                modifier            = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Spacer(Modifier.height(40.dp))
-                                Icon(
-                                    imageVector        = Icons.Outlined.GridView,
-                                    contentDescription = null,
-                                    tint               = AppSecondaryText,
-                                    modifier           = Modifier.size(48.dp)
-                                )
-                                Text(
-                                    text = "No floors in this space yet.",
-                                    color = AppSecondaryText,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = "Create your first floor to start building rooms.",
-                                    color = AppSecondaryText,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center
-                                )
-                                Button(
-                                    onClick = onCreatePlan,
-                                    modifier = Modifier
-                                        .padding(top = 12.dp)
-                                        .height(52.dp),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Add,
-                                        contentDescription = null,
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(
-                                        text = "Create floor",
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                }
-                            }
+                            ScreenStateCard(
+                                title = "No floors in this space yet",
+                                message = "Create your first floor to start building rooms.",
+                                actionText = "Create floor",
+                                onAction = onCreatePlan
+                            )
                         }
                     } else {
                         item {

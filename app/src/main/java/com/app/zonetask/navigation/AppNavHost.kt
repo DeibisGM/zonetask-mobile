@@ -21,10 +21,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.core.UserMessages
+import com.app.zonetask.core.WorkspaceStore
 import com.app.zonetask.navigation.plans.PlansDestinations
 import com.app.zonetask.navigation.plans.PlansNavActions
 import com.app.zonetask.navigation.plans.PlansNavKeys
 import com.app.zonetask.navigation.plans.plansNavGraph
+import com.app.zonetask.navigation.HomeNavKeys
 import com.app.zonetask.navigation.spaces.SpacesDestinations
 import com.app.zonetask.navigation.spaces.SpacesNavActions
 import com.app.zonetask.navigation.spaces.SpacesNavKeys
@@ -38,6 +40,7 @@ import com.app.zonetask.ui.screens.login.LoginScreen
 import com.app.zonetask.ui.screens.passwordreset.ForgotPasswordScreen
 import com.app.zonetask.ui.screens.profile.ProfileEditScreen
 import com.app.zonetask.ui.screens.profile.ProfileScreen
+import com.app.zonetask.ui.screens.settings.SettingsScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
 import com.app.zonetask.ui.screens.chat.ChatEditScreen
 import com.app.zonetask.ui.screens.chat.ChatScreen
@@ -61,20 +64,25 @@ fun AppNavHost() {
     var currentUserEmail by rememberSaveable {
         mutableStateOf(AuthSessionStore.currentUser?.email ?: "")
     }
-    var currentSpaceId by rememberSaveable { mutableIntStateOf(0) }
+    var currentSpaceId by rememberSaveable {
+        mutableIntStateOf(WorkspaceStore.getLastSpaceId(currentUserId))
+    }
     var pendingNotificationRoute by remember {
         mutableStateOf(NotificationNavigationStore.consumeLastRoute())
     }
     val startDestination = if (currentUserId > 0) {
-        AppDestinations.homeRoute(0)
+        val lastSpaceId = WorkspaceStore.getLastSpaceId(currentUserId)
+        AppDestinations.homeRoute(lastSpaceId)
     } else {
         AppDestinations.LOGIN
     }
 
     // Central logout handler that clears the cached session and returns to the login screen.
     val performLogout = {
+        WorkspaceStore.clear(currentUserId)
         AuthSessionStore.clear()
         currentUserId = 0
+        currentUserEmail = ""
         currentSpaceId = 0
         navController.navigate(AppDestinations.LOGIN) {
             popUpTo(navController.graph.startDestinationId) {
@@ -105,7 +113,7 @@ fun AppNavHost() {
     }
 
     val spacesNavActions = rememberSpacesNavActions(navController, currentUserId)
-    val plansNavActions  = rememberPlansNavActions(navController)
+    val plansNavActions  = rememberPlansNavActions(navController, currentUserId)
 
     NavHost(
         navController = navController,
@@ -136,7 +144,9 @@ fun AppNavHost() {
                         }
                         pendingNotificationRoute = null
                     } else {
-                        navController.navigate(AppDestinations.homeRoute(0)) {
+                        val lastSpaceId = WorkspaceStore.getLastSpaceId(userId)
+                        currentSpaceId = lastSpaceId
+                        navController.navigate(AppDestinations.homeRoute(lastSpaceId)) {
                             popUpTo(AppDestinations.LOGIN) { inclusive = true }
                         }
                     }
@@ -183,6 +193,19 @@ fun AppNavHost() {
                         ?.savedStateHandle
                         ?.set("profileChanged", true)
                 }
+            )
+        }
+
+        composable(route = AppDestinations.SETTINGS) {
+            SettingsScreen(
+                onTabSelected = onTabSelected,
+                onOpenSpaces = {
+                    navController.navigate(SpacesDestinations.list(currentUserId))
+                },
+                onOpenProfile = {
+                    navController.navigate(AppDestinations.PROFILE)
+                },
+                onLogout = performLogout
             )
         }
 
@@ -234,6 +257,15 @@ fun AppNavHost() {
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->
             val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 0
+            val homeRefresh by backStackEntry.savedStateHandle
+                .getStateFlow(HomeNavKeys.HOME_REFRESH, false)
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(homeRefresh) {
+                if (homeRefresh) {
+                    backStackEntry.savedStateHandle[HomeNavKeys.HOME_REFRESH] = false
+                }
+            }
 
             ZoneTaskScaffold(
                 title = "",
@@ -248,6 +280,10 @@ fun AppNavHost() {
                     spaceId = spaceId,
                     userId = currentUserId,
                     modifier = Modifier.padding(padding),
+                    refreshTrigger = homeRefresh,
+                    onRefreshHandled = {
+                        backStackEntry.savedStateHandle[HomeNavKeys.HOME_REFRESH] = false
+                    },
                     onNavigateToCreateSpace = {
                         navController.navigate(SpacesDestinations.CREATE)
                     },
@@ -414,6 +450,7 @@ fun AppNavHost() {
         )
 
         plansNavGraph(
+            navController = navController,
             actions = plansNavActions,
             rootSnackbarHostState = snackbarHostState
         )
@@ -443,7 +480,7 @@ private fun navigateToTab(
         NavDestination.TASKS    -> AppDestinations.tasksRoute(userId)
         NavDestination.CHAT     -> AppDestinations.CHAT_LIST
         NavDestination.PROFILE  -> AppDestinations.PROFILE
-        NavDestination.SETTINGS -> SpacesDestinations.list(userId)
+        NavDestination.SETTINGS -> AppDestinations.SETTINGS
         else -> return
     }
     navController.navigate(route) { launchSingleTop = true }
@@ -523,20 +560,32 @@ private fun rememberSpacesNavActions(
 
 @Composable
 private fun rememberPlansNavActions(
-    navController: NavHostController
-): PlansNavActions = remember(navController) {
+    navController: NavHostController,
+    currentUserId: Int
+): PlansNavActions = remember(navController, currentUserId) {
     PlansNavActions(
-        onOpenList   = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
-        onCreatePlan = { spaceId -> navController.navigate(PlansDestinations.newPlan(spaceId)) },
-        onOpenPlan   = { spaceId, planId -> navController.navigate(PlansDestinations.editor(spaceId, planId)) },
-        onPlanSaved  = { message ->
-            navController.previousBackStackEntry
-                ?.savedStateHandle
-                ?.set(PlansNavKeys.PLAN_SAVED_MESSAGE, message)
-            navController.previousBackStackEntry
-                ?.savedStateHandle
-                ?.set(PlansNavKeys.RELOAD_PLANS, true)
-            navController.popBackStack()
+        onOpenList = { spaceId -> navController.navigate(PlansDestinations.list(spaceId)) },
+        onCreatePlan = { spaceId ->
+            WorkspaceStore.rememberSpace(currentUserId, spaceId)
+            navController.navigate(PlansDestinations.templateSelect(spaceId))
+        },
+        onApplyTemplate = { spaceId, templateId ->
+            WorkspaceStore.rememberSpace(currentUserId, spaceId)
+            navController.navigate(PlansDestinations.newPlan(spaceId, templateId))
+        },
+        onOpenPlan = { spaceId, planId ->
+            WorkspaceStore.rememberPlan(currentUserId, spaceId, planId)
+            navController.navigate(PlansDestinations.editor(spaceId, planId))
+        },
+        onPlanSaved = { message ->
+            // Return straight to the plan list, popping the template-selection screen too,
+            // and signal the list to reload.
+            runCatching {
+                val listEntry = navController.getBackStackEntry(PlansDestinations.LIST)
+                listEntry.savedStateHandle[PlansNavKeys.PLAN_SAVED_MESSAGE] = message
+                listEntry.savedStateHandle[PlansNavKeys.RELOAD_PLANS] = true
+            }
+            navController.popBackStack(PlansDestinations.LIST, inclusive = false)
         },
         onBack = { navController.popBackStack() }
     )
