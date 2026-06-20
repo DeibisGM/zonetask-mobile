@@ -226,6 +226,7 @@ fun HomeScreen(
                                 worldWidth = uiState.activePlan!!.canvasWidth,
                                 worldHeight = uiState.activePlan!!.canvasHeight,
                                 bottomInset = if (tasksExpanded) 280.dp else 64.dp,
+                                zones = uiState.activePlanZones,
                                 modifier = Modifier.fillMaxSize()
                             )
                         } else {

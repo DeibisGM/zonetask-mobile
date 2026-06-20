@@ -2,6 +2,7 @@ package com.app.zonetask.ui.screens.home
 
 import com.app.zonetask.domain.model.FloorPlan
 import com.app.zonetask.domain.model.Space
+import com.app.zonetask.ui.screens.plan.PlanZoneDraft
 
 data class HomeTaskItem(
     val taskId: Int,
@@ -17,6 +18,7 @@ data class HomeUiState(
     val spaceName: String = "",
     val plans: List<FloorPlan> = emptyList(),
     val activePlan: FloorPlan? = null,
+    val activePlanZones: List<PlanZoneDraft> = emptyList(),
     val pendingTasks: List<HomeTaskItem> = emptyList(),
     val userSpaces: List<Space> = emptyList(),
     val currentSpaceId: Int? = null,
