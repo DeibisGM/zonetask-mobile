@@ -124,17 +124,16 @@ fun PlanEditorScreen(
             shape = RoundedCornerShape(16.dp),
             shadowElevation = 0.dp,
             modifier = Modifier
-                .padding(horizontal = 18.dp, vertical = 10.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
                 .zIndex(2f)
         ) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Column(Modifier.padding(horizontal = 14.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text("Build your floor", color = AppOnSurface, fontWeight = FontWeight.SemiBold, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
                 Text(
-                    "Draw a zone on the grid. Long-press and drag the zone to move it. Resize it from the circles around the edges.",
+                    "Drag a zone to move it · resize from the edge circles · 1 cell = 1 m",
                     color = AppSecondaryText,
                     style = androidx.compose.material3.MaterialTheme.typography.bodySmall
                 )
-                Text("1 cell = 1 m", color = AppPrimary, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
             }
         }
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -142,7 +141,7 @@ fun PlanEditorScreen(
                 grid = grid, zones = state.zones, selectedZoneId = state.selectedZoneId,
                 isRoomToolActive = false, focusRequestKey = 0,
                 focusZoneId = null, resetRequestKey = resetRequest,
-                modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 4.dp),
                 onZoneSelected = { id -> viewModel.onSelectZone(id) },
                 onRoomCreated = { column, row, width, height -> viewModel.onCreateRoom(column, row, width, height) },
                 onZoneGeometryChanged = viewModel::onZoneGeometryChanged,

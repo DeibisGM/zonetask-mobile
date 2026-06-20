@@ -75,7 +75,7 @@ fun EditableFloorPlanBoard(
     BoxWithConstraints(modifier = modifier) {
         val viewportWidth = constraints.maxWidth.toFloat()
         val viewportHeight = constraints.maxHeight.toFloat()
-        val baseCellPx = 32f
+        val baseCellPx = 38f
         val worldWidth = grid.columns * baseCellPx
         val worldHeight = grid.rows * baseCellPx
         val origin = Offset((viewportWidth - worldWidth) / 2f, (viewportHeight - worldHeight) / 2f)

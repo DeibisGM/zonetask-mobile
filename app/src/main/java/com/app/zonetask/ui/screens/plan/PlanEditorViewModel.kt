@@ -211,7 +211,21 @@ class PlanEditorViewModel(
             is ApiResult.Error -> _uiState.value = _uiState.value.copy(isLoadingTemplate = false, errorBanner = result.message)
             is ApiResult.Success -> {
                 val template = result.data
-                val drafts = template.zones.map { it.toDraft() }
+                // Place the template's zones inside a central region of a larger canvas so
+                // there is free space around them (outer margin) and small gaps between them.
+                // This leaves room to enlarge any zone and to keep editing freely, like a
+                // blank plan, instead of zones tiling the whole grid edge to edge.
+                val margin = 0.12f          // free frame around the whole layout
+                val gap = 0.03f             // separation between adjacent zones
+                val span = 1f - margin * 2f
+                val drafts = template.zones.map { z ->
+                    z.toDraft().copy(
+                        x = margin + z.relativeX * span + gap,
+                        y = margin + z.relativeY * span + gap,
+                        width = (z.relativeWidth * span - gap * 2f).coerceAtLeast(0.02f),
+                        height = (z.relativeHeight * span - gap * 2f).coerceAtLeast(0.02f)
+                    )
+                }
                 _uiState.value = _uiState.value.copy(
                     isLoadingTemplate = false,
                     templateId = id,
