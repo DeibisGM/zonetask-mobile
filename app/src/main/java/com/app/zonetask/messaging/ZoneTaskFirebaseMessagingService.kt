@@ -29,6 +29,8 @@ class ZoneTaskFirebaseMessagingService : FirebaseMessagingService() {
         val data = message.data
         val spaceId = data["space_id"]?.toIntOrNull() ?: return
         val taskId = data["task_id"]?.toIntOrNull()
+        // Summary pushes do not include a task id, so the app falls back to the space
+        // home route instead of forcing a task-detail deep link.
         val isSummaryNotification = taskId == null
         val title = data["title"]
             ?: message.notification?.title
