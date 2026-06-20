@@ -7,6 +7,19 @@ import kotlin.math.roundToInt
 /** Four fine grid cells make one real-world metre. */
 const val SUBCELLS_PER_METER = 4
 
+data class ZoneObjectCatalogItem(
+    val type: String,
+    val name: String,
+    val spanColumns: Int,
+    val spanRows: Int
+)
+
+val ZoneObjectCatalog = listOf(
+    ZoneObjectCatalogItem("sofa", "Sofa", 8, 4),
+    ZoneObjectCatalogItem("bed", "Bed", 4, 8),
+    ZoneObjectCatalogItem("table_with_chairs", "Table and chairs", 8, 8)
+)
+
 data class FloorGridSpec(
     val columns: Int = 120,
     val rows: Int = 120
@@ -30,8 +43,27 @@ data class PlanZoneDraft(
     val column: Int? = null,
     val row: Int? = null,
     val spanColumns: Int? = null,
-    val spanRows: Int? = null
+    val spanRows: Int? = null,
+    val objects: List<PlanZoneObjectDraft> = emptyList()
 )
+
+data class PlanZoneObjectDraft(
+    val id: String = UUID.randomUUID().toString(),
+    val backendId: Int? = null,
+    val name: String = "Sofa",
+    val objectType: String = "sofa",
+    val column: Int = 0,
+    val row: Int = 0,
+    val spanColumns: Int = 8,
+    val spanRows: Int = 4,
+    val rotationDegrees: Int = 0
+) {
+    val rotatedSpanColumns: Int get() = if (rotationDegrees % 180 == 0) spanColumns else spanRows
+    val rotatedSpanRows: Int get() = if (rotationDegrees % 180 == 0) spanRows else spanColumns
+
+    fun fitsInside(zone: GridZoneGeometry): Boolean =
+        column >= 0 && row >= 0 && column + rotatedSpanColumns <= zone.spanColumns && row + rotatedSpanRows <= zone.spanRows
+}
 
 data class PlanZoneDraftSnapshot(
     val name: String,
@@ -48,7 +80,8 @@ data class PlanZoneDraftSnapshot(
     val column: Int? = null,
     val row: Int? = null,
     val spanColumns: Int? = null,
-    val spanRows: Int? = null
+    val spanRows: Int? = null,
+    val objects: List<PlanZoneObjectDraft> = emptyList()
 )
 
 fun PlanZoneDraft.geometry(grid: FloorGridSpec): GridZoneGeometry {
@@ -102,13 +135,13 @@ data class GridZoneGeometry(
 fun PlanZoneDraft.toSnapshot(): PlanZoneDraftSnapshot = PlanZoneDraftSnapshot(
     id = id, backendId = backendId, name = name, x = x, y = y, width = width, height = height,
     fillColor = fillColor, strokeColor = strokeColor, strokeWidth = strokeWidth, opacity = opacity,
-    column = column, row = row, spanColumns = spanColumns, spanRows = spanRows
+    column = column, row = row, spanColumns = spanColumns, spanRows = spanRows, objects = objects
 )
 
 fun PlanZoneDraftSnapshot.toDraft(): PlanZoneDraft = PlanZoneDraft(
     id = id, backendId = backendId, name = name, x = x, y = y, width = width, height = height,
     fillColor = fillColor, strokeColor = strokeColor, strokeWidth = strokeWidth, opacity = opacity,
-    column = column, row = row, spanColumns = spanColumns, spanRows = spanRows
+    column = column, row = row, spanColumns = spanColumns, spanRows = spanRows, objects = objects
 )
 
 fun String.asZoneColor(): Color = Color(android.graphics.Color.parseColor(this))

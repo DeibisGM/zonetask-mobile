@@ -89,6 +89,8 @@ fun PlanEditorScreen(
 
     val grid = FloorGridSpec(state.canvasWidth.toIntOrNull() ?: 240, state.canvasHeight.toIntOrNull() ?: 240)
     val selectedZone = state.zones.firstOrNull { it.id == state.selectedZoneId }
+    var editingObjectsZoneId by rememberSaveable { mutableStateOf<String?>(null) }
+    val objectsEditorZone = state.zones.firstOrNull { it.id == editingObjectsZoneId }
     var resetRequest by rememberSaveable { mutableIntStateOf(0) }
     var showRenameFloor by remember { mutableStateOf(false) }
     var showRenameRoom by remember { mutableStateOf(false) }
@@ -96,6 +98,20 @@ fun PlanEditorScreen(
     var floorName by rememberSaveable { mutableStateOf(state.name) }
     var roomName by rememberSaveable { mutableStateOf("") }
     var customColorInput by rememberSaveable { mutableStateOf(PlanZonePalette.first()) }
+
+    if (objectsEditorZone != null) {
+        ZoneObjectsEditorScreen(
+            zone = objectsEditorZone,
+            grid = grid,
+            onAddObject = { item -> viewModel.onAddObjectToZone(objectsEditorZone.id, item) },
+            onMoveObject = { objectId, column, row -> viewModel.onMoveZoneObject(objectsEditorZone.id, objectId, column, row) },
+            onRotateObject = { objectId -> viewModel.onRotateZoneObject(objectsEditorZone.id, objectId) },
+            onDeleteObject = { objectId -> viewModel.onDeleteZoneObject(objectsEditorZone.id, objectId) },
+            onDone = { editingObjectsZoneId = null },
+            modifier = modifier
+        )
+        return
+    }
 
     LaunchedEffect(state.isSaved) {
         if (state.isSaved) { viewModel.consumeSaved(); onSaved("Floor saved") }
@@ -187,7 +203,8 @@ fun PlanEditorScreen(
                 onColor = viewModel::onSelectedZoneColorChange,
                 onCustomColor = { showCustomColor = true },
                 onResize = viewModel::onResizeZone,
-                onDeselect = { viewModel.onSelectZone(null) }
+                onDeselect = { viewModel.onSelectZone(null) },
+                onEditObjects = { selectedZone?.let { editingObjectsZoneId = it.id } }
             )
         }
 
@@ -236,7 +253,8 @@ private fun BottomToolTray(
     onColor: (String) -> Unit,
     onCustomColor: () -> Unit,
     onResize: (String, Int, Int) -> Unit,
-    onDeselect: () -> Unit
+    onDeselect: () -> Unit,
+    onEditObjects: () -> Unit
 ) {
     Surface(color = Color(0xFF121718), shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -278,6 +296,7 @@ private fun BottomToolTray(
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CompactActionChip("Edit objects", onEditObjects)
                     CompactActionChip("Custom color", onCustomColor)
                 }
                 ZoneSizeInputs(
