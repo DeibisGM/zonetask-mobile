@@ -49,17 +49,23 @@ object ZoneTaskNotificationManager {
         title: String,
         body: String,
         spaceId: Int,
-        taskId: Int,
+        taskId: Int? = null,
         notificationType: String
     ) {
         // Build a local notification that deep-links into the task detail route.
         ensureChannel(context)
 
-        val route = AppDestinations.taskDetailRoute(spaceId, taskId)
+        val route = if (taskId != null && taskId > 0) {
+            AppDestinations.taskDetailRoute(spaceId, taskId)
+        } else {
+            AppDestinations.homeRoute(spaceId)
+        }
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra(EXTRA_SPACE_ID, spaceId)
-            putExtra(EXTRA_TASK_ID, taskId)
+            if (taskId != null && taskId > 0) {
+                putExtra(EXTRA_TASK_ID, taskId)
+            }
             putExtra(EXTRA_NOTIFICATION_TYPE, notificationType)
             putExtra("notification_route", route)
         }
@@ -91,8 +97,12 @@ object ZoneTaskNotificationManager {
         // Prefer the explicit task ids, but keep a fallback string for older taps.
         val spaceId = intent.getIntExtra(EXTRA_SPACE_ID, -1)
         val taskId = intent.getIntExtra(EXTRA_TASK_ID, -1)
-        if (spaceId <= 0 || taskId <= 0) {
+        if (spaceId <= 0) {
             return intent.getStringExtra("notification_route")
+        }
+
+        if (taskId <= 0) {
+            return AppDestinations.homeRoute(spaceId)
         }
 
         return AppDestinations.taskDetailRoute(spaceId, taskId)

@@ -27,14 +27,23 @@ class ZoneTaskFirebaseMessagingService : FirebaseMessagingService() {
         // Firebase can deliver either notification payloads or pure data payloads.
         // The app normalizes both into the same local notification model.
         val data = message.data
+        val spaceId = data["space_id"]?.toIntOrNull() ?: return
+        val taskId = data["task_id"]?.toIntOrNull()
+        val isSummaryNotification = taskId == null
         val title = data["title"]
             ?: message.notification?.title
-            ?: UserMessages.Notifications.DEFAULT_TITLE
+            ?: if (isSummaryNotification) {
+                UserMessages.Notifications.SUMMARY_TITLE
+            } else {
+                UserMessages.Notifications.DEFAULT_TITLE
+            }
         val body = data["body"]
             ?: message.notification?.body
-            ?: UserMessages.Notifications.DEFAULT_BODY
-        val spaceId = data["space_id"]?.toIntOrNull() ?: return
-        val taskId = data["task_id"]?.toIntOrNull() ?: return
+            ?: if (isSummaryNotification) {
+                UserMessages.Notifications.SUMMARY_BODY
+            } else {
+                UserMessages.Notifications.DEFAULT_BODY
+            }
         val type = data["notification_type"] ?: "task_event"
 
         ZoneTaskNotificationManager.showTaskNotification(

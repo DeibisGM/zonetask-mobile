@@ -144,6 +144,8 @@ object UserMessages {
         const val TASK_OVERDUE_BODY = "is now overdue."
         const val TASK_COMPLETED_TITLE = "Task completed"
         const val TASK_COMPLETED_BODY = "was completed and the next assignment was generated."
+        const val SUMMARY_TITLE = "Space summary"
+        const val SUMMARY_BODY = "Open the space to review the latest task summary."
     }
 
     object Accessibility {
