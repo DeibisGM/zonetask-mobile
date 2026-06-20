@@ -70,6 +70,18 @@ class HomeViewModel(
                     is ApiResult.Error -> emptyList()
                 }
 
+                // Load the zones of the active plan so the home preview shows the rooms,
+                // not just an empty floor outline.
+                val activePlan = plans.firstOrNull()
+                val activePlanZones = if (activePlan != null) {
+                    when (val zonesResult = AppContainer.zoneRepository.getZonesByPlan(
+                        activePlan.planId, activePlan.canvasWidth, activePlan.canvasHeight
+                    )) {
+                        is ApiResult.Success -> zonesResult.data
+                        is ApiResult.Error -> emptyList()
+                    }
+                } else emptyList()
+
                 val allTasks = when (tasksResult) {
                     is ApiResult.Success -> tasksResult.data
                     is ApiResult.Error -> emptyList()
@@ -85,7 +97,8 @@ class HomeViewModel(
                 _uiState.value = _uiState.value.copy(
                     spaceName = currentSpace?.name ?: "No space",
                     plans = plans,
-                    activePlan = plans.firstOrNull(),
+                    activePlan = activePlan,
+                    activePlanZones = activePlanZones,
                     pendingTasks = pendingTaskItems,
                     userSpaces = spaces,
                     currentSpaceId = resolvedSpaceId,

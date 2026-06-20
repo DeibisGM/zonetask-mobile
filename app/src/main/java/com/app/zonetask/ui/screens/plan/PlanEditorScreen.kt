@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -44,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -60,17 +62,24 @@ import com.app.zonetask.ui.theme.AppSecondaryText
 fun PlanEditorScreen(
     spaceId: Int,
     planId: Int? = null,
+    templateId: Int? = null,
     modifier: Modifier = Modifier,
     onSaved: (message: String) -> Unit = {},
     onBack: () -> Unit = {},
     onSaveActionChanged: ((() -> Unit)?, Boolean) -> Unit = { _, _ -> },
     viewModel: PlanEditorViewModel = viewModel(
-        factory = PlanEditorViewModelFactory(AppContainer.floorPlanRepository, AppContainer.zoneRepository, spaceId, planId)
+        factory = PlanEditorViewModelFactory(AppContainer.floorPlanRepository, AppContainer.zoneRepository, AppContainer.floorPlanTemplateRepository, spaceId, planId, templateId)
     )
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    if (state.isLoadingTemplate) {
+        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = AppPrimary)
+        }
+        return
+    }
     if (!state.setupComplete) {
-        FloorSetupScreen(state, { name -> viewModel.completeSetup(name, "240", "240") }, modifier)
+        FloorSetupScreen(state, { name -> viewModel.completeSetup(name, state.canvasWidth, state.canvasHeight) }, modifier)
         return
     }
 
@@ -101,7 +110,8 @@ fun PlanEditorScreen(
         onDismiss = { showRenameRoom = false }
     )
 
-    Column(modifier.fillMaxSize().background(Color(0xFF090B0C))) {
+    Box(modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().background(Color(0xFF090B0C))) {
         state.errorBanner?.let { message ->
             Surface(color = Color(0xFF311E22), modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(horizontal = 18.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -116,17 +126,16 @@ fun PlanEditorScreen(
             shape = RoundedCornerShape(16.dp),
             shadowElevation = 0.dp,
             modifier = Modifier
-                .padding(horizontal = 18.dp, vertical = 10.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
                 .zIndex(2f)
         ) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Column(Modifier.padding(horizontal = 14.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text("Build your floor", color = AppOnSurface, fontWeight = FontWeight.SemiBold, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
                 Text(
-                    "Draw a zone on the grid. Long-press and drag the zone to move it. Resize it from the circles around the edges.",
+                    "Drag a zone to move it · resize from the edge circles · 1 cell = 1 m",
                     color = AppSecondaryText,
                     style = androidx.compose.material3.MaterialTheme.typography.bodySmall
                 )
-                Text("1 cell = 1 m", color = AppPrimary, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
             }
         }
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -134,7 +143,7 @@ fun PlanEditorScreen(
                 grid = grid, zones = state.zones, selectedZoneId = state.selectedZoneId,
                 isRoomToolActive = false, focusRequestKey = 0,
                 focusZoneId = null, resetRequestKey = resetRequest,
-                modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 10.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 4.dp),
                 onZoneSelected = { id -> viewModel.onSelectZone(id) },
                 onRoomCreated = { column, row, width, height -> viewModel.onCreateRoom(column, row, width, height) },
                 onZoneGeometryChanged = viewModel::onZoneGeometryChanged,
@@ -167,6 +176,29 @@ fun PlanEditorScreen(
             onRename = { selectedZone?.let { roomName = it.name; showRenameRoom = true } },
             onColor = viewModel::onSelectedZoneColorChange
         )
+    }
+
+        // Saving overlay: covers the editor and blocks input while the plan and its
+        // zones are being persisted (create plan + sync zones).
+        if (state.isSaving) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xCC05090A))
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) { awaitPointerEvent().changes.forEach { it.consume() } }
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = AppPrimary)
+                    Spacer(Modifier.height(14.dp))
+                    Text("Saving floor…", color = AppOnSurface, fontWeight = FontWeight.Medium)
+                }
+            }
+        }
     }
 }
 

@@ -40,6 +40,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.app.zonetask.ui.screens.plan.PlanZoneDraft
+import com.app.zonetask.ui.screens.plan.asZoneColor
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSurface
 import kotlin.math.abs
@@ -54,7 +56,8 @@ fun FloorPlanCanvas(
     worldWidth:  Float,
     worldHeight: Float,
     modifier:    Modifier = Modifier,
-    bottomInset: Dp = 0.dp
+    bottomInset: Dp = 0.dp,
+    zones:       List<PlanZoneDraft> = emptyList()
 ) {
     val density = LocalDensity.current
 
@@ -123,6 +126,14 @@ fun FloorPlanCanvas(
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRect(color = AppSurface, topLeft = Offset.Zero, size = Size(planW, planH))
                 drawGrid(planW, planH, worldToCanvas, scale)
+                // Draw each zone (normalized 0..1 coords scaled to the plan rectangle).
+                zones.forEach { zone ->
+                    val topLeft = Offset(zone.x * planW, zone.y * planH)
+                    val zoneSize = Size(zone.width * planW, zone.height * planH)
+                    val zoneColor = zone.fillColor.asZoneColor()
+                    drawRect(color = zoneColor.copy(alpha = zone.opacity), topLeft = topLeft, size = zoneSize)
+                    drawRect(color = zoneColor.copy(alpha = 0.9f), topLeft = topLeft, size = zoneSize, style = Stroke(width = 1.5f / scale))
+                }
                 drawRect(
                     color = AppPrimary.copy(alpha = 0.7f),
                     topLeft = Offset.Zero,
