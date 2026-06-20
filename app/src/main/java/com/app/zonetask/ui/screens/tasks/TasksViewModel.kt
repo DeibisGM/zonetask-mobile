@@ -8,7 +8,7 @@ import com.app.zonetask.data.remote.dto.MarkTaskCompletionRequestDto
 import com.app.zonetask.data.remote.dto.TaskAssignmentResponse
 import com.app.zonetask.data.remote.dto.TaskResponse
 import com.app.zonetask.di.AppContainer
-import com.app.zonetask.ui.common.resolveDueTimeUiState
+import com.app.zonetask.ui.common.resolveDueTimeUiState as resolveTaskDueTimeUiState
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -255,8 +255,9 @@ class TasksViewModel(
             ?: emptyList()
 
         val zoneName = task.zoneId?.let { zoneNamesById[it] ?: "Zona $it" } ?: "Sin zona"
-        // dueTimeState also tells the card whether this user can complete the active assignment.
-        val dueTimeState = assignments.resolveDueTimeUiState(userId)
+        // The list uses the task's own start date and time for the overdue chip,
+        // while the assignment still drives the completion action.
+        val dueTimeState = task.resolveTaskDueTimeUiState(assignments, userId)
         return TaskItemUiState(
             task = task,
             zoneName = zoneName,
