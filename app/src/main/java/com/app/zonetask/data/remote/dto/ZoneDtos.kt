@@ -1,7 +1,9 @@
 package com.app.zonetask.data.remote.dto
 
 import com.app.zonetask.ui.screens.plan.PlanZoneDraft
+import com.app.zonetask.ui.screens.plan.PlanZoneObjectDraft
 import com.google.gson.annotations.SerializedName
+import kotlin.math.roundToInt
 
 data class ZoneResponse(
     @SerializedName("zoneId")
@@ -44,7 +46,22 @@ data class ZoneResponse(
     val displayOrder: Int,
 
     @SerializedName("planId")
-    val planId: Int
+    val planId: Int,
+
+    @SerializedName("objects")
+    val objects: List<ZoneLayoutObjectResponse> = emptyList()
+)
+
+data class ZoneLayoutObjectResponse(
+    @SerializedName("objectId") val objectId: Int,
+    @SerializedName("name") val name: String,
+    @SerializedName("objectType") val objectType: String,
+    @SerializedName("posX") val posX: Float,
+    @SerializedName("posY") val posY: Float,
+    @SerializedName("width") val width: Float,
+    @SerializedName("height") val height: Float,
+    @SerializedName("rotation") val rotation: Float = 0f,
+    @SerializedName("displayOrder") val displayOrder: Int
 )
 
 data class ZoneRequest(
@@ -82,7 +99,22 @@ data class ZoneRequest(
     val opacity: Float = 0.92f,
 
     @SerializedName("displayOrder")
-    val displayOrder: Int
+    val displayOrder: Int,
+
+    @SerializedName("objects")
+    val objects: List<ZoneLayoutObjectRequest> = emptyList()
+)
+
+data class ZoneLayoutObjectRequest(
+    @SerializedName("objectId") val objectId: Int? = null,
+    @SerializedName("name") val name: String,
+    @SerializedName("objectType") val objectType: String,
+    @SerializedName("posX") val posX: Float,
+    @SerializedName("posY") val posY: Float,
+    @SerializedName("width") val width: Float,
+    @SerializedName("height") val height: Float,
+    @SerializedName("rotation") val rotation: Float = 0f,
+    @SerializedName("displayOrder") val displayOrder: Int
 )
 
 fun ZoneResponse.toDraft(canvasWidth: Float, canvasHeight: Float): PlanZoneDraft = PlanZoneDraft(
@@ -96,7 +128,14 @@ fun ZoneResponse.toDraft(canvasWidth: Float, canvasHeight: Float): PlanZoneDraft
     fillColor = fillColor,
     strokeColor = strokeColor,
     strokeWidth = strokeWidth,
-    opacity = opacity
+    opacity = opacity,
+    objects = objects.map { item ->
+        PlanZoneObjectDraft(
+            backendId = item.objectId, id = "object_${item.objectId}", name = item.name,
+            objectType = item.objectType, column = item.posX.roundToInt(), row = item.posY.roundToInt(),
+            spanColumns = item.width.roundToInt().coerceAtLeast(1), spanRows = item.height.roundToInt().coerceAtLeast(1), rotationDegrees = item.rotation.roundToInt()
+        )
+    }
 )
 
 fun PlanZoneDraft.toRequest(displayOrder: Int, canvasWidth: Float, canvasHeight: Float): ZoneRequest = ZoneRequest(
@@ -109,5 +148,8 @@ fun PlanZoneDraft.toRequest(displayOrder: Int, canvasWidth: Float, canvasHeight:
     strokeColor = strokeColor,
     strokeWidth = strokeWidth,
     opacity = opacity,
-    displayOrder = displayOrder
+    displayOrder = displayOrder,
+    objects = objects.mapIndexed { index, item ->
+        ZoneLayoutObjectRequest(item.backendId, item.name, item.objectType, item.column.toFloat(), item.row.toFloat(), item.spanColumns.toFloat(), item.spanRows.toFloat(), item.rotationDegrees.toFloat(), index)
+    }
 )
