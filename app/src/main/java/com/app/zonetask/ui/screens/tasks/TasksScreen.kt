@@ -54,6 +54,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import android.widget.Toast
 import com.app.zonetask.R
 import com.app.zonetask.domain.model.Space
+import com.app.zonetask.ui.components.ScreenLoadingState
+import com.app.zonetask.ui.components.ScreenStateCard
 import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
@@ -201,60 +203,43 @@ private fun TasksContent(
         when {
             uiState.isLoadingSpaces && uiState.spaces.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "Cargando...",
-                        color = AppSecondaryText,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    ScreenLoadingState(modifier = Modifier.fillMaxWidth(), lines = 2)
                 }
             }
 
             uiState.errorMessage != null && uiState.spaces.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = uiState.errorMessage!!,
-                            color = AppSecondaryText,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        TextButton(onClick = onRetry) {
-                            Text(text = "Reintentar", color = AppPrimary)
-                        }
-                    }
+                    ScreenStateCard(
+                        title = "Could not load spaces",
+                        message = uiState.errorMessage!!,
+                        actionText = "Retry",
+                        onAction = onRetry
+                    )
                 }
             }
 
             uiState.isLoadingTasks -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "Cargando tareas...",
-                        color = AppSecondaryText,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    ScreenLoadingState(modifier = Modifier.fillMaxWidth(), lines = 3)
                 }
             }
 
             uiState.taskErrorMessage != null -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = uiState.taskErrorMessage!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        TextButton(onClick = onRetry) {
-                            Text(text = "Reintentar", color = AppPrimary)
-                        }
-                    }
+                    ScreenStateCard(
+                        title = "Could not load tasks",
+                        message = uiState.taskErrorMessage!!,
+                        actionText = "Retry",
+                        onAction = onRetry
+                    )
                 }
             }
 
             uiState.zoneGroups.isEmpty() && uiState.selectedSpaceId != null -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "No hay tareas en este espacio.",
-                        color = AppSecondaryText,
-                        style = MaterialTheme.typography.bodyMedium
+                    ScreenStateCard(
+                        title = "No tasks in this space",
+                        message = "Create a task from this space when you need one."
                     )
                 }
             }

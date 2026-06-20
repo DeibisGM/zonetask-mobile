@@ -15,8 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.app.zonetask.navigation.AppDestinations
+import com.app.zonetask.navigation.HomeNavKeys
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.plan.PlanEditorScreen
 import com.app.zonetask.ui.screens.plan.PlanListScreen
@@ -24,6 +27,7 @@ import com.app.zonetask.ui.screens.plan.TemplateSelectScreen
 import com.app.zonetask.ui.theme.AppPrimary
 
 fun NavGraphBuilder.plansNavGraph(
+    navController: NavHostController,
     actions:  PlansNavActions,
     rootSnackbarHostState: SnackbarHostState
 ) {
@@ -127,7 +131,13 @@ fun NavGraphBuilder.plansNavGraph(
                 planId     = null,
                 templateId = templateId,
                 modifier   = Modifier.padding(padding),
-                onSaved    = { message -> actions.onPlanSaved(message) },
+                onSaved    = { message ->
+                    runCatching {
+                        navController.getBackStackEntry(AppDestinations.homeRoute(spaceId))
+                            .savedStateHandle[HomeNavKeys.HOME_REFRESH] = true
+                    }
+                    actions.onPlanSaved(message)
+                },
                 onBack     = actions.onBack,
                 onSaveActionChanged = { action, enabled -> saveFloorAction = action; canSaveFloor = enabled }
             )
@@ -162,7 +172,13 @@ fun NavGraphBuilder.plansNavGraph(
                 spaceId  = spaceId,
                 planId   = planId,
                 modifier = Modifier.padding(padding),
-                onSaved  = { message -> actions.onPlanSaved(message) },
+                onSaved  = { message ->
+                    runCatching {
+                        navController.getBackStackEntry(AppDestinations.homeRoute(spaceId))
+                            .savedStateHandle[HomeNavKeys.HOME_REFRESH] = true
+                    }
+                    actions.onPlanSaved(message)
+                },
                 onBack   = actions.onBack,
                 onSaveActionChanged = { action, enabled -> saveFloorAction = action; canSaveFloor = enabled }
             )

@@ -12,6 +12,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.app.zonetask.core.UserMessages
+import com.app.zonetask.core.WorkspaceStore
 import com.app.zonetask.ui.components.NavDestination
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.spaces.CreateSpaceScreen
@@ -75,7 +76,10 @@ fun NavGraphBuilder.spacesNavGraph(
                 onSuccessMessageShown = {
                     backStackEntry.savedStateHandle[SpacesNavKeys.SUCCESS_MESSAGE] = null
                 },
-                onSpaceClick = { space -> actions.onOpenDetail(space.spaceId) },
+                onSpaceClick = { space ->
+                    WorkspaceStore.rememberSpace(currentUserId, space.spaceId)
+                    actions.onOpenDetail(space.spaceId)
+                },
                 onOpenInvitations = actions.onOpenInvitations,
                 onOpenSpaceReports = actions.onOpenSpaceReports
             )
