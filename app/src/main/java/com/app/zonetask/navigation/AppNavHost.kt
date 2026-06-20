@@ -39,10 +39,11 @@ import com.app.zonetask.ui.screens.passwordreset.ForgotPasswordScreen
 import com.app.zonetask.ui.screens.profile.ProfileEditScreen
 import com.app.zonetask.ui.screens.profile.ProfileScreen
 import com.app.zonetask.ui.screens.register.RegisterScreen
-import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
-import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.chat.ChatEditScreen
 import com.app.zonetask.ui.screens.chat.ChatScreen
+import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
+import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
+import com.app.zonetask.ui.screens.taskhistory.SpaceRotationHistoryScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 import kotlinx.coroutines.flow.collect
 
@@ -298,6 +299,9 @@ fun AppNavHost() {
                 onEdit = { id ->
                     navController.navigate(AppDestinations.taskEditRoute(spaceId, id))
                 },
+                onOpenRotationHistory = { id ->
+                    navController.navigate(AppDestinations.taskRotationHistoryRoute(spaceId, id))
+                },
                 onDeleted = {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
@@ -305,6 +309,31 @@ fun AppNavHost() {
                     navController.popBackStack()
                 }
             )
+        }
+
+        composable(
+            route = AppDestinations.TASK_ROTATION_HISTORY,
+            arguments = listOf(
+                navArgument("spaceId") { type = NavType.IntType },
+                navArgument("taskId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: return@composable
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: return@composable
+
+            ZoneTaskScaffold(
+                title = "Historial de rotación",
+                showBack = true,
+                onBackClick = { navController.popBackStack() },
+                snackbarHostState = snackbarHostState
+            ) { padding ->
+                SpaceRotationHistoryScreen(
+                    spaceId = spaceId,
+                    requestingUserId = currentUserId,
+                    initialTaskId = taskId,
+                    modifier = Modifier.padding(padding)
+                )
+            }
         }
 
         composable(
@@ -410,6 +439,9 @@ private fun rememberSpacesNavActions(
         },
         onOpenCompletedTasks = { spaceId ->
             navController.navigate(SpacesDestinations.completedTasks(spaceId))
+        },
+        onOpenRotationHistory = { spaceId ->
+            navController.navigate(SpacesDestinations.rotationHistory(spaceId))
         },
         onOpenStatisticsMenu = { spaceId, userId ->
             navController.navigate(SpacesDestinations.statisticsMenu(spaceId, userId))

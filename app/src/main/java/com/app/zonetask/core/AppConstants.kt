@@ -54,6 +54,10 @@ object AppConstants {
             // Completion history endpoint
             const val COMPLETED_TASKS = "api/spaces/{spaceId}/completed-tasks"
 
+            // Rotation history endpoint
+            const val TASK_ROTATION_HISTORY = "api/tasks/{taskId}/rotation-log"
+            const val SPACE_ROTATION_HISTORY = "api/spaces/{spaceId}/rotation-log"
+
             // Statistics endpoints
             const val USER_STATISTICS   = "api/spaces/{spaceId}/members/{userId}/statistics"
             const val SPACE_STATISTICS  = "api/spaces/{spaceId}/statistics"

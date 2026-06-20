@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
@@ -141,6 +142,7 @@ fun TaskDetailScreen(
     onRefreshHandled: () -> Unit = {},
     onBack: () -> Unit = {},
     onEdit: (taskId: Int) -> Unit = {},
+    onOpenRotationHistory: (taskId: Int) -> Unit = {},
     onDeleted: () -> Unit = {},
     viewModel: TaskDetailViewModel = viewModel(
         factory = TaskDetailViewModelFactory(spaceId, taskId)
@@ -340,6 +342,47 @@ fun TaskDetailScreen(
                                 label = "Reminder",
                                 value = if (task.reminderEnabled) "On" else "Off"
                             )
+                        }
+                    }
+
+                    Surface(
+                        onClick = { onOpenRotationHistory(task.taskId) },
+                        shape = RoundedCornerShape(14.dp),
+                        color = AppSurface,
+                        border = BorderStroke(1.dp, AppBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Outlined.Repeat,
+                                null,
+                                tint = AppPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Rotation history",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    "Review how assignees changed over time",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = AppSecondaryText
+                                )
+                                    }
+                                    Icon(
+                                        Icons.Outlined.ChevronRight,
+                                        null,
+                                        tint = AppSecondaryText,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                         }
                     }
 
