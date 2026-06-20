@@ -39,6 +39,7 @@ class TasksViewModel(
             taskErrorMessage = null,
             zoneGroups = emptyList()
         )
+        // Reload only the selected space so the task list stays in sync after navigation changes.
         loadTasksForSpace(spaceId)
     }
 
@@ -111,6 +112,7 @@ class TasksViewModel(
 
     private fun loadInitialData() {
         viewModelScope.launch {
+            // Spaces and user names are loaded together because both are needed to render the task list.
             _uiState.value = _uiState.value.copy(
                 isLoadingSpaces = true,
                 isLoadingTasks = true,
@@ -166,6 +168,7 @@ class TasksViewModel(
 
     private fun loadTasksForSpace(spaceId: Int) {
         viewModelScope.launch {
+            // This refresh rebuilds the task cards from the backend response and the assignment lookups.
             _uiState.value = _uiState.value.copy(
                 isLoadingTasks = true,
                 taskErrorMessage = null,
@@ -195,6 +198,7 @@ class TasksViewModel(
     }
 
     private suspend fun buildGroupsForSpace(spaceId: Int): ApiResult<List<ZoneTaskGroupUiState>> = coroutineScope {
+        // Lookups and tasks are fetched in parallel to keep the list refresh as short as possible.
         val lookupsDeferred = async { AppContainer.taskLookupRepository.getTaskFormOptions(spaceId) }
         val tasksDeferred = async { AppContainer.taskRepository.getTasksBySpace(spaceId) }
 
@@ -235,6 +239,7 @@ class TasksViewModel(
         task: TaskResponse,
         zoneNamesById: Map<Int, String>
     ): TaskItemUiState {
+        // The overdue chip uses the task schedule plus its assignments, not just the current time.
         val assignmentsResult = AppContainer.taskRepository.getTaskAssignments(task.taskId)
         val assignments = when (assignmentsResult) {
             is ApiResult.Success -> assignmentsResult.data

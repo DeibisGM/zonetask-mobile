@@ -26,6 +26,7 @@ object RetrofitClient {
     }
 
     private val client = OkHttpClient.Builder()
+        // Save requests can wait on background work, so the client needs a longer write/read window.
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
