@@ -134,7 +134,7 @@ fun EditableFloorPlanBoard(
                         .pointerInput(Unit) { detectTapGestures(onTap = { onZoneSelected(null) }) }
                         .pointerInput(Unit) {
                             detectTransformGestures { centroid, panChange, zoomChange, _ ->
-                                val nextZoom = (zoom * zoomChange).coerceIn(0.65f, 3f)
+                                val nextZoom = (zoom * zoomChange).coerceIn(0.4f, 3f)
                                 pan = centroid + (pan - centroid) * (nextZoom / zoom) + panChange
                                 zoom = nextZoom
                             }
