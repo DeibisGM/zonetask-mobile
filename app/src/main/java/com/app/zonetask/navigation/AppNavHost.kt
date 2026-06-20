@@ -26,6 +26,7 @@ import com.app.zonetask.navigation.plans.PlansDestinations
 import com.app.zonetask.navigation.plans.PlansNavActions
 import com.app.zonetask.navigation.plans.PlansNavKeys
 import com.app.zonetask.navigation.plans.plansNavGraph
+import com.app.zonetask.navigation.HomeNavKeys
 import com.app.zonetask.navigation.spaces.SpacesDestinations
 import com.app.zonetask.navigation.spaces.SpacesNavActions
 import com.app.zonetask.navigation.spaces.SpacesNavKeys
@@ -254,6 +255,15 @@ fun AppNavHost() {
             arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
         ) { backStackEntry ->
             val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 0
+            val homeRefresh by backStackEntry.savedStateHandle
+                .getStateFlow(HomeNavKeys.HOME_REFRESH, false)
+                .collectAsStateWithLifecycle()
+
+            LaunchedEffect(homeRefresh) {
+                if (homeRefresh) {
+                    backStackEntry.savedStateHandle[HomeNavKeys.HOME_REFRESH] = false
+                }
+            }
 
             ZoneTaskScaffold(
                 title = "",
@@ -268,6 +278,10 @@ fun AppNavHost() {
                     spaceId = spaceId,
                     userId = currentUserId,
                     modifier = Modifier.padding(padding),
+                    refreshTrigger = homeRefresh,
+                    onRefreshHandled = {
+                        backStackEntry.savedStateHandle[HomeNavKeys.HOME_REFRESH] = false
+                    },
                     onNavigateToCreateSpace = {
                         navController.navigate(SpacesDestinations.CREATE)
                     },
@@ -411,6 +425,7 @@ fun AppNavHost() {
         )
 
         plansNavGraph(
+            navController = navController,
             actions = plansNavActions,
             rootSnackbarHostState = snackbarHostState
         )

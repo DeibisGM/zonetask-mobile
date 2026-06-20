@@ -53,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.R
@@ -65,6 +66,7 @@ import com.app.zonetask.ui.theme.AppCardElevated
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
 import com.app.zonetask.ui.theme.AppSurface
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +74,8 @@ fun HomeScreen(
     spaceId: Int,
     userId: Int,
     modifier: Modifier = Modifier,
+    refreshTrigger: Boolean = false,
+    onRefreshHandled: () -> Unit = {},
     onNavigateToCreateSpace: () -> Unit = {},
     onNavigateToCreatePlan: (spaceId: Int) -> Unit = {},
     onNavigateToCreateTask: () -> Unit = {},
@@ -91,6 +95,13 @@ fun HomeScreen(
         val resolved = uiState.currentSpaceId
         if (spaceId == 0 && resolved != null && resolved > 0) {
             onSpaceChanged(resolved)
+        }
+    }
+
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger) {
+            viewModel.loadHomeData()
+            onRefreshHandled()
         }
     }
 
@@ -145,6 +156,7 @@ fun HomeScreen(
                     val currentPlanIndex = uiState.plans.indexOfFirst { it.planId == uiState.activePlan?.planId }
                     val previousPlan = if (currentPlanIndex > 0) uiState.plans[currentPlanIndex - 1] else null
                     val nextPlan = if (currentPlanIndex >= 0 && currentPlanIndex < uiState.plans.lastIndex) uiState.plans[currentPlanIndex + 1] else null
+                    val activePlan = uiState.activePlan
 
                     Column(
                         modifier = Modifier
@@ -169,76 +181,69 @@ fun HomeScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
+                                .padding(horizontal = 2.dp, vertical = 10.dp)
                         ) {
-                            Surface(
-                                modifier = Modifier
-                                .fillMaxSize()
-                                .shadow(12.dp, RoundedCornerShape(28.dp)),
-                            color = AppCardElevated,
-                            shape = RoundedCornerShape(28.dp)
-                            ) {
-                                Box(modifier = Modifier.fillMaxSize()) {
-                                    when {
-                                        uiState.activePlan != null -> {
-                                            FloorPlanCanvas(
-                                                worldWidth = uiState.activePlan!!.canvasWidth,
-                                                worldHeight = uiState.activePlan!!.canvasHeight,
-                                                bottomInset = if (tasksExpanded) 300.dp else 96.dp,
-                                                zones = uiState.planZones,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                when {
+                                    activePlan != null -> {
+                                        FloorPlanCanvas(
+                                            gridColumns = activePlan.canvasWidth.roundToInt().coerceAtLeast(1),
+                                            gridRows = activePlan.canvasHeight.roundToInt().coerceAtLeast(1),
+                                            bottomInset = if (tasksExpanded) 320.dp else 112.dp,
+                                            zones = uiState.planZones,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
 
-                                            if (uiState.isZonesLoading || uiState.zonesErrorMessage != null) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .align(Alignment.TopStart)
-                                                        .padding(16.dp)
-                                                ) {
-                                                    when {
-                                                        uiState.isZonesLoading -> ScreenStateCard(
-                                                            title = "Loading floor",
-                                                            message = "Refreshing zones and context."
-                                                        )
-                                                        uiState.zonesErrorMessage != null -> ScreenStateCard(
-                                                            title = "Floor loading issue",
-                                                            message = uiState.zonesErrorMessage!!,
-                                                            actionText = "Retry",
-                                                            onAction = viewModel::loadHomeData
-                                                        )
-                                                    }
+                                        if (uiState.isZonesLoading || uiState.zonesErrorMessage != null) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopStart)
+                                                    .padding(16.dp)
+                                            ) {
+                                                when {
+                                                    uiState.isZonesLoading -> ScreenStateCard(
+                                                        title = "Loading floor",
+                                                        message = "Refreshing zones and context."
+                                                    )
+                                                    uiState.zonesErrorMessage != null -> ScreenStateCard(
+                                                        title = "Floor loading issue",
+                                                        message = uiState.zonesErrorMessage!!,
+                                                        actionText = "Retry",
+                                                        onAction = viewModel::loadHomeData
+                                                    )
                                                 }
                                             }
                                         }
+                                    }
 
-                                        uiState.plansErrorMessage != null -> {
-                                            Box(
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                ScreenStateCard(
-                                                    title = "Could not load floors",
-                                                    message = uiState.plansErrorMessage!!,
-                                                    actionText = "Retry",
-                                                    onAction = viewModel::loadHomeData
-                                                )
-                                            }
+                                    uiState.plansErrorMessage != null -> {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            ScreenStateCard(
+                                                title = "Could not load floors",
+                                                message = uiState.plansErrorMessage!!,
+                                                actionText = "Retry",
+                                                onAction = viewModel::loadHomeData
+                                            )
                                         }
+                                    }
 
-                                        else -> {
-                                            Box(
-                                                modifier = Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                ScreenStateCard(
-                                                    title = "No floor yet",
-                                                    message = "Create a floor in this space so zones and tasks have a place to live.",
-                                                    actionText = "Open floors",
-                                                    onAction = {
-                                                        val sid = uiState.currentSpaceId ?: spaceId
-                                                        if (sid > 0) onNavigateToCreatePlan(sid)
-                                                    }
-                                                )
-                                            }
+                                    else -> {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            ScreenStateCard(
+                                                title = "No floor yet",
+                                                message = "Create a floor in this space so zones and tasks have a place to live.",
+                                                actionText = "Open floors",
+                                                onAction = {
+                                                    val sid = uiState.currentSpaceId ?: spaceId
+                                                    if (sid > 0) onNavigateToCreatePlan(sid)
+                                                }
+                                            )
                                         }
                                     }
                                 }
@@ -250,11 +255,11 @@ fun HomeScreen(
         }
 
         if (!uiState.isLoading && uiState.currentSpaceId != null) {
-                        TasksPanel(
-                            expanded = tasksExpanded,
-                            pendingTasks = uiState.pendingTasks,
-                            tasksErrorMessage = uiState.tasksErrorMessage,
-                            onToggle = { tasksExpanded = !tasksExpanded },
+            TasksPanel(
+                expanded = tasksExpanded,
+                pendingTasks = uiState.pendingTasks,
+                tasksErrorMessage = uiState.tasksErrorMessage,
+                onToggle = { tasksExpanded = !tasksExpanded },
                 onOpenTask = { task -> onNavigateToTaskDetail(uiState.currentSpaceId!!, task.taskId) },
                 onCreateTask = onNavigateToCreateTask,
                 onRetry = viewModel::loadHomeData,
@@ -304,7 +309,7 @@ private fun HomeTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+                .padding(start = 16.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -314,7 +319,7 @@ private fun HomeTopBar(
             ) {
                 Text(
                     text = title,
-                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(fontSize = 21.sp),
                     fontWeight = FontWeight.SemiBold,
                     color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -324,35 +329,35 @@ private fun HomeTopBar(
 
             IconButton(
                 onClick = onOpenChat,
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chat_circle),
                     contentDescription = "Chat",
                     tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(27.dp)
                 )
             }
             IconButton(
                 onClick = onManageSpaces,
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_logo),
                     contentDescription = "Manage spaces",
                     tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(27.dp)
                 )
             }
             IconButton(
                 onClick = onCreateTask,
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Add,
                     contentDescription = "New task",
                     tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(27.dp)
                 )
             }
         }
@@ -428,7 +433,7 @@ private fun TasksPanel(
                     shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
                 )
                 .clickable(onClick = onToggle),
-            color = AppCardElevated,
+            color = Color(0xFF151B1D),
             shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
         ) {
             Row(
@@ -465,7 +470,7 @@ private fun TasksPanel(
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = AppCardElevated
+                color = Color(0xFF111719)
             ) {
                 Column(
                     modifier = Modifier

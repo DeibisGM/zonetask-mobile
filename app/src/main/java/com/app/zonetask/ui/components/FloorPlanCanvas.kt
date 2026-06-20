@@ -3,16 +3,16 @@ package com.app.zonetask.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
@@ -31,19 +31,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import com.app.zonetask.ui.screens.plan.FloorGridSpec
+import com.app.zonetask.ui.screens.plan.GridZoneGeometry
 import com.app.zonetask.ui.theme.AppPrimary
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -64,12 +67,12 @@ data class FloorPlanZonePreview(
     val taskCount: Int = 0
 )
 
-private data class CanvasFitState(
+internal data class HomeBoardFitState(
     val scale: Float,
     val pan: Offset
 )
 
-private data class ZoneBounds(
+internal data class HomeBoardBounds(
     val left: Float,
     val top: Float,
     val right: Float,
@@ -81,46 +84,64 @@ private data class ZoneBounds(
     val centerY: Float get() = top + height / 2f
 }
 
-private const val SCALE_MIN  = 0.4f
-private const val SCALE_MAX  = 14f
-private const val GRID_CELL  = 50f
-private const val GRID_CELL_MIN_PX = 20f
+private const val SCALE_MIN = 0.4f
+private const val SCALE_MAX = 14f
+private const val BASE_CELL_PX = 32f
 
 @Composable
 fun FloorPlanCanvas(
-    worldWidth:  Float,
-    worldHeight: Float,
-    modifier:    Modifier = Modifier,
+    gridColumns: Int,
+    gridRows: Int,
+    modifier: Modifier = Modifier,
     bottomInset: Dp = 0.dp,
     zones: List<FloorPlanZonePreview> = emptyList()
 ) {
     val density = LocalDensity.current
+    val columns = gridColumns.coerceAtLeast(1)
+    val rows = gridRows.coerceAtLeast(1)
+    val grid = remember(columns, rows) { FloorGridSpec(columns, rows) }
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0D0D0D))
+            .background(Color(0xFF090B0C))
     ) {
         val canvasW = constraints.maxWidth.toFloat()
         val canvasH = constraints.maxHeight.toFloat()
         val bottomInsetPx = with(density) { bottomInset.toPx() }
-
-        val worldToCanvas = minOf(canvasW / worldWidth, canvasH / worldHeight)
-
-        val planW = worldWidth  * worldToCanvas
-        val planH = worldHeight * worldToCanvas
+        val bottomReservePx = (bottomInsetPx * 0.62f).coerceAtLeast(0f)
+        val totalBottomReservePx = (bottomReservePx + bottomInsetPx * 0.1f).coerceAtLeast(bottomReservePx)
+        val availableHeight = (canvasH - totalBottomReservePx).coerceAtLeast(1f)
+        val worldWidth = grid.columns * BASE_CELL_PX
+        val worldHeight = grid.rows * BASE_CELL_PX
+        val origin = Offset((canvasW - worldWidth) / 2f, (canvasH - worldHeight) / 2f)
+        val boardBounds = HomeBoardBounds(
+            left = origin.x,
+            top = origin.y,
+            right = origin.x + worldWidth,
+            bottom = origin.y + worldHeight
+        )
+        val contentBounds = zones.boundingBox(grid, origin) ?: HomeBoardBounds(
+            left = origin.x,
+            top = origin.y,
+            right = origin.x + worldWidth,
+            bottom = origin.y + worldHeight
+        )
 
         var scale by remember { mutableFloatStateOf(1f) }
         var pan by remember { mutableStateOf(Offset.Zero) }
-        var fitState by remember { mutableStateOf(CanvasFitState(scale = 1f, pan = Offset.Zero)) }
+        var fitState by remember { mutableStateOf(HomeBoardFitState(scale = 1f, pan = Offset.Zero)) }
 
-        LaunchedEffect(canvasW, canvasH, worldWidth, worldHeight, bottomInsetPx, zones.hashCode()) {
-            val fit = zones.fitToCanvas(
-                canvasWidth = canvasW,
-                canvasHeight = canvasH,
-                bottomInsetPx = bottomInsetPx,
-                planWidth = planW,
-                planHeight = planH,
+        LaunchedEffect(canvasW, canvasH, grid.columns, grid.rows, bottomInsetPx, zones.hashCode()) {
+            val fit = zones.fitToBoard(
+                grid = grid,
+                viewportWidth = canvasW,
+                viewportHeight = canvasH,
+                bottomReservePx = totalBottomReservePx,
+                origin = origin,
+                worldWidth = worldWidth,
+                worldHeight = worldHeight,
+                bounds = contentBounds
             )
             scale = fit.scale
             pan = fit.pan
@@ -137,30 +158,32 @@ fun FloorPlanCanvas(
             modifier = Modifier
                 .fillMaxSize()
                 .clipToBounds()
-                .pointerInput(canvasW, canvasH, planW, planH, bottomInsetPx) {
+                .pointerInput(canvasW, availableHeight, boardBounds) {
                     detectTransformGestures { centroid, panChange, zoomChange, _ ->
                         val previousScale = scale
-                        val nextScale = (scale * zoomChange).coerceIn(SCALE_MIN, SCALE_MAX)
+                        val nextScale = (previousScale * zoomChange).coerceIn(SCALE_MIN, SCALE_MAX)
                         val scaleRatio = if (previousScale == 0f) 1f else nextScale / previousScale
+                        val nextPan = centroid + (pan - centroid) * scaleRatio + panChange
 
                         pan = clampPan(
-                            pan = centroid + (pan - centroid) * scaleRatio + panChange,
+                            pan = nextPan,
                             scale = nextScale,
-                            contentWidth = planW,
-                            contentHeight = planH,
+                            contentBounds = boardBounds,
                             viewportWidth = canvasW,
-                            viewportHeight = canvasH - bottomInsetPx * 0.35f,
-                            sideMargin = 22f,
-                            verticalMargin = 22f
+                            viewportHeight = availableHeight,
+                            sideMargin = 96f,
+                            verticalMargin = 96f
                         )
                         scale = nextScale
                     }
                 }
                 .pointerInput(Unit) {
-                    detectTapGestures(onDoubleTap = {
-                        scale = fitState.scale
-                        pan = fitState.pan
-                    })
+                    detectTapGestures(
+                        onDoubleTap = {
+                            scale = fitState.scale
+                            pan = fitState.pan
+                        }
+                    )
                 }
                 .graphicsLayer {
                     scaleX = scale
@@ -170,13 +193,52 @@ fun FloorPlanCanvas(
                     transformOrigin = TransformOrigin(0f, 0f)
                 }
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawGrid(planW, planH, worldToCanvas, scale)
-                drawZones(zones, planW, planH, scale)
+            zones.forEach { zone ->
+                val geometry = zone.geometry(grid)
+                val zoneX = origin.x + geometry.column * BASE_CELL_PX
+                val zoneY = origin.y + geometry.row * BASE_CELL_PX
+                val zoneWidth = geometry.spanColumns * BASE_CELL_PX
+                val zoneHeight = geometry.spanRows * BASE_CELL_PX
+                val baseColor = zone.fillColor.asComposeColor()
+                val fillColor = baseColor.copy(alpha = (zone.opacity * 0.94f).coerceIn(0f, 1f))
+                val borderColor = baseColor.copy(alpha = 0.68f)
+
+                Box(
+                    modifier = Modifier
+                        .zIndex(0f)
+                        .offset { IntOffset(zoneX.roundToInt(), zoneY.roundToInt()) }
+                        .size(
+                            with(density) { zoneWidth.toDp() },
+                            with(density) { zoneHeight.toDp() }
+                        )
+                        .background(fillColor, RectangleShape)
+                        .border(
+                            width = 1.dp,
+                            color = borderColor,
+                            shape = RectangleShape
+                        )
+                ) {
+                    if (zoneWidth > 54f && zoneHeight > 34f) {
+                        Text(
+                            text = zone.name,
+                            color = Color(0xFF071112),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 10.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(start = 5.dp, top = 3.dp)
+                        )
+                    }
+                }
+            }
+
+            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                drawGridOverlay(grid, origin, worldWidth, worldHeight)
             }
         }
 
-        // Center button
         AnimatedVisibility(
             visible = isOffCenter,
             enter = fadeIn(),
@@ -189,10 +251,9 @@ fun FloorPlanCanvas(
                     pan = fitState.pan
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = AppPrimary.copy(alpha = 0.9f)),
-                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.padding(bottom = bottomInset)
             ) {
-                Icon(Icons.Filled.MyLocation, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                Icon(Icons.Filled.MyLocation, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Text(" Center", color = Color.White, fontWeight = FontWeight.Medium)
             }
         }
@@ -200,145 +261,71 @@ fun FloorPlanCanvas(
 }
 
 private fun DrawScope.drawGrid(
-    planW: Float, planH: Float, worldToCanvas: Float, scale: Float
+    grid: FloorGridSpec,
+    origin: Offset,
+    worldWidth: Float,
+    worldHeight: Float
 ) {
-    var cellPx = GRID_CELL * worldToCanvas
-    if (cellPx < GRID_CELL_MIN_PX) {
-        val factor = (GRID_CELL_MIN_PX / cellPx).toInt().coerceAtLeast(1)
-        cellPx *= factor
-    }
-    val stroke = (1.dp.toPx() / scale).coerceAtLeast(0.3f)
-    val majorColor = Color(0xFF63787B).copy(alpha = 0.20f)
-    val minorColor = Color(0xFF445356).copy(alpha = 0.12f)
-    val gridMargin = maxOf(planW, planH) * 0.45f
-    val startX = -gridMargin
-    val endX = planW + gridMargin
-    val startY = -gridMargin
-    val endY = planH + gridMargin
+    val major = Color(0xFF334144)
+    val minor = Color(0xFF263034)
 
-    var x = (startX / cellPx).toInt() * cellPx
-    while (x <= endX) {
+    for (column in 0..grid.columns) {
+        val x = origin.x + column * BASE_CELL_PX
+        val isMajor = column % 4 == 0
         drawLine(
-            if (((x / cellPx).roundToInt()) % 4 == 0) majorColor else minorColor,
-            Offset(x, startY),
-            Offset(x, endY),
-            if (((x / cellPx).roundToInt()) % 4 == 0) stroke else (stroke * 0.7f)
+            color = if (isMajor) major else minor,
+            start = Offset(x, origin.y),
+            end = Offset(x, origin.y + worldHeight),
+            strokeWidth = if (isMajor) 1.2f else 0.7f
         )
-        x += cellPx
-    }
-    var y = (startY / cellPx).toInt() * cellPx
-    while (y <= endY) {
-        drawLine(
-            if (((y / cellPx).roundToInt()) % 4 == 0) majorColor else minorColor,
-            Offset(startX, y),
-            Offset(endX, y),
-            if (((y / cellPx).roundToInt()) % 4 == 0) stroke else (stroke * 0.7f)
-        )
-        y += cellPx
     }
 
-    val center = Offset(planW / 2f, planH / 2f)
-    drawCircle(Color.White.copy(alpha = 0.02f), radius = 14f, center = center)
-    drawLine(Color.White.copy(alpha = 0.04f), Offset(center.x - 12f, center.y), Offset(center.x + 12f, center.y), stroke)
-    drawLine(Color.White.copy(alpha = 0.04f), Offset(center.x, center.y - 12f), Offset(center.x, center.y + 12f), stroke)
+    for (row in 0..grid.rows) {
+        val y = origin.y + row * BASE_CELL_PX
+        val isMajor = row % 4 == 0
+        drawLine(
+            color = if (isMajor) major else minor,
+            start = Offset(origin.x, y),
+            end = Offset(origin.x + worldWidth, y),
+            strokeWidth = if (isMajor) 1.2f else 0.7f
+        )
+    }
+
+    val center = Offset(origin.x + worldWidth / 2f, origin.y + worldHeight / 2f)
+    drawLine(AppPrimary.copy(alpha = 0.62f), Offset(center.x - 11f, center.y), Offset(center.x + 11f, center.y), 1.5f)
+    drawLine(AppPrimary.copy(alpha = 0.62f), Offset(center.x, center.y - 11f), Offset(center.x, center.y + 11f), 1.5f)
+    drawCircle(AppPrimary, 3.5f, center)
 }
 
-private fun DrawScope.drawZones(
-    zones: List<FloorPlanZonePreview>,
-    planW: Float,
-    planH: Float,
-    scale: Float
+private fun DrawScope.drawGridOverlay(
+    grid: FloorGridSpec,
+    origin: Offset,
+    worldWidth: Float,
+    worldHeight: Float
 ) {
-    if (zones.isEmpty()) return
+    val major = Color(0xFF86A1A5).copy(alpha = 0.16f)
+    val minor = Color(0xFF708789).copy(alpha = 0.11f)
 
-    val zoneLabelTextSizePx = (12.sp.toPx() / scale).coerceAtLeast(10f)
-    val labelPaint = android.graphics.Paint().apply {
-        isAntiAlias = true
-        color = android.graphics.Color.WHITE
-        this.textSize = zoneLabelTextSizePx
-        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
-    }
-    val chipPaint = android.graphics.Paint().apply {
-        isAntiAlias = true
-        color = android.graphics.Color.argb(200, 5, 5, 5)
-        style = android.graphics.Paint.Style.FILL
-    }
-    val subtleTextPaint = android.graphics.Paint().apply {
-        isAntiAlias = true
-        color = android.graphics.Color.argb(200, 255, 255, 255)
-        this.textSize = (10.sp.toPx() / scale).coerceAtLeast(8f)
-        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL)
+    for (column in 0..grid.columns) {
+        val x = origin.x + column * BASE_CELL_PX
+        val isMajor = column % 4 == 0
+        drawLine(
+            color = if (isMajor) major else minor,
+            start = Offset(x, origin.y),
+            end = Offset(x, origin.y + worldHeight),
+            strokeWidth = if (isMajor) 1.05f else 0.72f
+        )
     }
 
-    zones.forEach { zone ->
-        val left = zone.x.coerceIn(0f, 1f) * planW
-        val top = zone.y.coerceIn(0f, 1f) * planH
-        val width = zone.width.coerceIn(0.01f, 1f) * planW
-        val height = zone.height.coerceIn(0.01f, 1f) * planH
-        val right = (left + width).coerceAtMost(planW)
-        val bottom = (top + height).coerceAtMost(planH)
-        val zoneColor = zone.fillColor.asComposeColor((zone.opacity * 0.76f).coerceIn(0f, 1f))
-        val strokeColor = zone.strokeColor.asComposeColor(0.18f)
-        val strokeWidth = (zone.strokeWidth / scale).coerceAtLeast(0.6f)
-
-        when (zone.shapeType.lowercase()) {
-            "ellipse" -> {
-                drawOval(
-                    color = zoneColor,
-                    topLeft = Offset(left, top),
-                    size = Size(right - left, bottom - top)
-                )
-                drawOval(
-                    color = strokeColor,
-                    topLeft = Offset(left, top),
-                    size = Size(right - left, bottom - top),
-                    style = Stroke(width = strokeWidth)
-                )
-            }
-
-            else -> {
-                drawRect(
-                    color = zoneColor,
-                    topLeft = Offset(left, top),
-                    size = Size(right - left, bottom - top)
-                )
-            }
-        }
-
-        if (right - left >= 80f && bottom - top >= 44f) {
-            val canvas = drawContext.canvas.nativeCanvas
-            val padding = 10f / scale
-            val chipHeight = (zoneLabelTextSizePx * 1.8f).coerceAtLeast(24f)
-            val chipRight = right - padding
-            val chipLeft = left + padding
-            val chipTop = top + padding
-            val chipBottom = (chipTop + chipHeight).coerceAtMost(bottom - padding)
-
-            canvas.drawRoundRect(
-                chipLeft,
-                chipTop,
-                chipRight,
-                chipBottom,
-                12f,
-                12f,
-                chipPaint
-            )
-            canvas.drawText(
-                zone.name,
-                chipLeft + 10f,
-                chipBottom - 10f,
-                labelPaint
-            )
-
-            if (zone.taskCount > 0) {
-                canvas.drawText(
-                    "${zone.taskCount} tareas",
-                    chipLeft + 10f,
-                    chipBottom + subtleTextPaint.textSize + 2f,
-                    subtleTextPaint
-                )
-            }
-        }
+    for (row in 0..grid.rows) {
+        val y = origin.y + row * BASE_CELL_PX
+        val isMajor = row % 4 == 0
+        drawLine(
+            color = if (isMajor) major else minor,
+            start = Offset(origin.x, y),
+            end = Offset(origin.x + worldWidth, y),
+            strokeWidth = if (isMajor) 1.05f else 0.72f
+        )
     }
 }
 
@@ -346,25 +333,40 @@ private fun String.asComposeColor(alpha: Float = 1f): Color {
     return Color(android.graphics.Color.parseColor(this)).copy(alpha = alpha.coerceIn(0f, 1f))
 }
 
-private fun List<FloorPlanZonePreview>.fitToCanvas(
-    canvasWidth: Float,
-    canvasHeight: Float,
-    bottomInsetPx: Float,
-    planWidth: Float,
-    planHeight: Float
-): CanvasFitState {
-    val bounds = boundingBox(planWidth, planHeight) ?: ZoneBounds(0f, 0f, planWidth, planHeight)
-    val borderPadding = maxOf(24f, minOf(bounds.width, bounds.height) * 0.08f)
-    val contentWidth = (bounds.width + borderPadding * 2f).coerceAtLeast(planWidth * 0.14f)
-    val contentHeight = (bounds.height + borderPadding * 2f).coerceAtLeast(planHeight * 0.14f)
-    val visibleWidth = (canvasWidth - 24f).coerceAtLeast(1f)
-    val visibleHeight = (canvasHeight - bottomInsetPx * 0.35f - 24f).coerceAtLeast(1f)
-    val fitScale = minOf(visibleWidth / contentWidth, visibleHeight / contentHeight)
-    val targetScale = (fitScale * 1.32f).coerceIn(SCALE_MIN, SCALE_MAX)
-    val viewportCenterX = canvasWidth / 2f
-    val viewportCenterY = (canvasHeight - bottomInsetPx * 0.35f) / 2f
+private fun FloorPlanZonePreview.geometry(grid: FloorGridSpec): GridZoneGeometry {
+    val inferredColumn = (x * grid.columns).roundToInt()
+    val inferredRow = (y * grid.rows).roundToInt()
+    val inferredWidth = (width * grid.columns).roundToInt().coerceAtLeast(1)
+    val inferredHeight = (height * grid.rows).roundToInt().coerceAtLeast(1)
+    return GridZoneGeometry(
+        column = inferredColumn,
+        row = inferredRow,
+        spanColumns = inferredWidth,
+        spanRows = inferredHeight
+    ).bounded(grid)
+}
 
-    return CanvasFitState(
+private fun List<FloorPlanZonePreview>.fitToBoard(
+    grid: FloorGridSpec,
+    viewportWidth: Float,
+    viewportHeight: Float,
+    bottomReservePx: Float,
+    origin: Offset,
+    worldWidth: Float,
+    worldHeight: Float,
+    bounds: HomeBoardBounds
+): HomeBoardFitState {
+    val padding = maxOf(BASE_CELL_PX * 0.9f, minOf(bounds.width, bounds.height) * 0.055f)
+    val contentWidth = (bounds.width + padding * 2f).coerceAtLeast(BASE_CELL_PX * 4f)
+    val contentHeight = (bounds.height + padding * 2f).coerceAtLeast(BASE_CELL_PX * 4f)
+    val visibleWidth = (viewportWidth - 12f).coerceAtLeast(1f)
+    val visibleHeight = (viewportHeight - bottomReservePx - 12f).coerceAtLeast(1f)
+    val fitScale = minOf(visibleWidth / contentWidth, visibleHeight / contentHeight)
+    val targetScale = fitScale.coerceIn(SCALE_MIN, SCALE_MAX)
+    val viewportCenterX = viewportWidth / 2f
+    val viewportCenterY = (viewportHeight - bottomReservePx) / 2f
+
+    return HomeBoardFitState(
         scale = targetScale,
         pan = Offset(
             x = viewportCenterX - targetScale * bounds.centerX,
@@ -373,44 +375,53 @@ private fun List<FloorPlanZonePreview>.fitToCanvas(
     )
 }
 
+private fun List<FloorPlanZonePreview>.boundingBox(
+    grid: FloorGridSpec,
+    origin: Offset
+): HomeBoardBounds? {
+    if (isEmpty()) return null
+
+    val geometries = map { it.geometry(grid) }
+    val left = geometries.minOf { it.column }.toFloat()
+    val top = geometries.minOf { it.row }.toFloat()
+    val right = geometries.maxOf { it.column + it.spanColumns }.toFloat()
+    val bottom = geometries.maxOf { it.row + it.spanRows }.toFloat()
+
+    return HomeBoardBounds(
+        left = origin.x + left * BASE_CELL_PX,
+        top = origin.y + top * BASE_CELL_PX,
+        right = origin.x + right * BASE_CELL_PX,
+        bottom = origin.y + bottom * BASE_CELL_PX
+    )
+}
+
 private fun clampPan(
     pan: Offset,
     scale: Float,
-    contentWidth: Float,
-    contentHeight: Float,
+    contentBounds: HomeBoardBounds,
     viewportWidth: Float,
     viewportHeight: Float,
     sideMargin: Float,
     verticalMargin: Float
 ): Offset {
-    val scaledWidth = contentWidth * scale
-    val scaledHeight = contentHeight * scale
+    val centeredX = viewportWidth / 2f - scale * contentBounds.centerX
+    val centeredY = viewportHeight / 2f - scale * contentBounds.centerY
 
-    val clampedX = if (scaledWidth + sideMargin * 2f <= viewportWidth) {
-        (viewportWidth - scaledWidth) / 2f
+    val clampedX = if (scale * contentBounds.width + sideMargin * 2f <= viewportWidth) {
+        centeredX
     } else {
-        pan.x.coerceIn(viewportWidth - scaledWidth - sideMargin, sideMargin)
+        val minX = viewportWidth - sideMargin - scale * contentBounds.right
+        val maxX = sideMargin - scale * contentBounds.left
+        pan.x.coerceIn(minOf(minX, maxX), maxOf(minX, maxX))
     }
 
-    val clampedY = if (scaledHeight + verticalMargin * 2f <= viewportHeight) {
-        (viewportHeight - scaledHeight) / 2f
+    val clampedY = if (scale * contentBounds.height + verticalMargin * 2f <= viewportHeight) {
+        centeredY
     } else {
-        pan.y.coerceIn(viewportHeight - scaledHeight - verticalMargin, verticalMargin)
+        val minY = viewportHeight - verticalMargin - scale * contentBounds.bottom
+        val maxY = verticalMargin - scale * contentBounds.top
+        pan.y.coerceIn(minOf(minY, maxY), maxOf(minY, maxY))
     }
 
     return Offset(clampedX, clampedY)
-}
-
-private fun List<FloorPlanZonePreview>.boundingBox(
-    planWidth: Float,
-    planHeight: Float
-): ZoneBounds? {
-    if (isEmpty()) return null
-
-    val left = map { it.x.coerceIn(0f, 1f) * planWidth }.minOrNull() ?: 0f
-    val top = map { it.y.coerceIn(0f, 1f) * planHeight }.minOrNull() ?: 0f
-    val right = map { (it.x.coerceIn(0f, 1f) + it.width.coerceIn(0.01f, 1f)) * planWidth }.maxOrNull() ?: planWidth
-    val bottom = map { (it.y.coerceIn(0f, 1f) + it.height.coerceIn(0.01f, 1f)) * planHeight }.maxOrNull() ?: planHeight
-
-    return ZoneBounds(left, top, right, bottom)
 }
