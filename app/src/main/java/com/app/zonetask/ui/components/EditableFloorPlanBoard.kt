@@ -3,8 +3,10 @@ package com.app.zonetask.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,254 +14,439 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.consumeAllChanges
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.consumeAllChanges
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import com.app.zonetask.ui.screens.plan.FloorGridSpec
+import com.app.zonetask.ui.screens.plan.GridZoneGeometry
 import com.app.zonetask.ui.screens.plan.PlanZoneDraft
 import com.app.zonetask.ui.screens.plan.asZoneColor
+import com.app.zonetask.ui.screens.plan.geometry
 import com.app.zonetask.ui.theme.AppPrimary
-import com.app.zonetask.ui.theme.AppSecondaryText
-import com.app.zonetask.ui.theme.AppSurface
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 @Composable
 fun EditableFloorPlanBoard(
-    worldWidth: Float,
-    worldHeight: Float,
+    grid: FloorGridSpec,
     zones: List<PlanZoneDraft>,
     selectedZoneId: String?,
+    isRoomToolActive: Boolean,
+    focusRequestKey: Int,
+    focusZoneId: String? = null,
+    resetRequestKey: Int = 0,
     modifier: Modifier = Modifier,
-    onZoneSelected: (String) -> Unit,
-    onZoneDragged: (String, Float, Float) -> Unit,
-    onZoneResized: (String, Float, Float) -> Unit
+    onZoneSelected: (String?) -> Unit,
+    onRoomCreated: (column: Int, row: Int, spanColumns: Int, spanRows: Int) -> Unit,
+    onZoneGeometryChanged: (id: String, column: Int, row: Int, spanColumns: Int, spanRows: Int) -> Unit,
+    onZoneDelete: (String) -> Unit
 ) {
     val density = LocalDensity.current
+    var zoom by remember { mutableStateOf(1f) }
+    var pan by remember { mutableStateOf(Offset.Zero) }
+    var drawStart by remember { mutableStateOf<GridPoint?>(null) }
+    var drawCurrent by remember { mutableStateOf<GridPoint?>(null) }
 
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(28.dp))
-            .background(Color(0xFF0B0B0B))
-    ) {
-        val boardWidthPx = constraints.maxWidth.toFloat()
-        val boardHeightPx = constraints.maxHeight.toFloat()
-        if (boardWidthPx <= 0f || boardHeightPx <= 0f || worldWidth <= 0f || worldHeight <= 0f) {
-            return@BoxWithConstraints
+    BoxWithConstraints(modifier = modifier) {
+        val viewportWidth = constraints.maxWidth.toFloat()
+        val viewportHeight = constraints.maxHeight.toFloat()
+        val baseCellPx = 32f
+        val worldWidth = grid.columns * baseCellPx
+        val worldHeight = grid.rows * baseCellPx
+        val origin = Offset((viewportWidth - worldWidth) / 2f, (viewportHeight - worldHeight) / 2f)
+
+        LaunchedEffect(resetRequestKey) {
+            zoom = 1f
+            pan = Offset.Zero
+        }
+        LaunchedEffect(focusRequestKey) {
+            val zone = zones.firstOrNull { it.id == focusZoneId } ?: return@LaunchedEffect
+            val geometry = zone.geometry(grid)
+            val targetZoom = 1.45f
+            val centerX = origin.x + geometry.centerColumn * baseCellPx
+            val centerY = origin.y + geometry.centerRow * baseCellPx
+            zoom = targetZoom
+            pan = Offset(viewportWidth / 2f - centerX * targetZoom, viewportHeight / 2f - centerY * targetZoom)
         }
 
-        val fitScale = minOf(boardWidthPx / worldWidth, boardHeightPx / worldHeight)
-        if (!fitScale.isFinite() || fitScale <= 0f) {
-            return@BoxWithConstraints
-        }
-
-        val planPxWidth = worldWidth * fitScale
-        val planPxHeight = worldHeight * fitScale
-        val originX = ((boardWidthPx - planPxWidth) / 2f).coerceAtLeast(0f)
-        val originY = ((boardHeightPx - planPxHeight) / 2f).coerceAtLeast(0f)
-
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFF121212), Color(0xFF0A0A0A))
-                )
+        fun toGridPoint(position: Offset): GridPoint {
+            val localX = (position.x - pan.x) / zoom - origin.x
+            val localY = (position.y - pan.y) / zoom - origin.y
+            return GridPoint(
+                column = floor(localX / baseCellPx).toInt().coerceIn(0, grid.columns - 1),
+                row = floor(localY / baseCellPx).toInt().coerceIn(0, grid.rows - 1)
             )
-            drawRect(
-                color = AppSurface,
-                topLeft = Offset(originX, originY),
-                size = androidx.compose.ui.geometry.Size(planPxWidth, planPxHeight)
-            )
-
-            val gridColor = Color(0xFF2A3238)
-            val gridStroke = (1f / density.density).coerceAtLeast(0.65f)
-            val cellSize = (50f * fitScale).coerceAtLeast(8f)
-            val maxColumns = ((planPxWidth / cellSize).toInt() + 2).coerceAtMost(250)
-            val maxRows = ((planPxHeight / cellSize).toInt() + 2).coerceAtMost(250)
-
-            var x = originX
-            repeat(maxColumns) { column ->
-                drawLine(
-                    color = gridColor.copy(alpha = if (column % 4 == 0) 0.55f else 0.28f),
-                    start = Offset(x, originY),
-                    end = Offset(x, originY + planPxHeight),
-                    strokeWidth = gridStroke
-                )
-                x += cellSize
-            }
-
-            var y = originY
-            repeat(maxRows) { row ->
-                drawLine(
-                    color = gridColor.copy(alpha = if (row % 4 == 0) 0.55f else 0.28f),
-                    start = Offset(originX, y),
-                    end = Offset(originX + planPxWidth, y),
-                    strokeWidth = gridStroke
-                )
-                y += cellSize
-            }
-
-            drawRect(
-                color = AppPrimary.copy(alpha = 0.55f),
-                topLeft = Offset(originX, originY),
-                size = androidx.compose.ui.geometry.Size(planPxWidth, planPxHeight),
-                style = Stroke(width = 2.2f)
-            )
-        }
-
-        if (zones.isEmpty()) {
-            Text(
-                text = "Agrega una zona para empezar",
-                color = AppSecondaryText,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-
-        zones.forEach { zone ->
-            val zoneColor = zone.fillColor.asZoneColor()
-            val selected = zone.id == selectedZoneId
-            val x = originX + (zone.x * planPxWidth)
-            val y = originY + (zone.y * planPxHeight)
-            val width = zone.width * planPxWidth
-            val height = zone.height * planPxHeight
-            val luminance = (0.299f * zoneColor.red) + (0.587f * zoneColor.green) + (0.114f * zoneColor.blue)
-            val contentColor = if (luminance < 0.45f) Color.White else Color(0xFF101010)
-
-            Surface(
-                modifier = Modifier
-                    .offset { IntOffset(x.roundToInt(), y.roundToInt()) }
-                    .size(
-                        width = with(density) { width.toDp() },
-                        height = with(density) { height.toDp() }
-                    )
-                    .pointerInput(zone.id) {
-                        detectTapGestures(
-                            onTap = { onZoneSelected(zone.id) }
-                        )
-                    }
-                    .pointerInput(zone.id, planPxWidth, planPxHeight) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consumeAllChanges()
-                            onZoneDragged(
-                                zone.id,
-                                dragAmount.x / planPxWidth,
-                                dragAmount.y / planPxHeight
-                            )
-                        }
-                    },
-                shape = RoundedCornerShape(20.dp),
-                color = zoneColor.copy(alpha = zone.opacity),
-                border = BorderStroke(
-                    width = if (selected) 2.5.dp else 1.dp,
-                    color = if (selected) AppPrimary else zoneColor.copy(alpha = 0.45f)
-                ),
-                shadowElevation = if (selected) 8.dp else 2.dp,
-                tonalElevation = 0.dp
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .background(
-                                color = Color.Black.copy(alpha = 0.16f),
-                                shape = RoundedCornerShape(bottomEnd = 14.dp)
-                            )
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
-                    ) {
-                        Text(
-                            text = zone.name,
-                            color = contentColor,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1
-                        )
-                    }
-
-                    Text(
-                        text = "${(zone.width * 100).roundToInt()}% x ${(zone.height * 100).roundToInt()}%",
-                        color = contentColor.copy(alpha = 0.72f),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 12.dp, bottom = 10.dp)
-                    )
-
-                    if (selected) {
-                        ResizeHandle(
-                            modifier = Modifier.align(Alignment.BottomEnd),
-                            onDrag = { deltaX, deltaY ->
-                                onZoneResized(
-                                    zone.id,
-                                    deltaX / planPxWidth,
-                                    deltaY / planPxHeight
-                                )
-                            }
-                        )
-                    }
-                }
-            }
         }
 
         Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(14.dp)
-                .background(
-                    color = Color(0xFF0F1113).copy(alpha = 0.88f),
-                    shape = RoundedCornerShape(999.dp)
+                .fillMaxSize()
+                .then(
+                    if (isRoomToolActive) Modifier.pointerInput(grid, zoom, pan) {
+                        detectDragGestures(
+                            onDragStart = { position ->
+                                val point = toGridPoint(position)
+                                drawStart = point
+                                drawCurrent = point
+                            },
+                            onDragCancel = { drawStart = null; drawCurrent = null },
+                            onDragEnd = {
+                                val start = drawStart
+                                val end = drawCurrent
+                                if (start != null && end != null) {
+                                    onRoomCreated(
+                                        minOf(start.column, end.column), minOf(start.row, end.row),
+                                        kotlin.math.abs(end.column - start.column) + 1,
+                                        kotlin.math.abs(end.row - start.row) + 1
+                                    )
+                                }
+                                drawStart = null
+                                drawCurrent = null
+                            },
+                            onDrag = { change, _ -> drawCurrent = toGridPoint(change.position); change.consumeAllChanges() }
+                        )
+                    } else Modifier
+                        .pointerInput(Unit) { detectTapGestures(onTap = { onZoneSelected(null) }) }
+                        .pointerInput(Unit) {
+                            detectTransformGestures { centroid, panChange, zoomChange, _ ->
+                                val nextZoom = (zoom * zoomChange).coerceIn(0.65f, 3f)
+                                pan = centroid + (pan - centroid) * (nextZoom / zoom) + panChange
+                                zoom = nextZoom
+                            }
+                        }
                 )
-                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            Text(
-                text = "Toca, arrastra y redimensiona las zonas",
-                color = AppSecondaryText,
-                style = MaterialTheme.typography.labelMedium
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        translationX = pan.x
+                        translationY = pan.y
+                        scaleX = zoom
+                        scaleY = zoom
+                        transformOrigin = TransformOrigin(0f, 0f)
+                    }
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val major = Color(0xFF334144)
+                    val minor = Color(0xFF263034)
+                    for (column in 0..grid.columns) {
+                        val x = origin.x + column * baseCellPx
+                        drawLine(if (column % 4 == 0) major else minor, Offset(x, origin.y), Offset(x, origin.y + worldHeight), if (column % 4 == 0) 1.2f else 0.7f)
+                    }
+                    for (row in 0..grid.rows) {
+                        val y = origin.y + row * baseCellPx
+                        drawLine(if (row % 4 == 0) major else minor, Offset(origin.x, y), Offset(origin.x + worldWidth, y), if (row % 4 == 0) 1.2f else 0.7f)
+                    }
+                    val center = Offset(origin.x + worldWidth / 2f, origin.y + worldHeight / 2f)
+                    drawLine(AppPrimary.copy(alpha = 0.62f), Offset(center.x - 11f, center.y), Offset(center.x + 11f, center.y), 1.5f)
+                    drawLine(AppPrimary.copy(alpha = 0.62f), Offset(center.x, center.y - 11f), Offset(center.x, center.y + 11f), 1.5f)
+                    drawCircle(AppPrimary, 3.5f, center)
+                    val start = drawStart
+                    val end = drawCurrent
+                    if (start != null && end != null) {
+                        val left = minOf(start.column, end.column)
+                        val top = minOf(start.row, end.row)
+                        val width = kotlin.math.abs(end.column - start.column) + 1
+                        val height = kotlin.math.abs(end.row - start.row) + 1
+                        drawRect(
+                            color = AppPrimary.copy(alpha = 0.22f),
+                            topLeft = Offset(origin.x + left * baseCellPx, origin.y + top * baseCellPx),
+                            size = androidx.compose.ui.geometry.Size(width * baseCellPx, height * baseCellPx)
+                        )
+                        drawRect(
+                            color = AppPrimary, topLeft = Offset(origin.x + left * baseCellPx, origin.y + top * baseCellPx),
+                            size = androidx.compose.ui.geometry.Size(width * baseCellPx, height * baseCellPx), style = Stroke(2f)
+                        )
+                    }
+                }
+
+                zones.forEach { zone ->
+                    val geometry = zone.geometry(grid)
+                    val selected = zone.id == selectedZoneId
+                    val x = origin.x + geometry.column * baseCellPx
+                    val y = origin.y + geometry.row * baseCellPx
+                    val zoneWidth = geometry.spanColumns * baseCellPx
+                    val zoneHeight = geometry.spanRows * baseCellPx
+                    val zoneColor = zone.fillColor.asZoneColor()
+                    Box(
+                        modifier = Modifier
+                            .zIndex(if (selected) 1f else 0f)
+                            .offset { IntOffset(x.roundToInt(), y.roundToInt()) }
+                            .size(with(density) { zoneWidth.toDp() }, with(density) { zoneHeight.toDp() })
+                            .background(zoneColor.copy(alpha = zone.opacity), RectangleShape)
+                            .border(
+                                width = if (selected) 2.dp else 1.dp,
+                                color = if (selected) AppPrimary else zoneColor.copy(alpha = 0.75f),
+                                shape = RectangleShape
+                            )
+                            .pointerInput(zone.id, isRoomToolActive, zoom) {
+                                if (!isRoomToolActive) {
+                                    var dragOrigin: GridZoneGeometry? = null
+                                    var dragDistance = Offset.Zero
+                                    detectDragGestures(
+                                        onDragStart = {
+                                            dragOrigin = zone.geometry(grid)
+                                            dragDistance = Offset.Zero
+                                            onZoneSelected(zone.id)
+                                        },
+                                        onDragCancel = {
+                                            dragOrigin = null
+                                            dragDistance = Offset.Zero
+                                        },
+                                        onDragEnd = {
+                                            dragOrigin = null
+                                            dragDistance = Offset.Zero
+                                        },
+                                        onDrag = { change, delta ->
+                                            change.consumeAllChanges()
+                                            dragDistance += delta
+                                            val base = dragOrigin ?: zone.geometry(grid)
+                                            val movedColumn = base.column + (dragDistance.x / (baseCellPx * zoom)).roundToInt()
+                                            val movedRow = base.row + (dragDistance.y / (baseCellPx * zoom)).roundToInt()
+                                            onZoneGeometryChanged(
+                                                zone.id,
+                                                movedColumn,
+                                                movedRow,
+                                                base.spanColumns,
+                                                base.spanRows
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                            .pointerInput(zone.id) { detectTapGestures(onTap = { onZoneSelected(zone.id) }) }
+                    ) {
+                        Box(Modifier.fillMaxSize()) {
+                            if (!selected && zoneWidth > 54f && zoneHeight > 34f) {
+                                Text(
+                                    zone.name,
+                                    color = Color(0xFF071112),
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 12.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.align(Alignment.TopStart).offset(6.dp, 4.dp)
+                                )
+                            }
+                            if (selected) {
+                                var resizeOrigin by remember(zone.id) { mutableStateOf<GridZoneGeometry?>(null) }
+                                DeleteBubble(
+                                    modifier = Modifier.align(Alignment.TopEnd).offset(24.dp, (-24).dp),
+                                    onClick = { onZoneDelete(zone.id) }
+                                )
+                                ResizeHandle(
+                                    modifier = Modifier.align(Alignment.TopCenter).offset(0.dp, (-8).dp),
+                                    onDragStart = { resizeOrigin = zone.geometry(grid) },
+                                    onDrag = { delta ->
+                                        val current = resizeOrigin ?: zone.geometry(grid)
+                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
+                                        onZoneGeometryChanged(
+                                            zone.id,
+                                            current.column,
+                                            current.row + dy,
+                                            current.spanColumns,
+                                            current.spanRows - dy
+                                        )
+                                    },
+                                    onDragEnd = { resizeOrigin = null }
+                                )
+                                ResizeHandle(
+                                    modifier = Modifier.align(Alignment.TopEnd).offset((-4).dp, (-4).dp),
+                                    onDragStart = { resizeOrigin = zone.geometry(grid) },
+                                    onDrag = { delta ->
+                                        val current = resizeOrigin ?: zone.geometry(grid)
+                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
+                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
+                                        onZoneGeometryChanged(
+                                            zone.id,
+                                            current.column,
+                                            current.row + dy,
+                                            current.spanColumns + dx,
+                                            current.spanRows - dy
+                                        )
+                                    },
+                                    onDragEnd = { resizeOrigin = null }
+                                )
+                                ResizeHandle(
+                                    modifier = Modifier.align(Alignment.CenterStart).offset((-8).dp, 0.dp),
+                                    onDragStart = { resizeOrigin = zone.geometry(grid) },
+                                    onDrag = { delta ->
+                                        val current = resizeOrigin ?: zone.geometry(grid)
+                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
+                                        onZoneGeometryChanged(
+                                            zone.id,
+                                            current.column + dx,
+                                            current.row,
+                                            current.spanColumns - dx,
+                                            current.spanRows
+                                        )
+                                    },
+                                    onDragEnd = { resizeOrigin = null }
+                                )
+                                ResizeHandle(
+                                    modifier = Modifier.align(Alignment.CenterEnd).offset(8.dp, 0.dp),
+                                    onDragStart = { resizeOrigin = zone.geometry(grid) },
+                                    onDrag = { delta ->
+                                        val current = resizeOrigin ?: zone.geometry(grid)
+                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
+                                        onZoneGeometryChanged(
+                                            zone.id,
+                                            current.column,
+                                            current.row,
+                                            current.spanColumns + dx,
+                                            current.spanRows
+                                        )
+                                    },
+                                    onDragEnd = { resizeOrigin = null }
+                                )
+                                ResizeHandle(
+                                    modifier = Modifier.align(Alignment.BottomStart).offset((-8).dp, 8.dp),
+                                    onDragStart = { resizeOrigin = zone.geometry(grid) },
+                                    onDrag = { delta ->
+                                        val current = resizeOrigin ?: zone.geometry(grid)
+                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
+                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
+                                        onZoneGeometryChanged(
+                                            zone.id,
+                                            current.column + dx,
+                                            current.row,
+                                            current.spanColumns - dx,
+                                            current.spanRows + dy
+                                        )
+                                    },
+                                    onDragEnd = { resizeOrigin = null }
+                                )
+                                ResizeHandle(
+                                    modifier = Modifier.align(Alignment.BottomCenter).offset(0.dp, 8.dp),
+                                    onDragStart = { resizeOrigin = zone.geometry(grid) },
+                                    onDrag = { delta ->
+                                        val current = resizeOrigin ?: zone.geometry(grid)
+                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
+                                        onZoneGeometryChanged(
+                                            zone.id,
+                                            current.column,
+                                            current.row,
+                                            current.spanColumns,
+                                            current.spanRows + dy
+                                        )
+                                    },
+                                    onDragEnd = { resizeOrigin = null }
+                                )
+                                ResizeHandle(
+                                    modifier = Modifier.align(Alignment.BottomEnd).offset(8.dp, 8.dp),
+                                    onDragStart = { resizeOrigin = zone.geometry(grid) },
+                                    onDrag = { delta ->
+                                        val current = resizeOrigin ?: zone.geometry(grid)
+                                        val dx = (delta.x / (baseCellPx * zoom)).roundToInt()
+                                        val dy = (delta.y / (baseCellPx * zoom)).roundToInt()
+                                        onZoneGeometryChanged(
+                                            zone.id,
+                                            current.column,
+                                            current.row,
+                                            current.spanColumns + dx,
+                                            current.spanRows + dy
+                                        )
+                                    },
+                                    onDragEnd = { resizeOrigin = null }
+                                )
+                            }
+                        }
+                    }
+                }
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val major = Color(0xFF506366).copy(alpha = 0.08f)
+                    val minor = Color(0xFF3B4A4C).copy(alpha = 0.05f)
+                    for (column in 0..grid.columns) {
+                        val x = origin.x + column * baseCellPx
+                        drawLine(if (column % 4 == 0) major else minor, Offset(x, origin.y), Offset(x, origin.y + worldHeight), if (column % 4 == 0) 0.8f else 0.45f)
+                    }
+                    for (row in 0..grid.rows) {
+                        val y = origin.y + row * baseCellPx
+                        drawLine(if (row % 4 == 0) major else minor, Offset(origin.x, y), Offset(origin.x + worldWidth, y), if (row % 4 == 0) 0.8f else 0.45f)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private data class GridPoint(val column: Int, val row: Int)
+
+@Composable
+private fun DeleteBubble(modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = Color(0xFFF4F5F5),
+        shape = RoundedCornerShape(99.dp),
+        border = BorderStroke(1.dp, Color(0xFFB06A74)),
+        modifier = modifier.size(24.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.Close, contentDescription = null, tint = Color(0xFF8C3F4A), modifier = Modifier.size(14.dp))
         }
     }
 }
 
 @Composable
 private fun ResizeHandle(
-    modifier: Modifier = Modifier,
-    onDrag: (Float, Float) -> Unit
+    modifier: Modifier,
+    onDragStart: () -> Unit = {},
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit = {}
 ) {
     Box(
         modifier = modifier
-            .padding(10.dp)
-            .size(26.dp)
-            .clip(RoundedCornerShape(9.dp))
-            .background(AppPrimary)
+            .size(18.dp)
+            .background(Color(0xFFF3F4F5), RoundedCornerShape(99.dp))
+            .border(1.dp, Color(0xFF91A1A6), RoundedCornerShape(99.dp))
             .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consumeAllChanges()
-                    onDrag(dragAmount.x, dragAmount.y)
-                }
+                var accumulated = Offset.Zero
+                detectDragGestures(
+                    onDragStart = {
+                        accumulated = Offset.Zero
+                        onDragStart()
+                    },
+                    onDragCancel = {
+                        accumulated = Offset.Zero
+                        onDragEnd()
+                    },
+                    onDragEnd = {
+                        accumulated = Offset.Zero
+                        onDragEnd()
+                    },
+                    onDrag = { change, delta ->
+                        change.consumeAllChanges()
+                        accumulated += delta
+                        onDrag(accumulated)
+                    }
+                )
             },
         contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "↘",
-            color = Color.Black,
-            fontWeight = FontWeight.Black,
-            style = MaterialTheme.typography.labelSmall
-        )
-    }
+    ) { }
 }

@@ -85,26 +85,26 @@ data class ZoneRequest(
     val displayOrder: Int
 )
 
-fun ZoneResponse.toDraft(): PlanZoneDraft = PlanZoneDraft(
+fun ZoneResponse.toDraft(canvasWidth: Float, canvasHeight: Float): PlanZoneDraft = PlanZoneDraft(
     backendId = zoneId,
     id = "zone_$zoneId",
     name = name,
-    x = posX,
-    y = posY,
-    width = width,
-    height = height,
+    x = (posX / canvasWidth.coerceAtLeast(1f)).coerceIn(0f, 1f),
+    y = (posY / canvasHeight.coerceAtLeast(1f)).coerceIn(0f, 1f),
+    width = (width / canvasWidth.coerceAtLeast(1f)).coerceIn(0f, 1f),
+    height = (height / canvasHeight.coerceAtLeast(1f)).coerceIn(0f, 1f),
     fillColor = fillColor,
     strokeColor = strokeColor,
     strokeWidth = strokeWidth,
     opacity = opacity
 )
 
-fun PlanZoneDraft.toRequest(displayOrder: Int): ZoneRequest = ZoneRequest(
+fun PlanZoneDraft.toRequest(displayOrder: Int, canvasWidth: Float, canvasHeight: Float): ZoneRequest = ZoneRequest(
     name = name.trim(),
-    posX = x,
-    posY = y,
-    width = width,
-    height = height,
+    posX = x * canvasWidth,
+    posY = y * canvasHeight,
+    width = width * canvasWidth,
+    height = height * canvasHeight,
     fillColor = fillColor,
     strokeColor = strokeColor,
     strokeWidth = strokeWidth,

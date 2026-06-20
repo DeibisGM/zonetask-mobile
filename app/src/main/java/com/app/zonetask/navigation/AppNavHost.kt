@@ -217,7 +217,7 @@ fun AppNavHost() {
                         navController.navigate(SpacesDestinations.CREATE)
                     },
                     onNavigateToCreatePlan = { sid ->
-                        navController.navigate(PlansDestinations.newPlan(sid))
+                        navController.navigate(PlansDestinations.list(sid))
                     },
                     onNavigateToCreateTask = {
                         val sid = if (currentSpaceId > 0) currentSpaceId else spaceId
@@ -348,7 +348,7 @@ private fun rememberSpacesNavActions(
             navController.popBackStack()
         },
         onSpaceCreatedAndOpenPlans = { spaceId ->
-            navController.navigate(PlansDestinations.newPlan(spaceId)) {
+            navController.navigate(PlansDestinations.list(spaceId)) {
                 popUpTo(SpacesDestinations.CREATE) {
                     inclusive = true
                 }

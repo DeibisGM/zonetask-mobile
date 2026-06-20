@@ -20,319 +20,275 @@ class PlanEditorViewModel(
     private val spaceId: Int,
     private val planId: Int?
 ) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(
-        PlanEditorUiState(
-            planId = planId,
-            spaceId = spaceId
-        )
-    )
+    private val _uiState = MutableStateFlow(PlanEditorUiState(planId = planId, spaceId = spaceId))
     val uiState = _uiState.asStateFlow()
+    private var selectedZoneSnapshot: GridZoneGeometry? = null
 
     init {
-        if (planId != null) {
+        if (planId == null) {
+            _uiState.value = PlanEditorUiState(planId = null, spaceId = spaceId)
+        } else {
             loadPlan(planId)
-        } else {
-            restoreDraftZones()
         }
     }
 
-    private fun loadPlan(id: Int) {
-        _uiState.value = _uiState.value.copy(isLoading = true, errorBanner = null)
-        viewModelScope.launch {
-            when (val planResult = floorPlanRepository.getPlanById(id)) {
-                is ApiResult.Success -> {
-                    val plan = planResult.data
-                    when (val zonesResult = zoneRepository.getZonesByPlan(plan.planId)) {
-                        is ApiResult.Success -> {
-                            val zones = zonesResult.data
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                planId = plan.planId,
-                                name = plan.name,
-                                canvasWidth = plan.canvasWidth.toInt().toString(),
-                                canvasHeight = plan.canvasHeight.toInt().toString(),
-                                zones = zones,
-                                selectedZoneId = zones.firstOrNull()?.id,
-                                isDirty = false
-                            )
-                        }
-
-                        is ApiResult.Error -> {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                errorBanner = zonesResult.message
-                            )
-                        }
-                    }
-                }
-
-                is ApiResult.Error -> {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorBanner = planResult.message
-                    )
-                }
-            }
-        }
-    }
-
-    private fun restoreDraftZones() {
-        val storedZones = PlanDraftStore.loadZones(spaceId, null)
-        val zones = if (storedZones.isNotEmpty()) {
-            storedZones.map { it.toDraft() }
-        } else {
-            createStarterZones()
-        }
-        _uiState.value = _uiState.value.copy(
-            zones = zones,
-            selectedZoneId = zones.firstOrNull()?.id,
-            isDirty = false
+    fun completeSetup(name: String, columns: String, rows: String) {
+        val parsedColumns = columns.toIntOrNull()
+        val parsedRows = rows.toIntOrNull()
+        if (name.isBlank()) return setError("Floor name is required")
+        if (parsedColumns == null || parsedColumns !in 6..1000) return setError("Width must be between 6 and 1000 cells")
+        if (parsedRows == null || parsedRows !in 6..1000) return setError("Height must be between 6 and 1000 cells")
+        val grid = FloorGridSpec(parsedColumns, parsedRows)
+        val state = _uiState.value.copy(
+            name = name.trim(), canvasWidth = parsedColumns.toString(), canvasHeight = parsedRows.toString(),
+            setupComplete = true, zones = normalizeZones(_uiState.value.zones, grid), isDirty = true, errorBanner = null
         )
-        persistDraft(zones)
+        _uiState.value = state
     }
 
-    fun onNameChange(value: String) {
-        _uiState.value = _uiState.value.copy(name = value, isDirty = true, errorBanner = null)
+    fun onSelectZone(zoneId: String?) {
+        val state = _uiState.value
+        val previousSelected = state.selectedZoneId
+        if (previousSelected != null && previousSelected != zoneId) {
+            finalizeSelection(previousSelected)
+        }
+        if (zoneId != null && (zoneId != previousSelected || selectedZoneSnapshot == null)) {
+            selectedZoneSnapshot = state.zones.firstOrNull { it.id == zoneId }?.geometry(gridFor(state))
+        }
+        updateState { it.copy(selectedZoneId = zoneId, errorBanner = null) }
     }
 
-    fun onCanvasWidthChange(value: String) {
-        _uiState.value = _uiState.value.copy(canvasWidth = value, isDirty = true, errorBanner = null)
-    }
-
-    fun onCanvasHeightChange(value: String) {
-        _uiState.value = _uiState.value.copy(canvasHeight = value, isDirty = true, errorBanner = null)
+    fun onCreateRoom(column: Int, row: Int, spanColumns: Int, spanRows: Int) {
+        val state = _uiState.value
+        val grid = gridFor(state)
+        val geometry = GridZoneGeometry(column, row, spanColumns, spanRows).bounded(grid)
+        if (!isAreaFree(geometry, state.zones, grid)) return setError("Rooms cannot overlap")
+        val index = state.zones.size + 1
+        val zone = geometry.toDraftGeometry(
+            PlanZoneDraft(
+                id = UUID.randomUUID().toString(), name = uniqueName("Room $index", state.zones),
+                x = 0f, y = 0f, width = 0f, height = 0f, fillColor = PlanZonePalette[(index - 1) % PlanZonePalette.size]
+            ), grid
+        )
+        replaceZones(state.zones + zone, zone.id)
     }
 
     fun onAddZone() {
         val state = _uiState.value
-        val nextIndex = state.zones.size + 1
-        val paletteColor = PlanZonePalette[(nextIndex - 1) % PlanZonePalette.size]
-        val baseName = "Zona $nextIndex"
-        val existingNames = state.zones.map { it.name }
-        val zone = PlanZoneDraft(
-            name = uniqueZoneName(baseName, existingNames),
-            x = 0.32f,
-            y = 0.28f,
-            width = 0.24f,
-            height = 0.20f,
-            fillColor = paletteColor
+        val grid = gridFor(state)
+        val spanColumns = 12
+        val spanRows = 12
+        val centerColumn = ((grid.columns - spanColumns) / 2).coerceAtLeast(0)
+        val centerRow = ((grid.rows - spanRows) / 2).coerceAtLeast(0)
+        val source = GridZoneGeometry(centerColumn, centerRow, spanColumns, spanRows).bounded(grid)
+        val geometry = if (isAreaFree(source, state.zones, grid)) source else findNearestFree(source, state.zones, grid) ?: run {
+            setError("No free space for a new zone")
+            return
+        }
+        val index = state.zones.size + 1
+        val zone = geometry.toDraftGeometry(
+            PlanZoneDraft(
+                id = UUID.randomUUID().toString(),
+                name = uniqueName("Room $index", state.zones),
+                x = 0f,
+                y = 0f,
+                width = 0f,
+                height = 0f,
+                fillColor = PlanZonePalette[(index - 1) % PlanZonePalette.size]
+            ),
+            grid
         )
-        updateZones(state.zones + zone, selectedZoneId = zone.id)
+        replaceZones(state.zones + zone, zone.id)
     }
 
-    fun onSelectZone(zoneId: String?) {
-        _uiState.value = _uiState.value.copy(selectedZoneId = zoneId, errorBanner = null)
+    fun onMoveZone(id: String, column: Int, row: Int) = mutateGeometry(id, validateOverlap = false) { zone, grid ->
+        GridZoneGeometry(column, row, zone.geometry(grid).spanColumns, zone.geometry(grid).spanRows).bounded(grid)
     }
 
-    fun onSelectedZoneNameChange(value: String) = updateSelectedZone { zone ->
-        zone.copy(name = value)
+    fun onResizeZone(id: String, spanColumns: Int, spanRows: Int) = mutateGeometry(id, validateOverlap = false) { zone, grid ->
+        val old = zone.geometry(grid)
+        GridZoneGeometry(old.column, old.row, spanColumns, spanRows).bounded(grid)
     }
 
-    fun onSelectedZoneColorChange(value: String) = updateSelectedZone { zone ->
-        zone.copy(fillColor = value)
+    fun onZoneGeometryChanged(id: String, column: Int, row: Int, spanColumns: Int, spanRows: Int) = mutateGeometry(id, validateOverlap = false) { _, grid ->
+        GridZoneGeometry(column, row, spanColumns, spanRows).bounded(grid)
     }
 
-    fun onSelectedZoneOpacityChange(value: Float) = updateSelectedZone { zone ->
-        zone.copy(opacity = value.coerceIn(0.35f, 1f))
-    }
-
-    fun onSelectedZoneSizeChange(width: Float, height: Float) = updateSelectedZone { zone ->
-        zone.copy(
-            width = width.coerceIn(0.08f, 0.90f),
-            height = height.coerceIn(0.08f, 0.90f)
-        )
-    }
-
-    fun onSelectedZonePositionChange(x: Float, y: Float) = updateSelectedZone { zone ->
-        zone.copy(
-            x = x.coerceIn(0f, 1f - zone.width),
-            y = y.coerceIn(0f, 1f - zone.height)
-        )
-    }
+    fun onSelectedZoneNameChange(value: String) = mutateSelected { it.copy(name = value.trim().ifBlank { it.name }) }
+    fun onSelectedZoneColorChange(value: String) = mutateSelected { it.copy(fillColor = value) }
 
     fun onDuplicateSelectedZone() {
         val state = _uiState.value
         val selected = state.zones.firstOrNull { it.id == state.selectedZoneId } ?: return
-        val duplicated = selected.copy(
-            id = UUID.randomUUID().toString(),
-            backendId = null,
-            name = uniqueZoneName("${selected.name} copia", state.zones.map { it.name }),
-            x = (selected.x + 0.03f).coerceAtMost(0.80f),
-            y = (selected.y + 0.03f).coerceAtMost(0.80f)
+        val grid = gridFor(state)
+        val source = selected.geometry(grid)
+        val candidate = findNearestFree(source, state.zones, grid) ?: return setError("No free space for a copy")
+        val duplicate = candidate.toDraftGeometry(
+            selected.copy(id = UUID.randomUUID().toString(), backendId = null, name = uniqueName("${selected.name} copy", state.zones)), grid
         )
-        updateZones(state.zones + duplicated, selectedZoneId = duplicated.id)
+        replaceZones(state.zones + duplicate, duplicate.id)
     }
 
     fun onDeleteSelectedZone() {
         val state = _uiState.value
-        val selectedId = state.selectedZoneId ?: return
-        val remaining = state.zones.filterNot { it.id == selectedId }
-        updateZones(remaining, selectedZoneId = remaining.firstOrNull()?.id)
+        selectedZoneSnapshot = null
+        val remaining = state.zones.filterNot { it.id == state.selectedZoneId }
+        replaceZones(remaining, remaining.firstOrNull()?.id)
     }
 
-    fun onZoneDrag(zoneId: String, deltaX: Float, deltaY: Float) {
-        val state = _uiState.value
-        val updated = state.zones.map { zone ->
-            if (zone.id != zoneId) {
-                zone
-            } else {
-                zone.copy(
-                    x = (zone.x + deltaX).coerceIn(0f, 1f - zone.width),
-                    y = (zone.y + deltaY).coerceIn(0f, 1f - zone.height)
-                )
-            }
-        }
-        updateZones(updated, selectedZoneId = zoneId)
-    }
-
-    fun onZoneResize(zoneId: String, deltaWidth: Float, deltaHeight: Float) {
-        val state = _uiState.value
-        val updated = state.zones.map { zone ->
-            if (zone.id != zoneId) {
-                zone
-            } else {
-                zone.copy(
-                    width = (zone.width + deltaWidth).coerceIn(0.08f, 0.92f - zone.x),
-                    height = (zone.height + deltaHeight).coerceIn(0.08f, 0.92f - zone.y)
-                )
-            }
-        }
-        updateZones(updated, selectedZoneId = zoneId)
-    }
-
-    fun clearErrorBanner() {
-        _uiState.value = _uiState.value.copy(errorBanner = null)
-    }
+    fun clearErrorBanner() = updateState { it.copy(errorBanner = null) }
 
     fun save() {
+        finalizeSelection(_uiState.value.selectedZoneId)
         val state = _uiState.value
-
-        if (state.name.isBlank()) {
-            _uiState.value = state.copy(errorBanner = "El nombre del plano es requerido")
-            return
-        }
-
-        val width = state.canvasWidth.toFloatOrNull()
-        val height = state.canvasHeight.toFloatOrNull()
-
-        if (width == null || width <= 0f) {
-            _uiState.value = state.copy(errorBanner = "El ancho del plano debe ser mayor a 0")
-            return
-        }
-        if (height == null || height <= 0f) {
-            _uiState.value = state.copy(errorBanner = "El alto del plano debe ser mayor a 0")
-            return
-        }
-        if (state.zones.isEmpty()) {
-            _uiState.value = state.copy(errorBanner = "Agrega al menos una zona antes de guardar")
-            return
-        }
-
+        if (!state.setupComplete) return setError("Finish floor setup first")
+        val grid = gridFor(state)
         _uiState.value = state.copy(isSaving = true, errorBanner = null)
-
         viewModelScope.launch {
-            val savedPlanResult = if (state.planId == null) {
-                floorPlanRepository.createPlan(
-                    CreateFloorPlanRequest(
-                        name = state.name.trim(),
-                        canvasWidth = width,
-                        canvasHeight = height,
-                        spaceId = state.spaceId
-                    )
-                )
+            val savedPlan = if (state.planId == null) {
+                floorPlanRepository.createPlan(CreateFloorPlanRequest(state.name, grid.columns.toFloat(), grid.rows.toFloat(), state.spaceId))
             } else {
-                floorPlanRepository.updatePlan(
-                    state.planId,
-                    UpdateFloorPlanRequest(
-                        name = state.name.trim(),
-                        canvasWidth = width,
-                        canvasHeight = height
-                    )
-                )
+                floorPlanRepository.updatePlan(state.planId, UpdateFloorPlanRequest(state.name, grid.columns.toFloat(), grid.rows.toFloat()))
             }
-
-            when (savedPlanResult) {
-                is ApiResult.Success -> {
-                    val savedPlan = savedPlanResult.data
-                    when (val savedZonesResult = zoneRepository.syncZones(savedPlan.planId, state.zones)) {
-                        is ApiResult.Success -> {
-                            val syncedZones = savedZonesResult.data
-                            if (state.planId == null) {
-                                PlanDraftStore.clearDraft(state.spaceId)
-                            }
-                            val selectedZoneId = syncedZones.firstOrNull { it.id == state.selectedZoneId }?.id
-                                ?: syncedZones.firstOrNull()?.id
-                            _uiState.value = state.copy(
-                                planId = savedPlan.planId,
-                                zones = syncedZones,
-                                selectedZoneId = selectedZoneId,
-                                isSaving = false,
-                                isDirty = false,
-                                isSaved = true
-                            )
-                        }
-
-                        is ApiResult.Error -> {
-                            _uiState.value = state.copy(
-                                planId = savedPlan.planId,
-                                isSaving = false,
-                                errorBanner = savedZonesResult.message
-                            )
-                        }
+            when (savedPlan) {
+                is ApiResult.Error -> _uiState.value = _uiState.value.copy(isSaving = false, errorBanner = savedPlan.message)
+                is ApiResult.Success -> when (val synced = zoneRepository.syncZones(
+                    savedPlan.data.planId, state.zones, savedPlan.data.canvasWidth, savedPlan.data.canvasHeight
+                )) {
+                    is ApiResult.Error -> _uiState.value = _uiState.value.copy(planId = savedPlan.data.planId, isSaving = false, errorBanner = synced.message)
+                    is ApiResult.Success -> {
+                        val zones = normalizeZones(synced.data, grid)
+                        PlanDraftStore.clearDraft(spaceId, null)
+                        PlanDraftStore.clearDraft(spaceId, savedPlan.data.planId)
+                        _uiState.value = _uiState.value.copy(
+                            planId = savedPlan.data.planId, zones = zones,
+                            selectedZoneId = zones.firstOrNull { it.id == state.selectedZoneId }?.id,
+                            isSaving = false, isDirty = false, isSaved = true
+                        )
                     }
                 }
+            }
+        }
+    }
 
-                is ApiResult.Error -> {
-                    _uiState.value = state.copy(
-                        isSaving = false,
-                        errorBanner = savedPlanResult.message
+    fun consumeSaved() = updateState { it.copy(isSaved = false) }
+
+    private fun loadPlan(id: Int) = viewModelScope.launch {
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        when (val planResult = floorPlanRepository.getPlanById(id)) {
+            is ApiResult.Error -> _uiState.value = _uiState.value.copy(isLoading = false, errorBanner = planResult.message)
+            is ApiResult.Success -> when (val zonesResult = zoneRepository.getZonesByPlan(
+                planResult.data.planId, planResult.data.canvasWidth, planResult.data.canvasHeight
+            )) {
+                is ApiResult.Error -> _uiState.value = _uiState.value.copy(isLoading = false, errorBanner = zonesResult.message)
+                is ApiResult.Success -> {
+                    val columns = gridDimension(planResult.data.canvasWidth.toInt().toString(), 240)
+                    val rows = gridDimension(planResult.data.canvasHeight.toInt().toString(), 240)
+                    val grid = FloorGridSpec(columns, rows)
+                    val zones = normalizeZones(zonesResult.data, grid)
+                    selectedZoneSnapshot = zones.firstOrNull()?.geometry(grid)
+                    _uiState.value = PlanEditorUiState(
+                        planId = planResult.data.planId, spaceId = spaceId,
+                        name = planResult.data.name,
+                        canvasWidth = columns.toString(), canvasHeight = rows.toString(), setupComplete = true,
+                        zones = zones, selectedZoneId = zones.firstOrNull()?.id,
+                        isDirty = false
                     )
                 }
             }
         }
     }
 
-    fun consumeSaved() {
-        _uiState.value = _uiState.value.copy(isSaved = false)
+    private fun restoreDraft() {
+        _uiState.value = _uiState.value.copy(
+            name = "", canvasWidth = "240", canvasHeight = "240",
+            setupComplete = false, zones = emptyList(), selectedZoneId = null
+        )
     }
 
-    private fun updateSelectedZone(transform: (PlanZoneDraft) -> PlanZoneDraft) {
+    private fun mutateGeometry(
+        id: String,
+        validateOverlap: Boolean = true,
+        transform: (PlanZoneDraft, FloorGridSpec) -> GridZoneGeometry
+    ) {
         val state = _uiState.value
-        val selectedId = state.selectedZoneId ?: return
-        val updated = state.zones.map { zone ->
-            if (zone.id == selectedId) transform(zone) else zone
+        val grid = gridFor(state)
+        val zone = state.zones.firstOrNull { it.id == id } ?: return
+        val geometry = transform(zone, grid)
+        if (validateOverlap && !isAreaFree(geometry, state.zones, grid, id)) return setError("Rooms cannot overlap")
+        replaceZones(state.zones.map { if (it.id == id) geometry.toDraftGeometry(it, grid) else it }, id)
+    }
+
+    private fun mutateSelected(transform: (PlanZoneDraft) -> PlanZoneDraft) {
+        val selected = _uiState.value.selectedZoneId ?: return
+        replaceZones(_uiState.value.zones.map { if (it.id == selected) transform(it) else it }, selected)
+    }
+
+    private fun replaceZones(zones: List<PlanZoneDraft>, selectedId: String?) = updateState {
+        it.copy(zones = normalizeZones(zones, gridFor(it)), selectedZoneId = selectedId, isDirty = true, errorBanner = null)
+    }
+
+    private fun updateState(transform: (PlanEditorUiState) -> PlanEditorUiState) {
+        _uiState.value = transform(_uiState.value)
+        persistDraft()
+    }
+
+    private fun finalizeSelection(selectedId: String?) {
+        if (selectedId == null) {
+            selectedZoneSnapshot = null
+            return
         }
-        updateZones(updated, selectedId)
+        val state = _uiState.value
+        val grid = gridFor(state)
+        val zone = state.zones.firstOrNull { it.id == selectedId } ?: run {
+            selectedZoneSnapshot = null
+            return
+        }
+        val current = zone.geometry(grid)
+        val overlaps = !isAreaFree(current, state.zones, grid, selectedId)
+        if (overlaps) {
+            val snapshot = selectedZoneSnapshot
+            if (snapshot != null) {
+                val reverted = state.zones.map { if (it.id == selectedId) snapshot.toDraftGeometry(it, grid) else it }
+                _uiState.value = state.copy(zones = normalizeZones(reverted, grid), isDirty = true, errorBanner = null)
+            }
+        }
+        selectedZoneSnapshot = null
     }
 
-    private fun updateZones(zones: List<PlanZoneDraft>, selectedZoneId: String? = _uiState.value.selectedZoneId) {
-        val nextState = _uiState.value.copy(
-            zones = zones,
-            selectedZoneId = selectedZoneId,
-            isDirty = true,
-            errorBanner = null
-        )
-        _uiState.value = nextState
-        persistDraft(zones)
+    private fun persistDraft() {
+        // Draft persistence is intentionally disabled. Save is explicit and only happens through the top-bar action.
     }
 
-    private fun persistDraft(zones: List<PlanZoneDraft>) {
-        if (_uiState.value.planId != null) return
-        PlanDraftStore.saveZones(
-            spaceId = spaceId,
-            planId = null,
-            zones = zones.map { it.toSnapshot() }
-        )
+    private fun gridFor(state: PlanEditorUiState) = FloorGridSpec(gridDimension(state.canvasWidth, 240), gridDimension(state.canvasHeight, 240))
+    private fun gridDimension(value: String?, fallback: Int) = value?.toIntOrNull()?.takeIf { it in 6..1000 } ?: fallback
+    private fun normalizeZones(zones: List<PlanZoneDraft>, grid: FloorGridSpec) = zones.map { it.geometry(grid).toDraftGeometry(it, grid) }
+    private fun setError(message: String) = updateState { it.copy(errorBanner = message) }
+
+    private fun isAreaFree(candidate: GridZoneGeometry, zones: List<PlanZoneDraft>, grid: FloorGridSpec, ignoredId: String? = null): Boolean =
+        zones.filter { it.id != ignoredId }.none { candidate.intersects(it.geometry(grid)) }
+
+    private fun GridZoneGeometry.intersects(other: GridZoneGeometry): Boolean =
+        column < other.column + other.spanColumns && column + spanColumns > other.column &&
+            row < other.row + other.spanRows && row + spanRows > other.row
+
+    private fun findNearestFree(source: GridZoneGeometry, zones: List<PlanZoneDraft>, grid: FloorGridSpec): GridZoneGeometry? {
+        for (distance in 1..maxOf(grid.columns, grid.rows)) {
+            for (dx in -distance..distance) for (dy in -distance..distance) {
+                if (kotlin.math.abs(dx) != distance && kotlin.math.abs(dy) != distance) continue
+                val candidate = GridZoneGeometry(source.column + dx, source.row + dy, source.spanColumns, source.spanRows).bounded(grid)
+                if (candidate != source && isAreaFree(candidate, zones, grid)) return candidate
+            }
+        }
+        return null
     }
 
-    private fun uniqueZoneName(baseName: String, existingNames: List<String>): String {
-        if (!existingNames.contains(baseName)) return baseName
+    private fun uniqueName(base: String, zones: List<PlanZoneDraft>): String {
+        val names = zones.map { it.name }.toSet()
+        if (base !in names) return base
         var suffix = 2
-        while (existingNames.contains("$baseName $suffix")) {
-            suffix++
-        }
-        return "$baseName $suffix"
+        while ("$base $suffix" in names) suffix++
+        return "$base $suffix"
     }
 }
 
@@ -342,13 +298,7 @@ class PlanEditorViewModelFactory(
     private val spaceId: Int,
     private val planId: Int?
 ) : ViewModelProvider.Factory {
-
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        PlanEditorViewModel(
-            floorPlanRepository = floorPlanRepository,
-            zoneRepository = zoneRepository,
-            spaceId = spaceId,
-            planId = planId
-        ) as T
+        PlanEditorViewModel(floorPlanRepository, zoneRepository, spaceId, planId) as T
 }

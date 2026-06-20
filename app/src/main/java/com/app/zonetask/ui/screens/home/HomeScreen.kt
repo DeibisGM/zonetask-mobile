@@ -259,7 +259,7 @@ fun HomeScreen(
                                         )
 
                                         Text(
-                                            text = "Create a plan from this space to start defining zones.",
+                                            text = "Create a floor from this space and start placing rooms.",
                                             style = HomeEmptyBodyStyle,
                                             color = AppSecondaryText,
                                             textAlign = TextAlign.Center
@@ -280,7 +280,7 @@ fun HomeScreen(
                                                 .height(52.dp)
                                         ) {
                                             Text(
-                                                text = "Create floor plan",
+                                                text = "Create floor",
                                                 color = Color.Black,
                                                 style = HomeActionTextStyle
                                             )

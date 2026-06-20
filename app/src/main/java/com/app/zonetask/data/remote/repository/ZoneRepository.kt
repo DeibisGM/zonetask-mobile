@@ -12,11 +12,11 @@ import com.app.zonetask.ui.screens.plan.PlanZoneDraft
 class ZoneRepository(
     private val apiService: ZoneApiService
 ) {
-    suspend fun getZonesByPlan(planId: Int): ApiResult<List<PlanZoneDraft>> {
+    suspend fun getZonesByPlan(planId: Int, canvasWidth: Float, canvasHeight: Float): ApiResult<List<PlanZoneDraft>> {
         return try {
             val response = apiService.getZonesByPlan(planId)
             if (response.isSuccessful) {
-                ApiResult.Success(response.body()?.map { it.toDraft() }.orEmpty())
+                ApiResult.Success(response.body()?.map { it.toDraft(canvasWidth, canvasHeight) }.orEmpty())
             } else {
                 ApiResult.Error(
                     message = ApiErrorHandler.bodyMessage(response.errorBody())
@@ -29,12 +29,12 @@ class ZoneRepository(
         }
     }
 
-    suspend fun createZone(planId: Int, draft: PlanZoneDraft, displayOrder: Int): ApiResult<PlanZoneDraft> {
-        return createZone(planId, draft.toRequest(displayOrder))
+    suspend fun createZone(planId: Int, draft: PlanZoneDraft, displayOrder: Int, canvasWidth: Float, canvasHeight: Float): ApiResult<PlanZoneDraft> {
+        return createZone(planId, draft.toRequest(displayOrder, canvasWidth, canvasHeight), canvasWidth, canvasHeight)
     }
 
-    suspend fun updateZone(zoneId: Int, draft: PlanZoneDraft, displayOrder: Int): ApiResult<PlanZoneDraft> {
-        return updateZone(zoneId, draft.toRequest(displayOrder))
+    suspend fun updateZone(zoneId: Int, draft: PlanZoneDraft, displayOrder: Int, canvasWidth: Float, canvasHeight: Float): ApiResult<PlanZoneDraft> {
+        return updateZone(zoneId, draft.toRequest(displayOrder, canvasWidth, canvasHeight), canvasWidth, canvasHeight)
     }
 
     suspend fun deleteZone(zoneId: Int): ApiResult<Unit> {
@@ -54,8 +54,8 @@ class ZoneRepository(
         }
     }
 
-    suspend fun syncZones(planId: Int, drafts: List<PlanZoneDraft>): ApiResult<List<PlanZoneDraft>> {
-        val currentResult = getZonesByPlan(planId)
+    suspend fun syncZones(planId: Int, drafts: List<PlanZoneDraft>, canvasWidth: Float, canvasHeight: Float): ApiResult<List<PlanZoneDraft>> {
+        val currentResult = getZonesByPlan(planId, canvasWidth, canvasHeight)
         if (currentResult is ApiResult.Error) {
             return currentResult
         }
@@ -70,8 +70,8 @@ class ZoneRepository(
         drafts.forEachIndexed { index, draft ->
             val displayOrder = index
             val result = when (val backendId = draft.backendId) {
-                null -> createZone(planId, draft.toRequest(displayOrder))
-                else -> updateZone(backendId, draft.toRequest(displayOrder))
+                null -> createZone(planId, draft.toRequest(displayOrder, canvasWidth, canvasHeight), canvasWidth, canvasHeight)
+                else -> updateZone(backendId, draft.toRequest(displayOrder, canvasWidth, canvasHeight), canvasWidth, canvasHeight)
             }
 
             when (result) {
@@ -98,11 +98,11 @@ class ZoneRepository(
         return ApiResult.Success(savedZones)
     }
 
-    private suspend fun createZone(planId: Int, request: ZoneRequest): ApiResult<PlanZoneDraft> {
+    private suspend fun createZone(planId: Int, request: ZoneRequest, canvasWidth: Float, canvasHeight: Float): ApiResult<PlanZoneDraft> {
         return try {
             val response = apiService.createZone(planId, request)
             if (response.isSuccessful) {
-                val zone = response.body()?.toDraft()
+                val zone = response.body()?.toDraft(canvasWidth, canvasHeight)
                     ?: return ApiResult.Error("No se pudo guardar una zona")
                 ApiResult.Success(zone)
             } else {
@@ -117,11 +117,11 @@ class ZoneRepository(
         }
     }
 
-    private suspend fun updateZone(zoneId: Int, request: ZoneRequest): ApiResult<PlanZoneDraft> {
+    private suspend fun updateZone(zoneId: Int, request: ZoneRequest, canvasWidth: Float, canvasHeight: Float): ApiResult<PlanZoneDraft> {
         return try {
             val response = apiService.updateZone(zoneId, request)
             if (response.isSuccessful) {
-                val zone = response.body()?.toDraft()
+                val zone = response.body()?.toDraft(canvasWidth, canvasHeight)
                     ?: return ApiResult.Error("No se pudo actualizar una zona")
                 ApiResult.Success(zone)
             } else {
