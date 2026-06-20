@@ -9,5 +9,6 @@ data class CreateSpaceUiState(
     val requireProof : Boolean = false,
     val isLoading    : Boolean = false,
     val errorBanner  : String? = null,
-    val isSuccess    : Boolean = false
+    val isSuccess    : Boolean = false,
+    val createdSpaceId: Int? = null
 )

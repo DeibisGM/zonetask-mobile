@@ -60,8 +60,8 @@ fun NavGraphBuilder.spacesNavGraph(
 
         ZoneTaskScaffold(
             title = UserMessages.Screens.SPACES_TITLE,
-            showBack = false,
-            onBackClick = {},
+            showBack = true,
+            onBackClick = actions.onBack,
             currentDestination = NavDestination.SETTINGS,
             onDestinationSelected = onTabSelected,
             snackbarHostState = rootSnackbarHostState,
@@ -85,7 +85,7 @@ fun NavGraphBuilder.spacesNavGraph(
     // Create space
     composable(route = SpacesDestinations.CREATE) {
         ZoneTaskScaffold(
-            title = "Create new space",
+            title = "Create space",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = rootSnackbarHostState
@@ -93,7 +93,8 @@ fun NavGraphBuilder.spacesNavGraph(
             CreateSpaceScreen(
                 ownerId = currentUserId,
                 modifier = Modifier.padding(padding),
-                onSaved = { message -> actions.onSpaceCreated(message) }
+                onSaved = { message -> actions.onSpaceCreated(message) },
+                onContinueToPlan = { spaceId -> actions.onSpaceCreatedAndOpenPlans(spaceId) }
             )
         }
     }
@@ -243,7 +244,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val historySnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Task History",
+            title = "Completed tasks",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = historySnackbarHostState
@@ -269,7 +270,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val historySnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Historial de rotación",
+            title = "Rotation history",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = historySnackbarHostState
@@ -294,7 +295,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val spaceStatsSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Space Statistics",
+            title = "Space statistics",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = spaceStatsSnackbarHostState
@@ -324,7 +325,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val statsSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "My Statistics",
+            title = "My statistics",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = statsSnackbarHostState
@@ -384,7 +385,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val reportsSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Reports by User",
+            title = "Reports by user",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = reportsSnackbarHostState
@@ -408,7 +409,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val spaceReportsSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Reports by Space",
+            title = "Reports by space",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = spaceReportsSnackbarHostState
@@ -432,7 +433,7 @@ fun NavGraphBuilder.spacesNavGraph(
         val overdueSnackbarHostState = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title = "Overdue Trends",
+            title = "Overdue trends",
             showBack = true,
             onBackClick = actions.onBack,
             snackbarHostState = overdueSnackbarHostState

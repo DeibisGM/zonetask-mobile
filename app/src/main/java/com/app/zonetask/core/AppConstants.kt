@@ -45,6 +45,10 @@ object AppConstants {
             const val CREATE_PLAN = "api/plans"
             const val UPDATE_PLAN = "api/plans/{planId}"
 
+            // Zone endpoints
+            const val PLAN_ZONES = "api/plans/{planId}/zones"
+            const val ZONE_BY_ID = "api/zones/{zoneId}"
+
             // Chat endpoints
             const val CHAT_BY_SPACE  = "api/spaces/{spaceId}/chat"
             const val CHAT_IMAGE     = "api/spaces/{spaceId}/chat/image"

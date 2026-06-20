@@ -5,13 +5,14 @@ import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.data.remote.service.AuthApiService
 import com.app.zonetask.data.remote.service.ChatApiService
 import com.app.zonetask.data.remote.service.CompletionApiService
-import com.app.zonetask.data.remote.service.TaskLookupApiService
-import com.app.zonetask.data.remote.service.TaskApiService
-import com.app.zonetask.data.remote.service.SpaceApiService
 import com.app.zonetask.data.remote.service.FloorPlanApiService
 import com.app.zonetask.data.remote.service.InvitationApiService
+import com.app.zonetask.data.remote.service.SpaceApiService
 import com.app.zonetask.data.remote.service.StatisticsApiService
+import com.app.zonetask.data.remote.service.TaskApiService
+import com.app.zonetask.data.remote.service.TaskLookupApiService
 import com.app.zonetask.data.remote.service.UserApiService
+import com.app.zonetask.data.remote.service.ZoneApiService
 import okhttp3.OkHttpClient
 import okhttp3.Interceptor
 import okhttp3.logging.HttpLoggingInterceptor
@@ -50,6 +51,10 @@ object RetrofitClient {
 
     val floorPlanApiService: FloorPlanApiService by lazy {
         retrofit.create(FloorPlanApiService::class.java)
+    }
+
+    val zoneApiService: ZoneApiService by lazy {
+        retrofit.create(ZoneApiService::class.java)
     }
 
     val taskLookupApiService: TaskLookupApiService by lazy {

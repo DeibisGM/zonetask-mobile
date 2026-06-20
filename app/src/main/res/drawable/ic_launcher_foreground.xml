@@ -16,43 +16,14 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="170"
-    android:viewportHeight="170">
-  <path
-      android:pathData="M38,0L132,0A38,38 0,0 1,170 38L170,132A38,38 0,0 1,132 170L38,170A38,38 0,0 1,0 132L0,38A38,38 0,0 1,38 0z"
-      android:fillColor="#0D1117"/>
-  <path
-      android:pathData="M36,28L70,28A8,8 0,0 1,78 36L78,70A8,8 0,0 1,70 78L36,78A8,8 0,0 1,28 70L28,36A8,8 0,0 1,36 28z"
-      android:fillColor="#0D9488"/>
-  <path
-      android:pathData="M94,28L128,28A8,8 0,0 1,136 36L136,70A8,8 0,0 1,128 78L94,78A8,8 0,0 1,86 70L86,36A8,8 0,0 1,94 28z"
-      android:strokeAlpha="0.3"
-      android:fillColor="#0D9488"
-      android:fillAlpha="0.3"/>
-  <path
-      android:pathData="M36,86L70,86A8,8 0,0 1,78 94L78,128A8,8 0,0 1,70 136L36,136A8,8 0,0 1,28 128L28,94A8,8 0,0 1,36 86z"
-      android:strokeAlpha="0.3"
-      android:fillColor="#0D9488"
-      android:fillAlpha="0.3"/>
-  <path
-      android:pathData="M94,86L128,86A8,8 0,0 1,136 94L136,128A8,8 0,0 1,128 136L94,136A8,8 0,0 1,86 128L86,94A8,8 0,0 1,94 86z"
-      android:strokeAlpha="0.5"
-      android:fillColor="#0D9488"
-      android:fillAlpha="0.5"/>
-  <path
-      android:pathData="M38,53l10,10l16,-19"
-      android:strokeLineJoin="round"
-      android:strokeWidth="5.5"
-      android:fillColor="#00000000"
-      android:strokeColor="#ffffff"
-      android:strokeLineCap="round"/>
-  <path
-      android:pathData="M98,100L128,100L98,128L128,128"
-      android:strokeAlpha="0.6"
-      android:strokeLineJoin="round"
-      android:strokeWidth="5"
-      android:fillColor="#00000000"
-      android:strokeColor="#ffffff"
-      android:fillAlpha="0.6"
-      android:strokeLineCap="round"/>
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+  <group android:scaleX="0.41"
+      android:scaleY="0.41"
+      android:translateX="71.68"
+      android:translateY="71.68">
+    <path
+        android:pathData="M136,120h24v16L136,136ZM240,64L240,200a8,8 0,0 1,-8 8L48,208a32,32 0,0 1,-32 -32L16,64A32,32 0,0 1,48 32L64,32a8,8 0,0 1,8 8L72,56L232,56A8,8 0,0 1,240 64ZM56,48L48,48A16,16 0,0 0,32 64v84.29A31.82,31.82 0,0 1,48 144h8ZM176,136L176,120h16a8,8 0,0 0,0 -16L176,104L176,96a8,8 0,0 0,-16 0v8L136,104L136,96a8,8 0,0 0,-16 0v8L104,104a8,8 0,0 0,0 16h16v16L104,136a8,8 0,0 0,0 16h16v8a8,8 0,0 0,16 0v-8h24v8a8,8 0,0 0,16 0v-8h16a8,8 0,0 0,0 -16Z"
+        android:fillColor="#FF3DB6B1"/>
+  </group>
 </vector>

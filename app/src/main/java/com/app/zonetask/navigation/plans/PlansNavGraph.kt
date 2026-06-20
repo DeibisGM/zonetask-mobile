@@ -1,10 +1,16 @@
 package com.app.zonetask.navigation.plans
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -14,6 +20,7 @@ import androidx.navigation.navArgument
 import com.app.zonetask.ui.components.ZoneTaskScaffold
 import com.app.zonetask.ui.screens.plan.PlanEditorScreen
 import com.app.zonetask.ui.screens.plan.PlanListScreen
+import com.app.zonetask.ui.theme.AppPrimary
 
 fun NavGraphBuilder.plansNavGraph(
     actions:  PlansNavActions,
@@ -45,10 +52,11 @@ fun NavGraphBuilder.plansNavGraph(
         val listSnackbar = remember { SnackbarHostState() }
 
         ZoneTaskScaffold(
-            title         = "Planos del espacio",
+            title         = "Floors",
             showBack      = true,
             onBackClick   = actions.onBack,
-            snackbarHostState = listSnackbar
+            snackbarHostState = listSnackbar,
+            onAddClick = { actions.onCreatePlan(spaceId) }
         ) { padding ->
             PlanListScreen(
                 spaceId         = spaceId,
@@ -68,13 +76,20 @@ fun NavGraphBuilder.plansNavGraph(
         route     = PlansDestinations.NEW,
         arguments = listOf(navArgument(PlansDestinations.ARG_SPACE_ID) { type = NavType.IntType })
     ) { backStackEntry ->
+        var saveFloorAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+        var canSaveFloor by remember { mutableStateOf(false) }
         val spaceId = backStackEntry.arguments
             ?.getInt(PlansDestinations.ARG_SPACE_ID) ?: return@composable
 
         ZoneTaskScaffold(
-            title         = "Nuevo plano",
+            title         = "Create floor",
             showBack      = true,
             onBackClick   = actions.onBack,
+            topBarActions = {
+                if (canSaveFloor) IconButton(onClick = { saveFloorAction?.invoke() }) {
+                    Icon(Icons.Outlined.Save, contentDescription = "Save", tint = AppPrimary)
+                }
+            },
             snackbarHostState = rootSnackbarHostState
         ) { padding ->
             PlanEditorScreen(
@@ -82,7 +97,8 @@ fun NavGraphBuilder.plansNavGraph(
                 planId   = null,
                 modifier = Modifier.padding(padding),
                 onSaved  = { message -> actions.onPlanSaved(message) },
-                onBack   = actions.onBack
+                onBack   = actions.onBack,
+                onSaveActionChanged = { action, enabled -> saveFloorAction = action; canSaveFloor = enabled }
             )
         }
     }
@@ -95,13 +111,20 @@ fun NavGraphBuilder.plansNavGraph(
             navArgument(PlansDestinations.ARG_PLAN_ID)  { type = NavType.IntType }
         )
     ) { backStackEntry ->
+        var saveFloorAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+        var canSaveFloor by remember { mutableStateOf(false) }
         val spaceId = backStackEntry.arguments?.getInt(PlansDestinations.ARG_SPACE_ID) ?: return@composable
         val planId  = backStackEntry.arguments?.getInt(PlansDestinations.ARG_PLAN_ID)  ?: return@composable
 
         ZoneTaskScaffold(
-            title         = "Editar plano",
+            title         = "Edit floor",
             showBack      = true,
             onBackClick   = actions.onBack,
+            topBarActions = {
+                if (canSaveFloor) IconButton(onClick = { saveFloorAction?.invoke() }) {
+                    Icon(Icons.Outlined.Save, contentDescription = "Save", tint = AppPrimary)
+                }
+            },
             snackbarHostState = rootSnackbarHostState
         ) { padding ->
             PlanEditorScreen(
@@ -109,7 +132,8 @@ fun NavGraphBuilder.plansNavGraph(
                 planId   = planId,
                 modifier = Modifier.padding(padding),
                 onSaved  = { message -> actions.onPlanSaved(message) },
-                onBack   = actions.onBack
+                onBack   = actions.onBack,
+                onSaveActionChanged = { action, enabled -> saveFloorAction = action; canSaveFloor = enabled }
             )
         }
     }

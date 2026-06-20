@@ -249,6 +249,9 @@ fun AppNavHost() {
                     onNavigateToCreateSpace = {
                         navController.navigate(SpacesDestinations.CREATE)
                     },
+                    onNavigateToCreatePlan = { sid ->
+                        navController.navigate(PlansDestinations.list(sid))
+                    },
                     onNavigateToCreateTask = {
                         val sid = if (currentSpaceId > 0) currentSpaceId else spaceId
                         if (sid > 0) {
@@ -468,6 +471,14 @@ private fun rememberSpacesNavActions(
                 ?.savedStateHandle
                 ?.set(SpacesNavKeys.SUCCESS_MESSAGE, message)
             navController.popBackStack()
+        },
+        onSpaceCreatedAndOpenPlans = { spaceId ->
+            navController.navigate(PlansDestinations.list(spaceId)) {
+                popUpTo(SpacesDestinations.CREATE) {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
         },
         onSpaceEdited = { message ->
             navController.getBackStackEntry(SpacesDestinations.LIST)

@@ -3,21 +3,27 @@ package com.app.zonetask
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import com.app.zonetask.core.AuthSessionStore
 import com.app.zonetask.core.FirebaseMessagingTokenProvider
+import com.app.zonetask.core.PlanDraftStore
 import com.app.zonetask.di.AppContainer
-import com.app.zonetask.navigation.AppNavHost
 import com.app.zonetask.messaging.ZoneTaskNotificationManager
+import com.app.zonetask.navigation.AppNavHost
+import com.app.zonetask.ui.theme.AppBackground
 import com.app.zonetask.ui.theme.ZoneTaskTheme
 
 @Composable
@@ -30,9 +36,11 @@ fun ZoneTaskApp() {
 
     ZoneTaskTheme {
         AuthSessionStore.initialize(context)
+        PlanDraftStore.initialize(context)
 
         LaunchedEffect(Unit) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(
                     context,
                     Manifest.permission.POST_NOTIFICATIONS
@@ -51,6 +59,12 @@ fun ZoneTaskApp() {
                 AppContainer.userRepository.updatePushToken(userId, token)
             }
         }
-        AppNavHost()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppBackground)
+        ) {
+            AppNavHost()
+        }
     }
 }
