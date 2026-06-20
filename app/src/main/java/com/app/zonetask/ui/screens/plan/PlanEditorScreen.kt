@@ -3,6 +3,7 @@ package com.app.zonetask.ui.screens.plan
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -58,6 +60,7 @@ import com.app.zonetask.ui.theme.AppBorder
 import com.app.zonetask.ui.theme.AppOnSurface
 import com.app.zonetask.ui.theme.AppPrimary
 import com.app.zonetask.ui.theme.AppSecondaryText
+import kotlin.math.roundToInt
 
 @Composable
 fun PlanEditorScreen(
@@ -140,11 +143,11 @@ fun PlanEditorScreen(
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("Build your floor", color = AppOnSurface, fontWeight = FontWeight.SemiBold, style = androidx.compose.material3.MaterialTheme.typography.titleSmall)
                     Text(
-                        "Draw a zone on the grid. Long-press and drag the zone to move it. Resize it from the circles around the edges.",
+                        "Tap a zone to select it. Drag a selected zone to move it. Use a corner handle or enter its size below to resize. Pinch or drag the background to inspect the plan.",
                         color = AppSecondaryText,
                         style = androidx.compose.material3.MaterialTheme.typography.bodySmall
                     )
-                    Text("1 cell = 1 m", color = AppPrimary, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
+                    Text("1 large square = 1 m. Small squares = 25 cm.", color = AppPrimary, style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
                 }
             }
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -158,24 +161,22 @@ fun PlanEditorScreen(
                     onZoneGeometryChanged = viewModel::onZoneGeometryChanged,
                     onZoneDelete = { _ -> viewModel.onDeleteSelectedZone() }
                 )
-                if (selectedZone == null) {
-                    Surface(
-                        onClick = { resetRequest++ },
-                        color = Color(0xFF151C1E),
-                        border = BorderStroke(1.dp, Color(0xFF2A3436)),
-                        shape = RoundedCornerShape(999.dp),
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 16.dp)
+                Surface(
+                    onClick = { resetRequest++ },
+                    color = Color(0xFF151C1E),
+                    border = BorderStroke(1.dp, Color(0xFF2A3436)),
+                    shape = RoundedCornerShape(999.dp),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Outlined.CenterFocusStrong, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(7.dp))
-                            Text("Center", color = AppOnSurface, fontWeight = FontWeight.SemiBold)
-                        }
+                        Icon(Icons.Outlined.CenterFocusStrong, contentDescription = null, tint = AppPrimary, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(7.dp))
+                        Text("Center", color = AppOnSurface, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -184,7 +185,9 @@ fun PlanEditorScreen(
                 onAddZone = viewModel::onAddZone,
                 onRename = { selectedZone?.let { roomName = it.name; showRenameRoom = true } },
                 onColor = viewModel::onSelectedZoneColorChange,
-                onCustomColor = { showCustomColor = true }
+                onCustomColor = { showCustomColor = true },
+                onResize = viewModel::onResizeZone,
+                onDeselect = { viewModel.onSelectZone(null) }
             )
         }
 
@@ -231,7 +234,9 @@ private fun BottomToolTray(
     selectedZone: PlanZoneDraft?, grid: FloorGridSpec,
     onAddZone: () -> Unit, onRename: () -> Unit,
     onColor: (String) -> Unit,
-    onCustomColor: () -> Unit
+    onCustomColor: () -> Unit,
+    onResize: (String, Int, Int) -> Unit,
+    onDeselect: () -> Unit
 ) {
     Surface(color = Color(0xFF121718), shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -259,9 +264,12 @@ private fun BottomToolTray(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(selectedZone.name, color = AppOnSurface, fontWeight = FontWeight.Bold)
-                        Text("${geometry.spanColumns} × ${geometry.spanRows} cells", color = AppSecondaryText, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                        Text("${formatMeters(geometry.spanColumns)} m x ${formatMeters(geometry.spanRows)} m", color = AppSecondaryText, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
                     }
-                    CompactActionChip("Rename", onRename)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CompactActionChip("Done", onDeselect)
+                        CompactActionChip("Rename", onRename)
+                    }
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PlanZonePalette.forEach { color ->
@@ -272,9 +280,71 @@ private fun BottomToolTray(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CompactActionChip("Custom color", onCustomColor)
                 }
+                ZoneSizeInputs(
+                    zoneId = selectedZone.id,
+                    widthCells = geometry.spanColumns,
+                    heightCells = geometry.spanRows,
+                    onResize = onResize
+                )
             }
         }
     }
+}
+
+@Composable
+private fun ZoneSizeInputs(
+    zoneId: String,
+    widthCells: Int,
+    heightCells: Int,
+    onResize: (String, Int, Int) -> Unit
+) {
+    var widthInput by rememberSaveable(zoneId) { mutableStateOf(formatMeters(widthCells)) }
+    var heightInput by rememberSaveable(zoneId) { mutableStateOf(formatMeters(heightCells)) }
+    val currentWidthMeters = formatMeters(widthCells)
+    val currentHeightMeters = formatMeters(heightCells)
+
+    LaunchedEffect(currentWidthMeters) {
+        if (widthInput.toFloatOrNull() == null || widthInput != currentWidthMeters) widthInput = currentWidthMeters
+    }
+    LaunchedEffect(currentHeightMeters) {
+        if (heightInput.toFloatOrNull() == null || heightInput != currentHeightMeters) heightInput = currentHeightMeters
+    }
+
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        OutlinedTextField(
+            value = widthInput,
+            onValueChange = { value ->
+                widthInput = value
+                value.toMetersInCells()?.let { onResize(zoneId, it, heightCells) }
+            },
+            modifier = Modifier.weight(1f),
+            label = { Text("Width (m)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            colors = fieldColors()
+        )
+        OutlinedTextField(
+            value = heightInput,
+            onValueChange = { value ->
+                heightInput = value
+                value.toMetersInCells()?.let { onResize(zoneId, widthCells, it) }
+            },
+            modifier = Modifier.weight(1f),
+            label = { Text("Height (m)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            colors = fieldColors()
+        )
+    }
+    Text("Each large square is 1 m. Values can use 0.25 m steps.", color = AppSecondaryText, style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+}
+
+private fun String.toMetersInCells(): Int? =
+    toFloatOrNull()?.takeIf { it >= 0.25f }?.times(SUBCELLS_PER_METER)?.roundToInt()?.coerceAtLeast(1)
+
+private fun formatMeters(cells: Int): String {
+    val metres = cells.toFloat() / SUBCELLS_PER_METER
+    return if (metres % 1f == 0f) metres.toInt().toString() else metres.toString()
 }
 
 @Composable

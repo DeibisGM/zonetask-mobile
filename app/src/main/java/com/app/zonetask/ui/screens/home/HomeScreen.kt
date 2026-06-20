@@ -90,11 +90,27 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showSpacePicker by rememberSaveable { mutableStateOf(false) }
     var tasksExpanded by rememberSaveable { mutableStateOf(false) }
+    var selectedZoneBackendId by rememberSaveable(uiState.activePlan?.planId) { mutableStateOf<Int?>(null) }
+
+    val selectedZone = selectedZoneBackendId?.let { backendId ->
+        uiState.planZones.firstOrNull { it.backendId == backendId }
+    }
+    val displayedTasks = if (selectedZoneBackendId != null) {
+        uiState.pendingTasks.filter { it.zoneId == selectedZoneBackendId }
+    } else {
+        uiState.pendingTasks
+    }
 
     LaunchedEffect(uiState.currentSpaceId) {
         val resolved = uiState.currentSpaceId
         if (spaceId == 0 && resolved != null && resolved > 0) {
             onSpaceChanged(resolved)
+        }
+    }
+
+    LaunchedEffect(uiState.planZones, selectedZoneBackendId) {
+        if (selectedZoneBackendId != null && selectedZone == null) {
+            selectedZoneBackendId = null
         }
     }
 
@@ -191,6 +207,16 @@ fun HomeScreen(
                                             gridRows = activePlan.canvasHeight.roundToInt().coerceAtLeast(1),
                                             bottomInset = if (tasksExpanded) 320.dp else 112.dp,
                                             zones = uiState.planZones,
+                                            selectedZoneBackendId = selectedZoneBackendId,
+                                            onZoneClick = { zone ->
+                                                zone.backendId?.let { backendId ->
+                                                    selectedZoneBackendId = if (selectedZoneBackendId == backendId) null else backendId
+                                                    tasksExpanded = true
+                                                }
+                                            },
+                                            onBackgroundTap = {
+                                                selectedZoneBackendId = null
+                                            },
                                             modifier = Modifier.fillMaxSize()
                                         )
 
@@ -257,7 +283,10 @@ fun HomeScreen(
         if (!uiState.isLoading && uiState.currentSpaceId != null) {
             TasksPanel(
                 expanded = tasksExpanded,
-                pendingTasks = uiState.pendingTasks,
+                pendingTasks = displayedTasks,
+                totalPendingTasks = uiState.pendingTasks.size,
+                selectedZoneName = selectedZone?.name,
+                selectedZoneTaskCount = displayedTasks.size,
                 tasksErrorMessage = uiState.tasksErrorMessage,
                 onToggle = { tasksExpanded = !tasksExpanded },
                 onOpenTask = { task -> onNavigateToTaskDetail(uiState.currentSpaceId!!, task.taskId) },
@@ -415,6 +444,9 @@ private fun HomeFloorSwitcher(
 private fun TasksPanel(
     expanded: Boolean,
     pendingTasks: List<HomeTaskItem>,
+    totalPendingTasks: Int,
+    selectedZoneName: String?,
+    selectedZoneTaskCount: Int,
     tasksErrorMessage: String?,
     onToggle: () -> Unit,
     onOpenTask: (HomeTaskItem) -> Unit,
@@ -444,22 +476,25 @@ private fun TasksPanel(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Today's tasks",
+                        text = selectedZoneName?.let { "Tasks in $it" } ?: "Today's tasks",
                         fontWeight = FontWeight.SemiBold,
                         color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "${pendingTasks.size} pending",
+                        text = selectedZoneName?.let { "$selectedZoneTaskCount active in this zone" }
+                            ?: "$totalPendingTasks pending",
                         color = AppSecondaryText,
                         style = androidx.compose.material3.MaterialTheme.typography.bodySmall
                     )
                 }
 
-                Icon(
-                    imageVector = if (expanded) Icons.Outlined.KeyboardArrowDown else Icons.Outlined.KeyboardArrowUp,
-                    contentDescription = null,
-                    tint = AppSecondaryText
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Outlined.KeyboardArrowDown else Icons.Outlined.KeyboardArrowUp,
+                        contentDescription = null,
+                        tint = AppSecondaryText
+                    )
+                }
             }
         }
 
@@ -484,6 +519,11 @@ private fun TasksPanel(
                             message = tasksErrorMessage,
                             actionText = "Retry",
                             onAction = onRetry
+                        )
+                    } else if (selectedZoneName != null && pendingTasks.isEmpty()) {
+                        ScreenStateCard(
+                            title = "No active tasks here",
+                            message = "This zone does not have pending tasks right now. Tap outside the zone to return to Today's tasks."
                         )
                     } else if (pendingTasks.isEmpty()) {
                         ScreenStateCard(

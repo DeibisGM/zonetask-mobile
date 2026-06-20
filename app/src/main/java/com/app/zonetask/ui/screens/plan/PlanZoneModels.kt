@@ -4,6 +4,9 @@ import androidx.compose.ui.graphics.Color
 import java.util.UUID
 import kotlin.math.roundToInt
 
+/** Four fine grid cells make one real-world metre. */
+const val SUBCELLS_PER_METER = 4
+
 data class FloorGridSpec(
     val columns: Int = 120,
     val rows: Int = 120
