@@ -68,4 +68,9 @@ interface ChatApiService {
         @Query("senderId") senderId: Int,
         @Part image: MultipartBody.Part
     ): Response<ChatMessageDto>
+
+    @GET(AppConstants.Api.Paths.USER_CHATS)
+    suspend fun getUserChats(
+        @Path("userId") userId: Int
+    ): Response<List<ChatGroupResponse>>
 }

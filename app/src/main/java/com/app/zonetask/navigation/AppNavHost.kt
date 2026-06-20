@@ -42,6 +42,7 @@ import com.app.zonetask.ui.screens.taskcreate.TaskCreateScreen
 import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.chat.ChatEditScreen
 import com.app.zonetask.ui.screens.chat.ChatScreen
+import com.app.zonetask.ui.screens.chatlist.ChatListScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 
 private const val AUTH_NOTICE_KEY = "authNotice"
@@ -312,6 +313,14 @@ fun AppNavHost() {
             )
         }
 
+        composable(route = AppDestinations.CHAT_LIST) {
+            ChatListScreen(
+                userId           = currentUserId,
+                onNavigateToChat = { spaceId -> navController.navigate(AppDestinations.chatRoute(spaceId)) },
+                onTabSelected    = onTabSelected
+            )
+        }
+
         spacesNavGraph(
             currentUserId = currentUserId,
             rootSnackbarHostState = snackbarHostState,
@@ -347,6 +356,7 @@ private fun navigateToTab(
             AppDestinations.homeRoute(sid)
         }
         NavDestination.TASKS    -> AppDestinations.tasksRoute(userId)
+        NavDestination.CHAT     -> AppDestinations.CHAT_LIST
         NavDestination.PROFILE  -> AppDestinations.PROFILE
         NavDestination.SETTINGS -> SpacesDestinations.list(userId)
         else -> return

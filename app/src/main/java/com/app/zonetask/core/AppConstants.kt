@@ -50,6 +50,7 @@ object AppConstants {
             const val CHAT_MEMBERS   = "api/spaces/{spaceId}/chat/members"
             const val SPACE_MESSAGES        = "api/spaces/{spaceId}/messages"
             const val SPACE_MESSAGES_UPLOAD = "api/spaces/{spaceId}/messages/upload"
+            const val USER_CHATS            = "api/users/{userId}/chats"
 
             // Completion history endpoint
             const val COMPLETED_TASKS = "api/spaces/{spaceId}/completed-tasks"
