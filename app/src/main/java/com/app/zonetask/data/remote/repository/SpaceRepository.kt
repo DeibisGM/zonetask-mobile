@@ -4,6 +4,8 @@ import com.app.zonetask.data.remote.ApiErrorHandler
 import com.app.zonetask.data.remote.ApiResult
 import com.app.zonetask.data.remote.dto.CreateSpaceRequest
 import com.app.zonetask.data.remote.dto.EditSpaceRequest
+import com.app.zonetask.data.remote.dto.SpaceMemberWithUserDto
+import com.app.zonetask.data.remote.dto.SpacePendingInvitationDto
 import com.app.zonetask.data.remote.dto.SpacePermissionsResponse
 import com.app.zonetask.data.remote.dto.UpdateMemberRoleRequest
 import com.app.zonetask.data.remote.dto.toDomain
@@ -92,6 +94,40 @@ class SpaceRepository(
             } else {
                 ApiResult.Error(
                     message = ApiErrorHandler.fromHttpCode(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(ApiErrorHandler.fromException(e))
+        }
+    }
+
+    suspend fun getMemberDirectory(spaceId: Int, userId: Int): ApiResult<List<SpaceMemberWithUserDto>> {
+        return try {
+            val response = apiService.getMemberDirectory(spaceId, userId)
+            if (response.isSuccessful) {
+                val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message    = ApiErrorHandler.fromHttpCode(response.code()),
+                    statusCode = response.code()
+                )
+            }
+        } catch (e: Exception) {
+            ApiResult.Error(ApiErrorHandler.fromException(e))
+        }
+    }
+
+    suspend fun getSpacePendingInvitations(spaceId: Int, userId: Int): ApiResult<List<SpacePendingInvitationDto>> {
+        return try {
+            val response = apiService.getSpacePendingInvitations(spaceId, userId)
+            if (response.isSuccessful) {
+                val body = response.body() ?: return ApiResult.Error("Respuesta vacía del servidor")
+                ApiResult.Success(body)
+            } else {
+                ApiResult.Error(
+                    message    = ApiErrorHandler.fromHttpCode(response.code()),
                     statusCode = response.code()
                 )
             }

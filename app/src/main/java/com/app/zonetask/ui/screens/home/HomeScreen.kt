@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Chat
@@ -52,6 +53,7 @@ fun HomeScreen(
     onNavigateToManageSpaces: () -> Unit = {},
     onNavigateToTaskDetail: (spaceId: Int, taskId: Int) -> Unit = { _, _ -> },
     onNavigateToChat: (spaceId: Int) -> Unit = {},
+    onNavigateToMembers: (spaceId: Int) -> Unit = {},
     onSpaceChanged: (newSpaceId: Int) -> Unit = {},
     viewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(spaceId = spaceId, userId = userId)
@@ -112,6 +114,17 @@ fun HomeScreen(
                             contentDescription = "Spaces",
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    IconButton(onClick = {
+                        val sid = uiState.currentSpaceId ?: spaceId
+                        onNavigateToMembers(sid)
+                    }) {
+                        Icon(
+                            imageVector        = Icons.Outlined.Group,
+                            contentDescription = "Members",
+                            tint               = MaterialTheme.colorScheme.onSurface,
+                            modifier           = Modifier.size(22.dp)
                         )
                     }
                     IconButton(onClick = {

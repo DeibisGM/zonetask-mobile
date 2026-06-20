@@ -43,6 +43,7 @@ import com.app.zonetask.ui.screens.taskdetail.TaskDetailScreen
 import com.app.zonetask.ui.screens.chat.ChatEditScreen
 import com.app.zonetask.ui.screens.chat.ChatScreen
 import com.app.zonetask.ui.screens.chatlist.ChatListScreen
+import com.app.zonetask.ui.screens.spacemembers.SpaceMembersScreen
 import com.app.zonetask.ui.screens.tasks.TasksScreen
 
 private const val AUTH_NOTICE_KEY = "authNotice"
@@ -234,6 +235,9 @@ fun AppNavHost() {
                     onNavigateToChat = { sid ->
                         navController.navigate(AppDestinations.chatRoute(sid))
                     },
+                    onNavigateToMembers = { sid ->
+                        navController.navigate(AppDestinations.spaceMembersRoute(sid))
+                    },
                     onSpaceChanged = { newSpaceId ->
                         currentSpaceId = newSpaceId
                         navController.navigate(AppDestinations.homeRoute(newSpaceId)) {
@@ -310,6 +314,18 @@ fun AppNavHost() {
                         ?.set("chatChanged", true)
                     navController.popBackStack()
                 }
+            )
+        }
+
+        composable(
+            route     = AppDestinations.SPACE_MEMBERS,
+            arguments = listOf(navArgument("spaceId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val spaceId = backStackEntry.arguments?.getInt("spaceId") ?: 0
+            SpaceMembersScreen(
+                spaceId = spaceId,
+                userId  = currentUserId,
+                onBack  = { navController.popBackStack() }
             )
         }
 
