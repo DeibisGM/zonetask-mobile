@@ -3,25 +3,34 @@ package com.app.zonetask.ui.screens.plan
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.zonetask.di.AppContainer
@@ -50,6 +60,7 @@ fun TemplateSelectScreen(
     )
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var previewTemplate by remember { mutableStateOf<FloorPlanTemplate?>(null) }
 
     Box(modifier.fillMaxSize().background(Color(0xFF090B0C))) {
         when {
@@ -64,17 +75,29 @@ fun TemplateSelectScreen(
             )
             else -> TemplateGrid(
                 templates = state.templates,
-                onSelectTemplate = onSelectTemplate,
+                // Tapping a template opens an expanded preview; applying only happens on confirm.
+                onPreviewTemplate = { previewTemplate = it },
                 onSelectBlank = onSelectBlank
             )
         }
+    }
+
+    previewTemplate?.let { template ->
+        TemplatePreviewDialog(
+            template = template,
+            onConfirm = {
+                previewTemplate = null
+                onSelectTemplate(template.templateId)
+            },
+            onDismiss = { previewTemplate = null }
+        )
     }
 }
 
 @Composable
 private fun TemplateGrid(
     templates: List<FloorPlanTemplate>,
-    onSelectTemplate: (Int) -> Unit,
+    onPreviewTemplate: (FloorPlanTemplate) -> Unit,
     onSelectBlank: () -> Unit
 ) {
     LazyVerticalGrid(
@@ -87,7 +110,7 @@ private fun TemplateGrid(
             BlankTemplateCard(onClick = onSelectBlank)
         }
         items(templates) { template ->
-            TemplateCard(template = template, onClick = { onSelectTemplate(template.templateId) })
+            TemplateCard(template = template, onClick = { onPreviewTemplate(template) })
         }
     }
 }
@@ -144,6 +167,69 @@ private fun TemplateCard(template: FloorPlanTemplate, onClick: () -> Unit) {
             Column(Modifier.padding(horizontal = 12.dp).padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(template.name, color = AppOnSurface, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
                 Text(template.description, color = AppSecondaryText, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TemplatePreviewDialog(
+    template: FloorPlanTemplate,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(18.dp),
+            color = Color(0xFF111418),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2A3436)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(template.name, color = AppOnSurface, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+
+                // Larger preview that keeps the template's real proportions (cols × rows).
+                TemplateMiniPreview(
+                    zones = template.zones,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 280.dp)
+                        .aspectRatio(
+                            (template.defaultColumns.toFloat() / template.defaultRows.coerceAtLeast(1))
+                        )
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, Color(0xFF2A3436), RoundedCornerShape(12.dp))
+                )
+
+                Text(template.description, color = AppSecondaryText, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "${template.zones.size} zonas · ${template.defaultColumns}×${template.defaultRows} celdas",
+                    color = AppPrimary,
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Text(
+                    "Podrás mover, redimensionar y editar todas las zonas después de aplicar la plantilla.",
+                    color = AppSecondaryText,
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancelar", color = AppSecondaryText)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = onConfirm,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AppPrimary)
+                    ) {
+                        Text("Usar plantilla", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }
